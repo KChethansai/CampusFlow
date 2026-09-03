@@ -36,6 +36,9 @@ const APPLICATION_STAGES = [
   'rejected'
 ];
 
+const toDateInputValue = (d) =>
+  d ? new Date(d).toISOString().slice(0, 10) : '';
+
 function Placement() {
   const { user } = useAuth();
   const role = user?.role;
@@ -48,6 +51,8 @@ function Placement() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [editingDriveId, setEditingDriveId] = useState(null);
+  const [editingCompanyId, setEditingCompanyId] = useState(null);
 
   // staff create-forms
   const [showCompanyForm, setShowCompanyForm] = useState(false);
@@ -95,7 +100,7 @@ function Placement() {
     }
   };
 
-  // --- staff actions ---
+  // --- staff actions: company create/update/delete ---
   const onCreateCompany = async (form) => {
     try {
       await api.post('/companies', form);
@@ -105,6 +110,30 @@ function Placement() {
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to add company');
+    }
+  };
+
+  const startEditCompany = (c) => {
+    companyForm.reset({
+      name: c.name,
+      website: c.website || '',
+      industry: c.industry || '',
+      hrContact: c.hrContact || ''
+    });
+    setEditingCompanyId(c._id);
+  };
+
+  const onUpdateCompany = async (companyId, form) => {
+    setBusy(`editcompany-${companyId}`);
+    try {
+      await api.patch(`/companies/${companyId}`, form);
+      toast.success('Company updated');
+      setEditingCompanyId(null);
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update company');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -121,29 +150,61 @@ function Placement() {
     }
   };
 
+  // --- staff actions: drive create/update/delete ---
+  const buildDrivePayload = (form) => ({
+    company: form.company,
+    role: form.role,
+    jobType: form.jobType,
+    packageLPA: form.packageLPA ? Number(form.packageLPA) : undefined,
+    location: form.location,
+    applicationDeadline: form.applicationDeadline || undefined,
+    status: form.status,
+    eligibility: {
+      minCGPA: form.minCGPA ? Number(form.minCGPA) : undefined,
+      maxBacklogs: form.maxBacklogs ? Number(form.maxBacklogs) : undefined,
+      graduationYear: form.graduationYear ? Number(form.graduationYear) : undefined
+    }
+  });
+
   const onCreateDrive = async (form) => {
     try {
-      const payload = {
-        company: form.company,
-        role: form.role,
-        jobType: form.jobType,
-        packageLPA: form.packageLPA ? Number(form.packageLPA) : undefined,
-        location: form.location,
-        applicationDeadline: form.applicationDeadline || undefined,
-        status: form.status,
-        eligibility: {
-          minCGPA: form.minCGPA ? Number(form.minCGPA) : undefined,
-          maxBacklogs: form.maxBacklogs ? Number(form.maxBacklogs) : undefined,
-          graduationYear: form.graduationYear ? Number(form.graduationYear) : undefined
-        }
-      };
-      await api.post('/job-drives', payload);
+      await api.post('/job-drives', buildDrivePayload(form));
       toast.success('Job drive created');
       setShowDriveForm(false);
       driveForm.reset();
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create drive');
+    }
+  };
+
+  const startEditDrive = (d) => {
+    driveForm.reset({
+      company: d.company?._id || d.company || '',
+      role: d.role || '',
+      jobType: d.jobType || 'full-time',
+      packageLPA: d.packageLPA ?? '',
+      location: d.location || '',
+      minCGPA: d.eligibility?.minCGPA ?? '',
+      maxBacklogs: d.eligibility?.maxBacklogs ?? '',
+      graduationYear: d.eligibility?.graduationYear ?? '',
+      applicationDeadline: toDateInputValue(d.applicationDeadline),
+      status: d.status || 'active'
+    });
+    setEditingDriveId(d._id);
+  };
+
+  const onUpdateDrive = async (driveId, form) => {
+    setBusy(`editdrive-${driveId}`);
+    try {
+      await api.patch(`/job-drives/${driveId}`, buildDrivePayload(form));
+      toast.success('Job drive updated');
+      setEditingDriveId(null);
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update drive');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -159,6 +220,78 @@ function Placement() {
       setBusy(null);
     }
   };
+
+  const renderDriveForm = (onSubmit, submitLabel, saving = false) => (
+    <form
+      onSubmit={onSubmit}
+      className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-1 md:grid-cols-3 gap-3"
+    >
+      <div>
+        <label className={labelClass}>Company</label>
+        <select className={selectClass} {...driveForm.register('company', { required: true })}>
+          <option value="">Select company</option>
+          {companies.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={labelClass}>Role</label>
+        <input className={inputClass} {...driveForm.register('role', { required: true })} />
+      </div>
+      <div>
+        <label className={labelClass}>Job Type</label>
+        <select className={selectClass} {...driveForm.register('jobType')}>
+          {JOB_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={labelClass}>Package (LPA)</label>
+        <input type="number" step="0.1" className={inputClass} {...driveForm.register('packageLPA')} />
+      </div>
+      <div>
+        <label className={labelClass}>Location</label>
+        <input className={inputClass} {...driveForm.register('location')} />
+      </div>
+      <div>
+        <label className={labelClass}>Min CGPA</label>
+        <input type="number" step="0.1" className={inputClass} {...driveForm.register('minCGPA')} />
+      </div>
+      <div>
+        <label className={labelClass}>Max Backlogs</label>
+        <input type="number" className={inputClass} {...driveForm.register('maxBacklogs')} />
+      </div>
+      <div>
+        <label className={labelClass}>Graduation Year</label>
+        <input type="number" className={inputClass} {...driveForm.register('graduationYear')} />
+      </div>
+      <div>
+        <label className={labelClass}>Application Deadline</label>
+        <input type="date" className={inputClass} {...driveForm.register('applicationDeadline')} />
+      </div>
+      <div>
+        <label className={labelClass}>Status</label>
+        <select className={selectClass} {...driveForm.register('status')}>
+          {DRIVE_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-end">
+        <button type="submit" disabled={saving} className={`${btnClass('success')} w-full disabled:opacity-50`}>
+          {saving ? 'Saving...' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
 
   const updateStage = async (applicationId, driveId, stage) => {
     setBusy(`stage-${applicationId}`);
@@ -234,157 +367,86 @@ function Placement() {
               >
                 {showDriveForm ? 'Cancel' : '+ Add Job Drive'}
               </button>
-              {showDriveForm && (
-                <form
-                  onSubmit={driveForm.handleSubmit(onCreateDrive)}
-                  className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-1 md:grid-cols-3 gap-3"
-                >
-                  <div>
-                    <label className={labelClass}>Company</label>
-                    <select
-                      className={selectClass}
-                      {...driveForm.register('company', { required: true })}
-                    >
-                      <option value="">Select company</option>
-                      {companies.map((c) => (
-                        <option key={c._id} value={c._id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Role</label>
-                    <input
-                      className={inputClass}
-                      {...driveForm.register('role', { required: true })}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Job Type</label>
-                    <select className={selectClass} {...driveForm.register('jobType')}>
-                      {JOB_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Package (LPA)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      className={inputClass}
-                      {...driveForm.register('packageLPA')}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Location</label>
-                    <input className={inputClass} {...driveForm.register('location')} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Min CGPA</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      className={inputClass}
-                      {...driveForm.register('minCGPA')}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Max Backlogs</label>
-                    <input
-                      type="number"
-                      className={inputClass}
-                      {...driveForm.register('maxBacklogs')}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Graduation Year</label>
-                    <input
-                      type="number"
-                      className={inputClass}
-                      {...driveForm.register('graduationYear')}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Application Deadline</label>
-                    <input
-                      type="date"
-                      className={inputClass}
-                      {...driveForm.register('applicationDeadline')}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Status</label>
-                    <select className={selectClass} {...driveForm.register('status')}>
-                      {DRIVE_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-end">
-                    <button type="submit" className={`${btnClass('success')} w-full`}>
-                      Create Drive
-                    </button>
-                  </div>
-                </form>
-              )}
+              {showDriveForm &&
+                renderDriveForm(driveForm.handleSubmit(onCreateDrive), 'Create Drive')}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {drives.map((d) => (
-              <div key={d._id} className={`${cardClass} p-5 flex flex-col`}>
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{d.role}</h3>
-                  <span className={badge(statusColors[d.status] || 'bg-gray-100 text-gray-700')}>
-                    {d.status}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mb-1">{d.company?.name || '—'}</p>
-                <p className="text-sm text-gray-500 mb-3">
-                  {d.location || '—'} · {d.jobType}
-                </p>
-                <div className="text-xs text-gray-400 mb-4 space-y-1">
-                  <p>
-                    Package: {d.packageLPA != null ? `₹${d.packageLPA} LPA` : '—'} · Min
-                    CGPA: {d.eligibility?.minCGPA || '—'} · Max backlogs:{' '}
-                    {d.eligibility?.maxBacklogs ?? '—'} · Batch:{' '}
-                    {d.eligibility?.graduationYear || '—'}
-                  </p>
-                  <p>Deadline: {formatDate(d.applicationDeadline)}</p>
-                </div>
-                <div className="mt-auto flex gap-2">
-                  {isStudent ? (
-                    alreadyApplied(d._id) ? (
-                      <span className="flex-1 text-center px-3 py-2 rounded-full text-sm font-medium bg-green-50 text-green-700">
-                        ✓ Applied
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => applyToDrive(d._id)}
-                        disabled={busy === `apply-${d._id}` || d.status !== 'active'}
-                        className={`${btnClass('primary')} flex-1 disabled:opacity-50`}
-                      >
-                        {busy === `apply-${d._id}` ? 'Applying...' : 'Apply Now'}
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      onClick={() => onDeleteDrive(d._id)}
-                      disabled={busy === `deldrive-${d._id}`}
-                      className={`${btnClass('danger', 'small')} ml-auto`}
-                    >
-                      {busy === `deldrive-${d._id}` ? 'Deleting...' : 'Delete'}
-                    </button>
+            {drives.map((d) =>
+              editingDriveId === d._id ? (
+                <div key={d._id} className={`${cardClass} p-5`}>
+                  {renderDriveForm(
+                    driveForm.handleSubmit((form) => onUpdateDrive(d._id, form)),
+                    'Save Changes',
+                    busy === `editdrive-${d._id}`
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingDriveId(null)}
+                    className={`${btnClass('secondary', 'small')} mt-3`}
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div key={d._id} className={`${cardClass} p-5 flex flex-col`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">{d.role}</h3>
+                    <span className={badge(statusColors[d.status] || 'bg-gray-100 text-gray-700')}>
+                      {d.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-1">{d.company?.name || '—'}</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    {d.location || '—'} · {d.jobType}
+                  </p>
+                  <div className="text-xs text-gray-400 mb-4 space-y-1">
+                    <p>
+                      Package: {d.packageLPA != null ? `₹${d.packageLPA} LPA` : '—'} · Min
+                      CGPA: {d.eligibility?.minCGPA || '—'} · Max backlogs:{' '}
+                      {d.eligibility?.maxBacklogs ?? '—'} · Batch:{' '}
+                      {d.eligibility?.graduationYear || '—'}
+                    </p>
+                    <p>Deadline: {formatDate(d.applicationDeadline)}</p>
+                  </div>
+                  <div className="mt-auto flex gap-2">
+                    {isStudent ? (
+                      alreadyApplied(d._id) ? (
+                        <span className="flex-1 text-center px-3 py-2 rounded-full text-sm font-medium bg-green-50 text-green-700">
+                          ✓ Applied
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => applyToDrive(d._id)}
+                          disabled={busy === `apply-${d._id}` || d.status !== 'active'}
+                          className={`${btnClass('primary')} flex-1 disabled:opacity-50`}
+                        >
+                          {busy === `apply-${d._id}` ? 'Applying...' : 'Apply Now'}
+                        </button>
+                      )
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => startEditDrive(d)}
+                          disabled={busy === `editdrive-${d._id}` || busy === `deldrive-${d._id}`}
+                          className={`${btnClass('secondary', 'small')} ml-auto`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onDeleteDrive(d._id)}
+                          disabled={busy === `deldrive-${d._id}`}
+                          className={btnClass('danger', 'small')}
+                        >
+                          {busy === `deldrive-${d._id}` ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            )}
             {drives.length === 0 && (
               <p className={`${emptyState} col-span-full`}>No job drives found.</p>
             )}
@@ -445,32 +507,85 @@ function Placement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {companies.map((c) => (
-                  <tr key={c._id} className={tableRowHover}>
-                    <td className={`${tableCell} font-medium`}>{c.name}</td>
-                    <td className={`${tableCell} text-gray-600`}>{c.industry || '—'}</td>
-                    <td className={`${tableCell} text-primary-600`}>
-                      {c.website || '—'}
-                    </td>
-                    <td className={`${tableCell} text-gray-600`}>{c.hrContact || '—'}</td>
-                    {isStaff && (
-                      <td className={`${tableCell} text-right`}>
-                        <button
-                          onClick={() => onDeleteCompany(c._id)}
-                          disabled={busy === `delcompany-${c._id}`}
-                          className={btnClass('danger', 'small')}
+                {companies.map((c) =>
+                  editingCompanyId === c._id ? (
+                    <tr key={c._id}>
+                      <td colSpan={isStaff ? 5 : 4} className="px-4 py-3">
+                        <form
+                          onSubmit={companyForm.handleSubmit((f) => onUpdateCompany(c._id, f))}
+                          className="flex flex-wrap items-center gap-2"
                         >
-                          {busy === `delcompany-${c._id}` ? '...' : 'Delete'}
-                        </button>
+                          <input
+                            placeholder="Company Name"
+                            className={`${inputClass} flex-1 min-w-36`}
+                            {...companyForm.register('name', { required: true })}
+                          />
+                          <input
+                            placeholder="Website"
+                            className={`${inputClass} flex-1 min-w-32`}
+                            {...companyForm.register('website')}
+                          />
+                          <input
+                            placeholder="Industry"
+                            className={`${inputClass} flex-1 min-w-32`}
+                            {...companyForm.register('industry')}
+                          />
+                          <input
+                            placeholder="HR Email"
+                            className={`${inputClass} flex-1 min-w-32`}
+                            {...companyForm.register('hrContact')}
+                          />
+                          <button
+                            type="submit"
+                            disabled={busy === `editcompany-${c._id}`}
+                            className={`${btnClass('success', 'small')} disabled:opacity-50`}
+                          >
+                            {busy === `editcompany-${c._id}` ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCompanyId(null)}
+                            className={btnClass('secondary', 'small')}
+                          >
+                            Cancel
+                          </button>
+                        </form>
                       </td>
-                    )}
-                  </tr>
-                ))}
+                    </tr>
+                  ) : (
+                    <tr key={c._id} className={tableRowHover}>
+                      <td className={`${tableCell} font-medium`}>{c.name}</td>
+                      <td className={`${tableCell} text-gray-600`}>{c.industry || '—'}</td>
+                      <td className={`${tableCell} text-primary-600`}>{c.website || '—'}</td>
+                      <td className={`${tableCell} text-gray-600`}>{c.hrContact || '—'}</td>
+                      {isStaff && (
+                        <td className={`${tableCell} text-right`}>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => startEditCompany(c)}
+                              disabled={
+                                busy === `editcompany-${c._id}` || busy === `delcompany-${c._id}`
+                              }
+                              className={btnClass('secondary', 'small')}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => onDeleteCompany(c._id)}
+                              disabled={busy === `delcompany-${c._id}`}
+                              className={btnClass('danger', 'small')}
+                            >
+                              {busy === `delcompany-${c._id}` ? '...' : 'Delete'}
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
-            {companies.length === 0 && (
-              <p className={emptyState}>No companies found.</p>
-            )}
+            {companies.length === 0 && <p className={emptyState}>No companies found.</p>}
           </div>
         </>
       ) : (
