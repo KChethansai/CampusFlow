@@ -15,6 +15,7 @@ let admin;
 let officer;
 let student;
 let course;
+let company;
 let drive;
 let adminToken;
 let studentToken;
@@ -60,7 +61,7 @@ beforeAll(async () => {
     durationYears: 4,
     totalSemesters: 8
   });
-  const company = await Company.create({ name: 'Acme Corp', website: 'acme.dev', institution: institution._id });
+  company = await Company.create({ name: 'Acme Corp', website: 'acme.dev', institution: institution._id });
   drive = await JobDrive.create({
     company: company._id,
     role: 'SDE Intern',
@@ -194,5 +195,38 @@ describe('Activity log + AI reports', () => {
       .get('/api/v1/ai-reports')
       .set('Authorization', `Bearer ${studentToken}`);
     expect(forbidden.status).toBe(403);
+  });
+});
+
+describe('Placement staff edits (PATCH)', () => {
+  it('updates a job drive and a company via their PATCH endpoints', async () => {
+    const updatedDrive = await request(app)
+      .patch(`/api/v1/job-drives/${drive._id}`)
+      .set('Authorization', `Bearer ${officerToken}`)
+      .send({
+        role: 'SDE Fulltime',
+        packageLPA: 15,
+        eligibility: { minCGPA: 6.5, maxBacklogs: 2, graduationYear: 2026 }
+      });
+    expect(updatedDrive.status).toBe(200);
+    expect(updatedDrive.body.data.role).toBe('SDE Fulltime');
+    expect(updatedDrive.body.data.packageLPA).toBe(15);
+    expect(updatedDrive.body.data.eligibility.minCGPA).toBe(6.5);
+
+    const updatedCompany = await request(app)
+      .patch(`/api/v1/companies/${company._id}`)
+      .set('Authorization', `Bearer ${officerToken}`)
+      .send({ industry: 'Software', website: 'acme.example.com' });
+    expect(updatedCompany.status).toBe(200);
+    expect(updatedCompany.body.data.industry).toBe('Software');
+    expect(updatedCompany.body.data.website).toBe('acme.example.com');
+  });
+
+  it('blocks students from editing placement resources', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/job-drives/${drive._id}`)
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ role: 'Hijacked' });
+    expect(res.status).toBe(403);
   });
 });

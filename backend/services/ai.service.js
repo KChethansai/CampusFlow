@@ -1,22 +1,29 @@
 import OpenAI from 'openai';
 import crypto from 'crypto';
 
-const client = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
-
 export function hashDataSnapshot(data) {
   return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex').slice(0, 16);
 }
 
+const PLACEHOLDER_SUMMARY =
+  'AI service is not configured. Set OPENAI_API_KEY to enable grounded insights.';
+
 export async function generatePerformanceSummary(student, performanceData) {
   const snapshotHash = hashDataSnapshot(performanceData);
 
-  if (!client) {
+  // Read the key at call time so .env values are picked up regardless of
+  // module evaluation order (config/env.js runs dotenv lazily at boot).
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
     return {
-      summary: 'AI service is not configured. Set OPENAI_API_KEY to enable grounded insights.',
+      summary: PLACEHOLDER_SUMMARY,
       provider: 'none',
       snapshotHash
     };
   }
+
+  const client = new OpenAI({ apiKey });
 
   try {
     const response = await client.chat.completions.create({
@@ -40,6 +47,11 @@ export async function generatePerformanceSummary(student, performanceData) {
       snapshotHash
     };
   } catch (err) {
-    throw new Error(`AI generation failed: ${err.message}`);
+    // Degrade gracefully (bad key, rate limit, network) instead of failing the request.
+    return {
+      summary: `AI generation failed (${err.message}). Check OPENAI_API_KEY and try again.`,
+      provider: 'none',
+      snapshotHash
+    };
   }
 }

@@ -3,7 +3,7 @@ import { RefreshTokenModel as RefreshToken } from '../models/RefreshTokenModel.j
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, sha256, randomToken } from '../utils/token.js';
-import { sendCredentialsEmail } from '../services/email.service.js';
+import { sendPasswordResetEmail, isSmtpConfigured } from '../services/email.service.js';
 import { createNotification } from '../services/notification.service.js';
 import { logActivity } from '../services/activityLog.service.js';
 
@@ -176,12 +176,27 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
   await user.save();
 
-  await createNotification({
-    recipient: user._id,
-    title: 'Password Reset Request',
-    message: `Your password reset token: ${resetToken} (valid for 10 minutes)`,
-    type: 'info'
-  });
+  const fallbackToInApp = async () =>
+    createNotification({
+      recipient: user._id,
+      title: 'Password Reset Request',
+      message: `Your password reset token: ${resetToken} (valid for 10 minutes)`,
+      type: 'info'
+    });
+
+  if (isSmtpConfigured()) {
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        token: resetToken
+      });
+    } catch {
+      await fallbackToInApp();
+    }
+  } else {
+    await fallbackToInApp();
+  }
 
   res.json({ success: true, message: 'If email exists, reset link sent' });
 });
