@@ -1,40 +1,28 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
-import { useEffect } from 'react'
-import { loadUserFromStorage } from './features/auth/authActions'
-import Layout from './components/layout/Layout'
-import Login from './pages/auth/Login'
-import Dashboard from './pages/Dashboard'
-import Users from './pages/admin/Users'
-import Departments from './pages/admin/Departments'
-import Courses from './pages/admin/Courses'
-import Subjects from './pages/academic/Subjects'
-import Assignments from './pages/academic/Assignments'
-import Attendance from './pages/academic/Attendance'
-import Placement from './pages/placement/Placement'
-import Requests from './pages/requests/Requests'
-import Profile from './pages/Profile'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuth } from './store/useAuth';
+import ProtectedRoute from './components/routing/ProtectedRoute';
+import Layout from './components/layout/Layout';
+import Login from './pages/auth/Login';
+import Dashboard from './pages/Dashboard';
+import Users from './pages/admin/Users';
+import Departments from './pages/admin/Departments';
+import Courses from './pages/admin/Courses';
+import Subjects from './pages/academic/Subjects';
+import Assignments from './pages/academic/Assignments';
+import Attendance from './pages/academic/Attendance';
+import Placement from './pages/placement/Placement';
+import Requests from './pages/requests/Requests';
+import Profile from './pages/Profile';
 
-function ProtectedRoute({ children, allowedRoles }) {
-  const { user, isAuthenticated } = useSelector((state) => state.auth)
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/dashboard" replace />
-  }
-
-  return children
-}
+const adminRoles = ['super_admin', 'college_admin'];
 
 function App() {
-  const dispatch = useDispatch()
+  const loadUserFromStorage = useAuth((state) => state.loadUserFromStorage);
 
   useEffect(() => {
-    dispatch(loadUserFromStorage())
-  }, [dispatch])
+    loadUserFromStorage();
+  }, [loadUserFromStorage]);
 
   return (
     <Routes>
@@ -53,7 +41,7 @@ function App() {
         <Route
           path="/users"
           element={
-            <ProtectedRoute allowedRoles={['super_admin', 'college_admin']}>
+            <ProtectedRoute allowedRoles={adminRoles}>
               <Users />
             </ProtectedRoute>
           }
@@ -61,7 +49,7 @@ function App() {
         <Route
           path="/departments"
           element={
-            <ProtectedRoute allowedRoles={['super_admin', 'college_admin']}>
+            <ProtectedRoute allowedRoles={adminRoles}>
               <Departments />
             </ProtectedRoute>
           }
@@ -69,7 +57,7 @@ function App() {
         <Route
           path="/courses"
           element={
-            <ProtectedRoute allowedRoles={['super_admin', 'college_admin']}>
+            <ProtectedRoute allowedRoles={adminRoles}>
               <Courses />
             </ProtectedRoute>
           }
@@ -77,9 +65,7 @@ function App() {
         <Route
           path="/subjects"
           element={
-            <ProtectedRoute
-              allowedRoles={['super_admin', 'college_admin', 'faculty']}
-            >
+            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty']}>
               <Subjects />
             </ProtectedRoute>
           }
@@ -87,14 +73,7 @@ function App() {
         <Route
           path="/assignments"
           element={
-            <ProtectedRoute
-              allowedRoles={[
-                'super_admin',
-                'college_admin',
-                'faculty',
-                'student'
-              ]}
-            >
+            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
               <Assignments />
             </ProtectedRoute>
           }
@@ -102,14 +81,7 @@ function App() {
         <Route
           path="/attendance"
           element={
-            <ProtectedRoute
-              allowedRoles={[
-                'super_admin',
-                'college_admin',
-                'faculty',
-                'student'
-              ]}
-            >
+            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
               <Attendance />
             </ProtectedRoute>
           }
@@ -118,12 +90,7 @@ function App() {
           path="/placement"
           element={
             <ProtectedRoute
-              allowedRoles={[
-                'super_admin',
-                'college_admin',
-                'placement_officer',
-                'student'
-              ]}
+              allowedRoles={[...adminRoles, 'placement_officer', 'student']}
             >
               <Placement />
             </ProtectedRoute>
@@ -132,14 +99,7 @@ function App() {
         <Route
           path="/requests"
           element={
-            <ProtectedRoute
-              allowedRoles={[
-                'super_admin',
-                'college_admin',
-                'faculty',
-                'student'
-              ]}
-            >
+            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
               <Requests />
             </ProtectedRoute>
           }
@@ -149,7 +109,7 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

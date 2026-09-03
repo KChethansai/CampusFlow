@@ -1,113 +1,163 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { useAuth } from '../../store/useAuth';
+import {
+  badge,
+  btnClass,
+  cardClass,
+  emptyState,
+  inputClass,
+  loadingState,
+  pageHeader,
+  pageHeading,
+  pageSubheading,
+  selectClass,
+  statusColors
+} from '../../styles/common';
 
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  in_review: 'bg-blue-100 text-blue-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-};
+const REQUEST_TYPES = ['leave', 'bonafide', 'revaluation', 'other'];
 
-export default function Requests() {
+function Requests() {
+  const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ type: 'leave', title: '', description: '' });
-  const { user } = useSelector((state) => state.auth);
   const isStudent = user?.role === 'student';
+  const canReview = !isStudent;
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: { type: 'leave', title: '', description: '' }
+  });
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
   const fetchRequests = async () => {
     try {
       const { data } = await api.get('/requests');
       setRequests(data.data || []);
-    } catch { /* handled */ }
+    } catch {
+      toast.error('Failed to load requests');
+    }
     setLoading(false);
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const onCreate = async (form) => {
     try {
       await api.post('/requests', form);
+      toast.success('Request submitted');
       setShowForm(false);
-      setForm({ type: 'leave', title: '', description: '' });
+      reset();
       fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create request');
+      toast.error(err.response?.data?.message || 'Failed to create request');
     }
   };
 
-  const handleStatusUpdate = async (id, status) => {
+  const updateStatus = async (id, status) => {
     try {
       await api.patch(`/requests/${id}/status`, { status });
+      toast.success(`Request ${status.replace('_', ' ')}`);
       fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update status');
+      toast.error(err.response?.data?.message || 'Failed to update status');
     }
   };
 
-  const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+  const formatDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+      : '';
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className={pageHeader}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Requests</h1>
-          <p className="text-sm text-gray-500">{requests.length} requests</p>
+          <h1 className={pageHeading}>Requests</h1>
+          <p className={pageSubheading}>{requests.length} requests</p>
         </div>
         {isStudent && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium">
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className={btnClass(showForm ? 'secondary' : 'primary')}
+          >
             {showForm ? 'Cancel' : '+ New Request'}
           </button>
         )}
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-gray-50 rounded-lg p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">
-          <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
-            <option value="leave">Leave</option>
-            <option value="bonafide">Bonafide</option>
-            <option value="revaluation">Revaluation</option>
-            <option value="other">Other</option>
+        <form
+          onSubmit={handleSubmit(onCreate)}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
+        >
+          <select className={selectClass} {...register('type')}>
+            {REQUEST_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </option>
+            ))}
           </select>
-          <input placeholder="Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="px-3 py-2 border rounded-lg text-sm" />
-          <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="px-3 py-2 border rounded-lg text-sm" />
-          <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">Submit</button>
+          <input
+            placeholder="Title"
+            className={inputClass}
+            {...register('title', { required: 'Title is required' })}
+          />
+          <input
+            placeholder="Description"
+            className={inputClass}
+            {...register('description')}
+          />
+          <button type="submit" className={`${btnClass('success')} self-start`}>
+            Submit
+          </button>
         </form>
       )}
 
       {loading ? (
-        <p className="text-gray-500">Loading...</p>
+        <p className={loadingState}>Loading...</p>
       ) : (
         <div className="space-y-3">
           {requests.map((r) => (
-            <div key={r._id} className="bg-white rounded-xl shadow-sm border p-5">
-              <div className="flex items-start justify-between">
+            <div key={r._id} className={`${cardClass} p-5`}>
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center space-x-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900">{r.title}</h3>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs capitalize">{r.type}</span>
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs capitalize">
+                      {r.type}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-500">{r.description || 'No description'}</p>
+                  <p className="text-sm text-gray-500">
+                    {r.description || 'No description'}
+                  </p>
                   <p className="text-xs text-gray-400 mt-1">
                     By: {r.student?.name || '—'} · {formatDate(r.createdAt)}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[r.status] || 'bg-gray-100'}`}>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={badge(statusColors[r.status] || 'bg-gray-100 text-gray-700')}>
                     {r.status?.replace('_', ' ')}
                   </span>
-                  {!isStudent && r.status !== 'approved' && r.status !== 'rejected' && (
-                    <div className="flex space-x-1">
-                      <button onClick={() => handleStatusUpdate(r._id, r.status === 'pending' ? 'in_review' : 'approved')}
-                        className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
+                  {canReview && r.status !== 'approved' && r.status !== 'rejected' && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() =>
+                          updateStatus(
+                            r._id,
+                            r.status === 'pending' ? 'in_review' : 'approved'
+                          )
+                        }
+                        className={`${btnClass('success', 'small')} !rounded-full`}
+                      >
                         {r.status === 'pending' ? 'Review' : 'Approve'}
                       </button>
-                      <button onClick={() => handleStatusUpdate(r._id, 'rejected')}
-                        className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                      <button
+                        onClick={() => updateStatus(r._id, 'rejected')}
+                        className={`${btnClass('danger', 'small')} !rounded-full`}
+                      >
                         Reject
                       </button>
                     </div>
@@ -116,9 +166,13 @@ export default function Requests() {
               </div>
             </div>
           ))}
-          {requests.length === 0 && <p className="text-center text-gray-400 py-8">No requests found.</p>}
+          {requests.length === 0 && (
+            <p className={emptyState}>No requests found.</p>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+export default Requests;
