@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllSubmissions,
   getSubmissionById,
@@ -11,6 +12,7 @@ export const submissionApp = Router();
 
 // All routes require authentication
 submissionApp.use(verifyToken());
+submissionApp.use(auditLog);
 
 // GET routes — faculty and student
 submissionApp.get('/', verifyToken('faculty', 'student'), getAllSubmissions);

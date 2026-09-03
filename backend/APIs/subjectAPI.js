@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllSubjects,
   getSubjectById,
@@ -12,6 +13,7 @@ export const subjectApp = Router();
 
 // All routes require authentication
 subjectApp.use(verifyToken());
+subjectApp.use(auditLog);
 
 // GET routes — all roles
 subjectApp.get('/', getAllSubjects);

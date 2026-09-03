@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllAssignments,
   getAssignmentById,
@@ -13,6 +14,7 @@ export const assignmentApp = Router();
 
 // All routes require authentication
 assignmentApp.use(verifyToken());
+assignmentApp.use(auditLog);
 
 // GET routes — all roles
 assignmentApp.get('/', getAllAssignments);

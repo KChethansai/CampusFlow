@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllUsers,
   getUserById,
@@ -12,6 +13,7 @@ export const userApp = Router();
 
 // All routes require verifyToken() + verifyToken('super_admin', 'college_admin')
 userApp.use(verifyToken('super_admin', 'college_admin'));
+userApp.use(auditLog);
 
 userApp.route('/')
   .get(getAllUsers)

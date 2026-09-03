@@ -1,6 +1,7 @@
 // Header: top navigation bar with brand, role-aware links, user menu.
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/useAuth';
+import NotificationsBell from './NotificationsBell';
 
 export const menuItems = [
   { label: 'Dashboard', to: '/dashboard', icon: '📊' },
@@ -51,6 +52,18 @@ export const menuItems = [
     to: '/requests',
     roles: ['super_admin', 'college_admin', 'faculty', 'student'],
     icon: '📨'
+  },
+  {
+    label: 'My Courses',
+    to: '/enrollments',
+    roles: ['student'],
+    icon: '🎓'
+  },
+  {
+    label: 'AI Reports',
+    to: '/ai-reports',
+    roles: ['super_admin', 'college_admin'],
+    icon: '🤖'
   }
 ];
 
@@ -92,7 +105,8 @@ function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
             <Link
               to="/profile"
               className="text-sm font-medium text-gray-700 hover:text-primary-600 capitalize"

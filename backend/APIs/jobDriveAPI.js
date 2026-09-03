@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllJobDrives,
   getJobDriveById,
@@ -12,6 +13,7 @@ export const jobDriveApp = Router();
 
 // All routes require authentication
 jobDriveApp.use(verifyToken());
+jobDriveApp.use(auditLog);
 
 // GET routes — all roles
 jobDriveApp.get('/', getAllJobDrives);

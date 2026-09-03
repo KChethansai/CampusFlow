@@ -5,6 +5,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, sha256, randomToken } from '../utils/token.js';
 import { sendCredentialsEmail } from '../services/email.service.js';
 import { createNotification } from '../services/notification.service.js';
+import { logActivity } from '../services/activityLog.service.js';
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -35,6 +36,15 @@ export const login = asyncHandler(async (req, res) => {
 
   user.lastLoginAt = new Date();
   await user.save();
+
+  await logActivity({
+    req,
+    action: 'auth.login',
+    entityType: 'User',
+    entityId: user._id,
+    actor: user._id,
+    institution: user.institution
+  });
 
   const userObj = user.toObject();
   delete userObj.password;
@@ -117,6 +127,15 @@ export const register = asyncHandler(async (req, res) => {
     ip: req.ip
   });
 
+  await logActivity({
+    req,
+    action: 'auth.register',
+    entityType: 'User',
+    entityId: user._id,
+    actor: user._id,
+    institution: user.institution
+  });
+
   res.status(201).json({ success: true, user, accessToken, refreshToken });
 });
 
@@ -133,6 +152,13 @@ export const logout = asyncHandler(async (req, res) => {
       await stored.save();
     }
   }
+
+  await logActivity({
+    req,
+    action: 'auth.logout',
+    entityType: 'User',
+    entityId: req.user._id
+  });
 
   res.json({ success: true, message: 'Logged out successfully' });
 });
@@ -180,6 +206,15 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   await RefreshToken.updateMany({ user: user._id }, { revokedAt: new Date() });
 
+  await logActivity({
+    req,
+    action: 'auth.reset_password',
+    entityType: 'User',
+    entityId: user._id,
+    actor: user._id,
+    institution: user.institution
+  });
+
   res.json({ success: true, message: 'Password reset successful. Please log in again.' });
 });
 
@@ -193,6 +228,13 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   user.password = newPassword;
   await user.save();
+
+  await logActivity({
+    req,
+    action: 'auth.change_password',
+    entityType: 'User',
+    entityId: req.user._id
+  });
 
   await RefreshToken.updateMany({ user: user._id }, { revokedAt: new Date() });
 
