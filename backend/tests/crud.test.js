@@ -1,11 +1,11 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../src/app.js';
-import User from '../src/models/User.js';
-import Institution from '../src/models/Institution.js';
-import Department from '../src/models/Department.js';
-import Course from '../src/models/Course.js';
+import app from '../app.js';
+import { UserModel as User } from '../models/UserModel.js';
+import { InstitutionModel as Institution } from '../models/InstitutionModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
+import { CourseModel as Course } from '../models/CourseModel.js';
 
 let mongod;
 let institution;

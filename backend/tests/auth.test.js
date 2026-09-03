@@ -1,9 +1,9 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../src/app.js';
-import User from '../src/models/User.js';
-import Institution from '../src/models/Institution.js';
+import app from '../app.js';
+import { UserModel as User } from '../models/UserModel.js';
+import { InstitutionModel as Institution } from '../models/InstitutionModel.js';
 
 let mongod;
 let institution;
