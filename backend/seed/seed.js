@@ -10,35 +10,26 @@
  */
 
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-// ── Load .env relative to the backend root ──────────────────────────────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
-
-const MONGO_URI =
-  process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/campusflow';
+import { env } from '../config/env.js'
 
 // ── Mongoose models ─────────────────────────────────────────────────────────
-import Institution from '../src/models/Institution.js';
-import Department from '../src/models/Department.js';
-import Course from '../src/models/Course.js';
-import Subject from '../src/models/Subject.js';
-import User from '../src/models/User.js';
-import Enrollment from '../src/models/Enrollment.js';
-import Assignment from '../src/models/Assignment.js';
-import AttendanceSession from '../src/models/AttendanceSession.js';
-import Company from '../src/models/Company.js';
-import JobDrive from '../src/models/JobDrive.js';
-import JobApplication from '../src/models/JobApplication.js';
-import Event from '../src/models/Event.js';
-import Request from '../src/models/Request.js';
-import Announcement from '../src/models/Announcement.js';
-import LearningResource from '../src/models/LearningResource.js';
+import { InstitutionModel as Institution } from '../models/InstitutionModel.js'
+import { DepartmentModel as Department } from '../models/DepartmentModel.js'
+import { CourseModel as Course } from '../models/CourseModel.js'
+import { SubjectModel as Subject } from '../models/SubjectModel.js'
+import { UserModel as User } from '../models/UserModel.js'
+import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js'
+import { AssignmentModel as Assignment } from '../models/AssignmentModel.js'
+import { AttendanceSessionModel as AttendanceSession } from '../models/AttendanceSessionModel.js'
+import { CompanyModel as Company } from '../models/CompanyModel.js'
+import { JobDriveModel as JobDrive } from '../models/JobDriveModel.js'
+import { JobApplicationModel as JobApplication } from '../models/JobApplicationModel.js'
+import { EventModel as Event } from '../models/EventModel.js'
+import { RequestModel as Request } from '../models/RequestModel.js'
+import { AnnouncementModel as Announcement } from '../models/AnnouncementModel.js'
+import { LearningResourceModel as LearningResource } from '../models/LearningResourceModel.js'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const hash = (pw) => bcrypt.hashSync(pw, 12);
@@ -68,8 +59,8 @@ const daysAhead = (d) => {
 // ── Main seed function ──────────────────────────────────────────────────────
 async function seed() {
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log(`✓ Connected to MongoDB: ${MONGO_URI}`);
+    await mongoose.connect(env.dbUrl);
+    console.log(`✓ Connected to MongoDB: ${env.dbUrl}`);
 
     // ── Drop existing data ────────────────────────────────────────────────
     const collections = await mongoose.connection.db.listCollections().toArray();

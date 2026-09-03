@@ -1,4 +1,4 @@
-import { checkEligibility } from '../src/services/eligibility.service.js';
+import { checkEligibility } from '../services/eligibility.service.js';
 
 describe('Eligibility Service', () => {
   const baseDrive = {
