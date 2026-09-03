@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   markSession,
   getSessions,
@@ -11,6 +12,7 @@ export const attendanceApp = Router();
 
 // All routes require authentication
 attendanceApp.use(verifyToken());
+attendanceApp.use(auditLog);
 
 // POST — faculty marks attendance session
 attendanceApp.post('/', verifyToken('faculty'), markSession);

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middlewares/verifyToken.js';
+import { auditLog } from '../middlewares/auditLog.js';
 import {
   getAllAnnouncements,
   getAnnouncementById,
@@ -12,6 +13,7 @@ export const announcementApp = Router();
 
 // All routes require authentication
 announcementApp.use(verifyToken());
+announcementApp.use(auditLog);
 
 // GET routes — all roles
 announcementApp.get('/', getAllAnnouncements);

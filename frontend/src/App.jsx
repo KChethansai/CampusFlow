@@ -6,11 +6,13 @@ import Layout from './components/layout/Layout';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/admin/Users';
+import AIReports from './pages/admin/AIReports';
 import Departments from './pages/admin/Departments';
 import Courses from './pages/admin/Courses';
 import Subjects from './pages/academic/Subjects';
 import Assignments from './pages/academic/Assignments';
 import Attendance from './pages/academic/Attendance';
+import MyEnrollments from './pages/academic/MyEnrollments';
 import Placement from './pages/placement/Placement';
 import Requests from './pages/requests/Requests';
 import Profile from './pages/Profile';
@@ -93,6 +95,22 @@ function App() {
               allowedRoles={[...adminRoles, 'placement_officer', 'student']}
             >
               <Placement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/enrollments"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <MyEnrollments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-reports"
+          element={
+            <ProtectedRoute allowedRoles={adminRoles}>
+              <AIReports />
             </ProtectedRoute>
           }
         />
