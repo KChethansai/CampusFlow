@@ -73,7 +73,7 @@ export default function Directory() {
         </div>
       </div>
       {loading ? <LoadingState label="Loading directory…" /> : rows.length === 0 ? (
-        <Card><EmptyState title="No matches" hint="Try a different search, or another section." /></Card>
+        <Card><EmptyState editorial title="No matches" hint="Try a different search, or another section." /></Card>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {rows.map(({ source, row }) => (

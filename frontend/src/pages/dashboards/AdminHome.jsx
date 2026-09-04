@@ -56,7 +56,7 @@ export default function AdminHome() {
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
       <motion.div variants={staggerChild} className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Institution pulse.</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Institution <em className="cf-display font-normal">pulse.</em></h1>
         <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
           {users.length} people · {departments.length} departments · {courses.length} courses
           {pending.length ? ` · ${pending.length} requests need review` : ' · queues are clear'}.

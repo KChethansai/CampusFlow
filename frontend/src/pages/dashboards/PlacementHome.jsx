@@ -56,7 +56,7 @@ export default function PlacementHome() {
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
       <motion.div variants={staggerChild} className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Your path from classroom to career.</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Your path from classroom to <em className="cf-display font-normal">career.</em></h1>
         <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
           {isStudent
             ? `${funnel.total} application${funnel.total === 1 ? '' : 's'} in motion · ${openDrives.length} drives open.`

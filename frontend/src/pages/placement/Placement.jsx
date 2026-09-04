@@ -220,7 +220,7 @@ export default function Placement() {
                   </button>
                 ))}
                 {applications.length === 0 && (
-                  <Card className="md:col-span-2"><EmptyState title="No applications yet" hint="The marketplace is waiting." action={<button onClick={() => setTab('market')} className={btnClass('primary', 'small')}>Browse drives</button>} /></Card>
+                  <Card className="md:col-span-2"><EmptyState editorial title="No applications yet" hint="The marketplace is waiting." action={<button onClick={() => setTab('market')} className={btnClass('primary', 'small')}>Browse drives</button>} /></Card>
                 )}
               </div>
             </div>

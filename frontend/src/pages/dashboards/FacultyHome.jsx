@@ -57,7 +57,7 @@ export default function FacultyHome() {
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
       <motion.div variants={staggerChild} className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Namaste, {user?.name?.split(' ')[0]}.</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Namaste, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></h1>
         <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
           {todaySessions.length ? `${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''} on record today.` : 'No sessions recorded today yet.'}
           {gradeQueue.length ? ` ${gradeQueue.length} submission${gradeQueue.length > 1 ? 's' : ''} waiting for review.` : ''}
