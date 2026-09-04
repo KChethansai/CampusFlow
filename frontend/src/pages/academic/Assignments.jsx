@@ -140,7 +140,7 @@ export default function Assignments() {
       </div>
 
       {loading ? <LoadingState /> : visible.length === 0 ? (
-        <Card><EmptyState title={`No ${view.toLowerCase()} assignments`} hint="Try another view." /></Card>
+        <Card><EmptyState editorial title={`No ${view.toLowerCase()} assignments`} hint="Try another view." /></Card>
       ) : (
         <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-3">
           {visible.map((a) => {

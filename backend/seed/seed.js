@@ -183,6 +183,7 @@ async function seed() {
       email: 'superadmin@campusflow.app',
       password: hashedAdmin,
       role: 'super_admin',
+      institution: institution._id,
       isEmailVerified: true,
       isActive: true,
     };

@@ -78,7 +78,7 @@ export default function StudentHome() {
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
       <motion.div variants={staggerChild} className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{greeting}, {user?.name?.split(' ')[0]}.</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{greeting}, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></h1>
         <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
           {upcoming.length ? `Next up: ${upcoming[0].title} — due ${fmtDay(upcoming[0].dueDate)}.` : 'Nothing due right now. A rare, beautiful thing.'}
         </p>

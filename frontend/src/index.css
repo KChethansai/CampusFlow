@@ -97,6 +97,72 @@ body {
     radial-gradient(700px 500px at 50% 110%, rgba(34, 211, 238, 0.12), transparent 60%);
 }
 
+/* Editorial layer — NOTA-grade display type + paper grain. Serif is display-only. */
+.cf-display {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.cf-display em, .cf-display i {
+  font-style: italic;
+}
+.cf-statement {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(2.4rem, 7vw, 5.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.cf-statement-sm {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(1.7rem, 4.2vw, 3rem);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cf-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cf-ink-mute);
+}
+/* Film grain over hero / statement bands — pure CSS, zero assets */
+.cf-grain { position: relative; isolation: isolate; }
+.cf-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
+}
+.dark .cf-grain::after { opacity: 0.28; }
+/* Line-mask reveal stage */
+.cf-mask { display: block; overflow: hidden; }
+.cf-mask > span { display: block; will-change: transform; }
+/* Marquee */
+@keyframes cf-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.cf-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: cf-marquee 28s linear infinite;
+}
+.cf-marquee-track:hover { animation-play-state: paused; }
+/* Border-beam CTA (Magic-UI pattern, tokenized) */
+@keyframes cf-beam { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+.cf-beam {
+  position: relative;
+  background:
+    linear-gradient(var(--cf-surface), var(--cf-surface)) padding-box,
+    linear-gradient(110deg, var(--cf-accent), var(--cf-cyan), var(--cf-violet), var(--cf-accent)) border-box;
+  background-size: 100% 100%, 200% 100%;
+  border: 1.5px solid transparent;
+  animation: cf-beam 5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

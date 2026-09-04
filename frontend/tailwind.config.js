@@ -46,7 +46,8 @@ export default {
           'Segoe UI',
           'Roboto',
           'sans-serif'
-        ]
+        ],
+        display: ["'Instrument Serif'", 'Georgia', 'serif']
       },
       borderRadius: {
         sm: '8px',

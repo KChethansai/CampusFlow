@@ -98,10 +98,14 @@ export function PageHeader({ title, subtitle, actions }) {
   );
 }
 
-export function EmptyState({ title = 'Nothing here yet', hint, action }) {
+export function EmptyState({ title = 'Nothing here yet', hint, action, editorial }) {
   return (
     <div className={emptyState}>
-      <p className="font-medium text-[var(--cf-ink-soft)]">{title}</p>
+      {editorial ? (
+        <p className="cf-display italic text-3xl text-[var(--cf-ink-soft)]">{title}</p>
+      ) : (
+        <p className="font-medium text-[var(--cf-ink-soft)]">{title}</p>
+      )}
       {hint && <p className="mt-1 text-sm">{hint}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
