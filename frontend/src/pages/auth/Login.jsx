@@ -1,19 +1,19 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { inputClass, labelClass } from '../../styles/common';
+import { Input } from '../../components/ui/primitives';
+import { btnClass } from '../../system/tokens';
+import AuthLayout from './AuthLayout';
 
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loading, error, loginUser, clearError } = useAuth();
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
-  useEffect(() => {
-    return () => clearError();
-  }, [clearError]);
+  useEffect(() => () => clearError(), [clearError]);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -23,77 +23,52 @@ function Login() {
     try {
       await loginUser(email, password);
       toast.success('Welcome back!');
-      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+      navigate(location.state?.from || '/dashboard', { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      const msg = err.response?.data?.message || 'Login failed';
+      // Unverified accounts are a dead-end without admin help — say so plainly.
+      toast.error(/verif/i.test(msg) ? 'Account not verified yet. Contact your administrator.' : msg);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-          <div className="text-center mb-8">
-            <div className="text-5xl mb-3">🎓</div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              CampusFlow
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Smart College Management Platform
-            </p>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to your digital campus."
+      footer={<>New here? <Link to="/signup" className="font-medium text-primary-600 hover:underline">Create an account</Link></>}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <Input
+          label="Email address"
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@institution.edu"
+          error={errors.email && 'Enter your email'}
+          {...register('email', { required: true })}
+        />
+        <Input
+          label="Password"
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Enter your password"
+          error={errors.password && 'Enter your password'}
+          {...register('password', { required: true })}
+        />
+        {error && (
+          <div role="alert" className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm">
+            {error}
           </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label htmlFor="email" className={labelClass}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                placeholder="you@institution.edu"
-                className={inputClass}
-                {...register('email', { required: true })}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className={labelClass}>
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                placeholder="Enter your password"
-                className={inputClass}
-                {...register('password', { required: true })}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-full font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-center text-xs text-gray-400">
-              Admin-provisioned accounts only. Contact your administrator for
-              access.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+        )}
+        <button type="submit" disabled={loading} className={btnClass('primary', 'large') + ' w-full'}>
+          {loading ? 'Signing in…' : 'Sign in'}
+        </button>
+        <p className="text-center text-sm">
+          <Link to="/forgot-password" className="text-[var(--cf-ink-mute)] hover:text-primary-600 transition">Forgot password?</Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }
 

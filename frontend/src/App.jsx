@@ -3,7 +3,11 @@ import { useEffect } from 'react';
 import { useAuth } from './store/useAuth';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+import Onboarding from './pages/auth/Onboarding';
+import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/admin/Users';
 import AIReports from './pages/admin/AIReports';
@@ -16,8 +20,14 @@ import MyEnrollments from './pages/academic/MyEnrollments';
 import Placement from './pages/placement/Placement';
 import Requests from './pages/requests/Requests';
 import Profile from './pages/Profile';
+import Directory from './pages/Directory';
 
 const adminRoles = ['super_admin', 'college_admin'];
+
+function HomeRoute() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />;
+}
 
 function App() {
   const loadUserFromStorage = useAuth((state) => state.loadUserFromStorage);
@@ -28,7 +38,11 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         element={
@@ -39,6 +53,8 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/directory" element={<Directory />} />
 
         <Route
           path="/users"
@@ -124,8 +140,7 @@ function App() {
         />
       </Route>
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

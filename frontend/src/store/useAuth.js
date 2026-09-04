@@ -70,7 +70,47 @@ export const useAuth = create((set) => ({
         refreshToken: auth.refreshToken,
         isAuthenticated: true
       });
+      // Revalidate against server without blocking paint.
+      api.get('/auth/me').then(({ data }) => {
+        const serverUser = data.user || data.data;
+        if (serverUser) {
+          const current = readStoredAuth();
+          if (current) {
+            localStorage.setItem('cf_auth', JSON.stringify({ ...current, user: serverUser }));
+          }
+          set({ user: serverUser });
+        }
+      }).catch(() => { /* token refresh interceptor handles expiry */ });
     }
+  },
+
+  registerUser: async (payload) => {
+    set({ loading: true, error: null });
+    try {
+      const { data } = await api.post('/auth/register', payload);
+      if (data.accessToken && data.user) {
+        const session = { user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken };
+        localStorage.setItem('cf_auth', JSON.stringify(session));
+        set({ ...session, isAuthenticated: true, loading: false, error: null });
+      } else {
+        set({ loading: false });
+      }
+      return data;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Registration failed';
+      set({ loading: false, error: message });
+      throw err;
+    }
+  },
+
+  forgotPassword: async (email) => {
+    const { data } = await api.post('/auth/forgot-password', { email });
+    return data;
+  },
+
+  resetPassword: async (token, password) => {
+    const { data } = await api.post('/auth/reset-password', { token, password });
+    return data;
   },
 
   changePassword: async (currentPassword, newPassword) => {

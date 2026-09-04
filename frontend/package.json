@@ -9,12 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "axios": "^1.6.7",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.41.0",
+    "motion": "^13.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.87.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.21.0",
+    "tailwind-merge": "^3.6.0",
+    "three": "^0.185.1",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

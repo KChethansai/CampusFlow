@@ -14,6 +14,7 @@ import {
   pageSubheading,
   roleColors,
   selectClass,
+  statusColors,
   tableCell,
   tableCellHead,
   tableClass,
@@ -78,7 +79,7 @@ function Users() {
       {showForm && (
         <form
           onSubmit={handleSubmit(onCreate)}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
+          className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
         >
           <input
             placeholder="Name"
@@ -132,11 +133,11 @@ function Users() {
                 <th className={tableCellHead}>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--cf-line)]">
               {users.map((user) => (
                 <tr key={user._id} className={tableRowHover}>
                   <td className={`${tableCell} font-medium`}>{user.name}</td>
-                  <td className={`${tableCell} text-gray-600`}>{user.email}</td>
+                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>{user.email}</td>
                   <td className={tableCell}>
                     <span
                       className={badge(roleColors[user.role] || 'bg-gray-100 text-gray-700')}
@@ -147,9 +148,7 @@ function Users() {
                   <td className={tableCell}>
                     <span
                       className={badge(
-                        user.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        user.isActive ? statusColors.active : statusColors.inactive
                       )}
                     >
                       {user.isActive ? 'Active' : 'Inactive'}
