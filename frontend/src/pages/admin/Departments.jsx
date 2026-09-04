@@ -68,7 +68,7 @@ function Departments() {
       {showForm && (
         <form
           onSubmit={handleSubmit(onCreate)}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3"
+          className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3"
         >
           <input
             placeholder="Department Name"
@@ -105,16 +105,16 @@ function Departments() {
           {departments.map((dept) => (
             <div key={dept._id} className={`${cardClass} p-5`}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">{dept.name}</h3>
-                <span className="bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full text-xs font-medium">
+                <h3 className="font-semibold text-[var(--cf-ink)]">{dept.name}</h3>
+                <span className="bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-300 px-2 py-0.5 rounded-full text-xs font-medium">
                   {dept.code}
                 </span>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--cf-ink-mute)]">
                 {dept.description || 'No description'}
               </p>
               {dept.hod && (
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-[var(--cf-ink-mute)] mt-2">
                   HOD: {dept.hod?.name || dept.hod}
                 </p>
               )}

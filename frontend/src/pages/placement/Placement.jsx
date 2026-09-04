@@ -1,97 +1,76 @@
-import { useCallback, useEffect, useState } from 'react';
+// Placement: spatial pipeline + job marketplace + application timelines.
+// Same endpoints as before; eligibility rendered verbatim (dept limits are advisory).
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { motion } from 'motion/react';
+import { ArrowRight, Building2, MapPin, Plus, Wallet } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import {
-  badge,
-  btnClass,
-  cardClass,
-  emptyState,
-  inputClass,
-  labelClass,
-  loadingState,
-  pageHeading,
-  pageSubheading,
-  selectClass,
-  statusColors,
-  tableCell,
-  tableCellHead,
-  tableClass,
-  tableHeadClass,
-  tableRowHover
-} from '../../styles/common';
+import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Modal } from '../../components/ui/Modal';
+import { PipelineLabels, PipelineStages, WorkflowTimeline } from '../../components/data/views';
+import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
+import { staggerChild, staggerParent } from '../../system/motion';
+import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
 
-const DRIVE_STATUSES = ['active', 'closed', 'archived'];
 const JOB_TYPES = ['full-time', 'part-time', 'internship', 'contract'];
-const APPLICATION_STAGES = [
-  'applied',
-  'shortlisted',
-  'assessment',
-  'interview_1',
-  'interview_2',
-  'hr_round',
-  'offer',
-  'placed',
-  'rejected'
-];
+const STAGES = [...PIPELINE_STAGES.flatMap((s) => (s === 'interview' ? ['interview_1', 'interview_2', 'hr_round'] : [s])), 'rejected'];
 
-const toDateInputValue = (d) =>
-  d ? new Date(d).toISOString().slice(0, 10) : '';
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
-function Placement() {
+export default function Placement() {
   const { user } = useAuth();
-  const role = user?.role;
-  const isStudent = role === 'student';
-  const isStaff = ['placement_officer', 'college_admin', 'super_admin'].includes(role);
+  const isStudent = user?.role === 'student';
+  const isStaff = ['placement_officer', 'college_admin', 'super_admin'].includes(user?.role);
 
-  const [tab, setTab] = useState('drives');
+  const [tab, setTab] = useState('board');
   const [drives, setDrives] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
-  const [editingDriveId, setEditingDriveId] = useState(null);
-  const [editingCompanyId, setEditingCompanyId] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [eligibility, setEligibility] = useState(null);
+  const [appDetail, setAppDetail] = useState(null);
+  const [showCompany, setShowCompany] = useState(false);
+  const [showDrive, setShowDrive] = useState(false);
 
-  // staff create-forms
-  const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [showDriveForm, setShowDriveForm] = useState(false);
   const companyForm = useForm({ defaultValues: { name: '', website: '', industry: '', hrContact: '' } });
   const driveForm = useForm({
-    defaultValues: {
-      company: '',
-      role: '',
-      jobType: 'full-time',
-      packageLPA: '',
-      location: '',
-      minCGPA: '',
-      maxBacklogs: '',
-      graduationYear: '',
-      applicationDeadline: '',
-      status: 'active'
-    }
+    defaultValues: { company: '', role: '', jobType: 'full-time', packageLPA: '', location: '', minCGPA: '', maxBacklogs: '', graduationYear: '', applicationDeadline: '', status: 'active' }
   });
 
   const fetchAll = useCallback(async () => {
-    const endpoints = ['/job-drives', '/companies', '/job-applications'];
-    const [d, c, a] = await Promise.allSettled(endpoints.map((ep) => api.get(ep)));
+    const [d, c, a] = await Promise.allSettled([api.get('/job-drives'), api.get('/companies'), api.get('/job-applications')]);
     if (d.status === 'fulfilled') setDrives(d.value.data.data || []);
     if (c.status === 'fulfilled') setCompanies(c.value.data.data || []);
     if (a.status === 'fulfilled') setApplications(a.value.data.data || []);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // --- student actions ---
-  const applyToDrive = async (driveId) => {
+  const openDetail = async (drive) => {
+    setDetail(drive);
+    setEligibility(null);
+    try {
+      const { data } = await api.get(`/job-applications/drives/${drive._id}/eligibility`);
+      setEligibility(data.data || data);
+    } catch { /* advisory only */ }
+  };
+
+  const apply = async (driveId) => {
     setBusy(`apply-${driveId}`);
     try {
-      await api.post(`/job-applications/drives/${driveId}/apply`);
-      toast.success('Application submitted');
+      const { data } = await api.post(`/job-applications/drives/${driveId}/apply`);
+      const elig = data.eligibility || data.data?.eligibility;
+      if (elig && elig.eligible === false) {
+        toast(`Applied with warnings: ${(elig.failures || []).join('; ') || 'check eligibility'}`, { icon: '⚠️' });
+      } else {
+        toast.success('Application submitted');
+      }
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to apply');
@@ -100,57 +79,32 @@ function Placement() {
     }
   };
 
-  // --- staff actions: company create/update/delete ---
-  const onCreateCompany = async (form) => {
+  const updateStage = async (applicationId, driveId, stage) => {
+    setBusy(`stage-${applicationId}`);
     try {
-      await api.post('/companies', form);
-      toast.success('Company added');
-      setShowCompanyForm(false);
-      companyForm.reset();
+      await api.patch(`/job-applications/drives/${driveId}/applications/${applicationId}`, { stage });
+      toast.success(`Stage set to ${stage.replace(/_/g, ' ')}`);
       fetchAll();
+      setAppDetail((prev) => (prev && prev._id === applicationId ? { ...prev, stage } : prev));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to add company');
+      toast.error(err.response?.data?.message || 'Failed to update stage');
+    } finally {
+      setBusy(null);
     }
   };
 
-  const startEditCompany = (c) => {
-    companyForm.reset({
-      name: c.name,
-      website: c.website || '',
-      industry: c.industry || '',
-      hrContact: c.hrContact || ''
+  const appliedDriveIds = useMemo(() => new Set(applications.map((a) => String(a.drive?._id || a.drive))), [applications]);
+
+  const funnel = useMemo(() => {
+    const counts = Object.fromEntries(PIPELINE_STAGES.map((s) => [s, 0]));
+    applications.forEach((a) => {
+      if (a.stage === 'rejected') return;
+      const n = normalizeStage(a.stage);
+      if (n in counts) counts[n]++;
     });
-    setEditingCompanyId(c._id);
-  };
+    return counts;
+  }, [applications]);
 
-  const onUpdateCompany = async (companyId, form) => {
-    setBusy(`editcompany-${companyId}`);
-    try {
-      await api.patch(`/companies/${companyId}`, form);
-      toast.success('Company updated');
-      setEditingCompanyId(null);
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update company');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const onDeleteCompany = async (companyId) => {
-    setBusy(`delcompany-${companyId}`);
-    try {
-      await api.delete(`/companies/${companyId}`);
-      toast.success('Company deleted');
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete company');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  // --- staff actions: drive create/update/delete ---
   const buildDrivePayload = (form) => ({
     company: form.company,
     role: form.role,
@@ -166,11 +120,23 @@ function Placement() {
     }
   });
 
+  const onCreateCompany = async (form) => {
+    try {
+      await api.post('/companies', form);
+      toast.success('Company added');
+      setShowCompany(false);
+      companyForm.reset();
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add company');
+    }
+  };
+
   const onCreateDrive = async (form) => {
     try {
       await api.post('/job-drives', buildDrivePayload(form));
       toast.success('Job drive created');
-      setShowDriveForm(false);
+      setShowDrive(false);
       driveForm.reset();
       fetchAll();
     } catch (err) {
@@ -178,483 +144,268 @@ function Placement() {
     }
   };
 
-  const startEditDrive = (d) => {
-    driveForm.reset({
-      company: d.company?._id || d.company || '',
-      role: d.role || '',
-      jobType: d.jobType || 'full-time',
-      packageLPA: d.packageLPA ?? '',
-      location: d.location || '',
-      minCGPA: d.eligibility?.minCGPA ?? '',
-      maxBacklogs: d.eligibility?.maxBacklogs ?? '',
-      graduationYear: d.eligibility?.graduationYear ?? '',
-      applicationDeadline: toDateInputValue(d.applicationDeadline),
-      status: d.status || 'active'
-    });
-    setEditingDriveId(d._id);
-  };
-
-  const onUpdateDrive = async (driveId, form) => {
-    setBusy(`editdrive-${driveId}`);
-    try {
-      await api.patch(`/job-drives/${driveId}`, buildDrivePayload(form));
-      toast.success('Job drive updated');
-      setEditingDriveId(null);
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update drive');
-    } finally {
-      setBusy(null);
+  const appTimeline = (app) => {
+    const history = app.history || [];
+    const seen = new Set(history.map((h) => h.stage));
+    const steps = [...PIPELINE_STAGES.map((s) => ({
+      label: s,
+      done: PIPELINE_STAGES.indexOf(normalizeStage(app.stage)) > PIPELINE_STAGES.indexOf(s),
+      active: normalizeStage(app.stage) === s,
+      note: history.find((h) => normalizeStage(h.stage) === s)?.remarks,
+      at: history.find((h) => normalizeStage(h.stage) === s)?.at ? fmtDT(history.find((h) => normalizeStage(h.stage) === s).at) : ''
+    }))];
+    if (!seen.has('applied') && app.createdAt) {
+      steps[0] = { ...steps[0], at: steps[0].at || fmtDT(app.createdAt) };
     }
-  };
-
-  const onDeleteDrive = async (driveId) => {
-    setBusy(`deldrive-${driveId}`);
-    try {
-      await api.delete(`/job-drives/${driveId}`);
-      toast.success('Job drive deleted');
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete drive');
-    } finally {
-      setBusy(null);
+    if (app.stage === 'rejected') {
+      steps.push({ label: 'rejected', done: false, active: true, note: 'Application closed' });
     }
+    return steps;
   };
 
-  const renderDriveForm = (onSubmit, submitLabel, saving = false) => (
-    <form
-      onSubmit={onSubmit}
-      className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-1 md:grid-cols-3 gap-3"
-    >
-      <div>
-        <label className={labelClass}>Company</label>
-        <select className={selectClass} {...driveForm.register('company', { required: true })}>
-          <option value="">Select company</option>
-          {companies.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className={labelClass}>Role</label>
-        <input className={inputClass} {...driveForm.register('role', { required: true })} />
-      </div>
-      <div>
-        <label className={labelClass}>Job Type</label>
-        <select className={selectClass} {...driveForm.register('jobType')}>
-          {JOB_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className={labelClass}>Package (LPA)</label>
-        <input type="number" step="0.1" className={inputClass} {...driveForm.register('packageLPA')} />
-      </div>
-      <div>
-        <label className={labelClass}>Location</label>
-        <input className={inputClass} {...driveForm.register('location')} />
-      </div>
-      <div>
-        <label className={labelClass}>Min CGPA</label>
-        <input type="number" step="0.1" className={inputClass} {...driveForm.register('minCGPA')} />
-      </div>
-      <div>
-        <label className={labelClass}>Max Backlogs</label>
-        <input type="number" className={inputClass} {...driveForm.register('maxBacklogs')} />
-      </div>
-      <div>
-        <label className={labelClass}>Graduation Year</label>
-        <input type="number" className={inputClass} {...driveForm.register('graduationYear')} />
-      </div>
-      <div>
-        <label className={labelClass}>Application Deadline</label>
-        <input type="date" className={inputClass} {...driveForm.register('applicationDeadline')} />
-      </div>
-      <div>
-        <label className={labelClass}>Status</label>
-        <select className={selectClass} {...driveForm.register('status')}>
-          {DRIVE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-end">
-        <button type="submit" disabled={saving} className={`${btnClass('success')} w-full disabled:opacity-50`}>
-          {saving ? 'Saving...' : submitLabel}
-        </button>
-      </div>
-    </form>
-  );
-
-  const updateStage = async (applicationId, driveId, stage) => {
-    setBusy(`stage-${applicationId}`);
-    try {
-      await api.patch(`/job-applications/drives/${driveId}/applications/${applicationId}`, {
-        stage
-      });
-      toast.success(`Stage set to ${stage.replace('_', ' ')}`);
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update stage');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const alreadyApplied = (driveId) =>
-    applications.some((a) => String(a.drive?._id || a.drive) === String(driveId));
-
-  const formatDate = (d) =>
-    d
-      ? new Date(d).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        })
-      : '—';
-
-  const studentTabs = [
-    { id: 'drives', label: `Job Drives (${drives.length})` },
-    { id: 'applications', label: `My Applications (${applications.length})` },
-    { id: 'companies', label: `Companies (${companies.length})` }
+  const TABS = [
+    { key: 'board', label: isStudent ? 'My journey' : 'Pipeline' },
+    { key: 'market', label: 'Marketplace' },
+    { key: 'apps', label: isStudent ? 'My applications' : 'Applicants' }
   ];
-  const staffTabs = [
-    { id: 'drives', label: `Job Drives (${drives.length})` },
-    { id: 'companies', label: `Companies (${companies.length})` },
-    { id: 'applications', label: `Applications (${applications.length})` }
-  ];
-  const tabs = isStudent ? studentTabs : staffTabs;
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className={pageHeading}>Placement</h1>
-        <p className={pageSubheading}>Job drives, companies and applications</p>
-      </div>
+      <PageHeader
+        title="Placements"
+        subtitle="Your path from classroom to career."
+        actions={isStaff && (
+          <>
+            <button onClick={() => setShowCompany(true)} className={btnClass('outline', 'medium')}><Plus size={15} /> Company</button>
+            <button onClick={() => setShowDrive(true)} className={btnClass('primary', 'medium')}><Plus size={15} /> Drive</button>
+          </>
+        )}
+      />
 
-      <div className="flex gap-2 mb-6 overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition shrink-0 ${
-              tab === t.id
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
+      <div className="flex gap-1.5 mb-4" role="tablist" aria-label="Placement views">
+        {TABS.map((t) => (
+          <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
+            className={cn('px-4 py-2 rounded-full text-xs font-medium transition',
+              tab === t.key ? 'bg-primary-600 text-white shadow-1' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)]')}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {loading ? (
-        <p className={loadingState}>Loading...</p>
-      ) : tab === 'drives' ? (
+      {loading ? <LoadingState /> : (
         <>
-          {isStaff && (
-            <div className="mb-5">
-              <button
-                onClick={() => setShowDriveForm((v) => !v)}
-                className={btnClass(showDriveForm ? 'secondary' : 'primary')}
-              >
-                {showDriveForm ? 'Cancel' : '+ Add Job Drive'}
-              </button>
-              {showDriveForm &&
-                renderDriveForm(driveForm.handleSubmit(onCreateDrive), 'Create Drive')}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {drives.map((d) =>
-              editingDriveId === d._id ? (
-                <div key={d._id} className={`${cardClass} p-5`}>
-                  {renderDriveForm(
-                    driveForm.handleSubmit((form) => onUpdateDrive(d._id, form)),
-                    'Save Changes',
-                    busy === `editdrive-${d._id}`
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setEditingDriveId(null)}
-                    className={`${btnClass('secondary', 'small')} mt-3`}
-                  >
-                    Cancel
-                  </button>
+          {tab === 'board' && (
+            <div className="space-y-4">
+              <Card>
+                <h2 className="font-semibold mb-1">Applied → Shortlisted → Assessment → Interview → Offer → Placed</h2>
+                <p className="text-xs text-[var(--cf-ink-mute)] mb-4">{applications.length} applications in motion.</p>
+                <div className="grid sm:grid-cols-6 gap-2">
+                  {PIPELINE_STAGES.map((s) => (
+                    <div key={s} className="rounded-2xl border border-[var(--cf-line)] p-3 text-center">
+                      <p className="text-2xl font-bold">{funnel[s]}</p>
+                      <p className="text-[11px] capitalize text-[var(--cf-ink-mute)]">{s}</p>
+                      <div className={cn('mt-2 h-1.5 rounded-full', funnel[s] ? 'bg-primary-500' : 'bg-black/10 dark:bg-white/10')} />
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div key={d._id} className={`${cardClass} p-5 flex flex-col`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{d.role}</h3>
-                    <span className={badge(statusColors[d.status] || 'bg-gray-100 text-gray-700')}>
-                      {d.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-1">{d.company?.name || '—'}</p>
-                  <p className="text-sm text-gray-500 mb-3">
-                    {d.location || '—'} · {d.jobType}
-                  </p>
-                  <div className="text-xs text-gray-400 mb-4 space-y-1">
-                    <p>
-                      Package: {d.packageLPA != null ? `₹${d.packageLPA} LPA` : '—'} · Min
-                      CGPA: {d.eligibility?.minCGPA || '—'} · Max backlogs:{' '}
-                      {d.eligibility?.maxBacklogs ?? '—'} · Batch:{' '}
-                      {d.eligibility?.graduationYear || '—'}
-                    </p>
-                    <p>Deadline: {formatDate(d.applicationDeadline)}</p>
-                  </div>
-                  <div className="mt-auto flex gap-2">
-                    {isStudent ? (
-                      alreadyApplied(d._id) ? (
-                        <span className="flex-1 text-center px-3 py-2 rounded-full text-sm font-medium bg-green-50 text-green-700">
-                          ✓ Applied
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => applyToDrive(d._id)}
-                          disabled={busy === `apply-${d._id}` || d.status !== 'active'}
-                          className={`${btnClass('primary')} flex-1 disabled:opacity-50`}
-                        >
-                          {busy === `apply-${d._id}` ? 'Applying...' : 'Apply Now'}
-                        </button>
-                      )
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => startEditDrive(d)}
-                          disabled={busy === `editdrive-${d._id}` || busy === `deldrive-${d._id}`}
-                          className={`${btnClass('secondary', 'small')} ml-auto`}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => onDeleteDrive(d._id)}
-                          disabled={busy === `deldrive-${d._id}`}
-                          className={btnClass('danger', 'small')}
-                        >
-                          {busy === `deldrive-${d._id}` ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
-            )}
-            {drives.length === 0 && (
-              <p className={`${emptyState} col-span-full`}>No job drives found.</p>
-            )}
-          </div>
-        </>
-      ) : tab === 'companies' ? (
-        <>
-          {isStaff && (
-            <div className="mb-5">
-              <button
-                onClick={() => setShowCompanyForm((v) => !v)}
-                className={btnClass(showCompanyForm ? 'secondary' : 'primary')}
-              >
-                {showCompanyForm ? 'Cancel' : '+ Add Company'}
-              </button>
-              {showCompanyForm && (
-                <form
-                  onSubmit={companyForm.handleSubmit(onCreateCompany)}
-                  className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-1 md:grid-cols-4 gap-3"
-                >
-                  <input
-                    placeholder="Company Name"
-                    className={inputClass}
-                    {...companyForm.register('name', { required: true })}
-                  />
-                  <input
-                    placeholder="Website"
-                    className={inputClass}
-                    {...companyForm.register('website')}
-                  />
-                  <input
-                    placeholder="Industry"
-                    className={inputClass}
-                    {...companyForm.register('industry')}
-                  />
-                  <input
-                    placeholder="HR Email"
-                    className={inputClass}
-                    {...companyForm.register('hrContact')}
-                  />
-                  <button type="submit" className={`${btnClass('success')} justify-self-start`}>
-                    Add Company
+              </Card>
+              <div className="grid md:grid-cols-2 gap-3">
+                {applications.slice(0, 6).map((a) => (
+                  <button key={a._id} onClick={() => setAppDetail(a)} className="text-left rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-4 hover:shadow-2 transition-shadow">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-sm font-semibold truncate">{a.drive?.role || 'Drive'} · {a.drive?.company?.name || ''}</p>
+                      <Badge status={a.stage || 'applied'}>{(a.stage || 'applied').replace(/_/g, ' ')}</Badge>
+                    </div>
+                    <PipelineStages current={a.stage || 'applied'} compact />
                   </button>
-                </form>
-              )}
-            </div>
-          )}
-
-          <div className={`${cardClass} overflow-hidden`}>
-            <table className={tableClass}>
-              <thead className={tableHeadClass}>
-                <tr>
-                  <th className={tableCellHead}>Company</th>
-                  <th className={tableCellHead}>Industry</th>
-                  <th className={tableCellHead}>Website</th>
-                  <th className={tableCellHead}>HR Contact</th>
-                  {isStaff && <th className={tableCellHead} />}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {companies.map((c) =>
-                  editingCompanyId === c._id ? (
-                    <tr key={c._id}>
-                      <td colSpan={isStaff ? 5 : 4} className="px-4 py-3">
-                        <form
-                          onSubmit={companyForm.handleSubmit((f) => onUpdateCompany(c._id, f))}
-                          className="flex flex-wrap items-center gap-2"
-                        >
-                          <input
-                            placeholder="Company Name"
-                            className={`${inputClass} flex-1 min-w-36`}
-                            {...companyForm.register('name', { required: true })}
-                          />
-                          <input
-                            placeholder="Website"
-                            className={`${inputClass} flex-1 min-w-32`}
-                            {...companyForm.register('website')}
-                          />
-                          <input
-                            placeholder="Industry"
-                            className={`${inputClass} flex-1 min-w-32`}
-                            {...companyForm.register('industry')}
-                          />
-                          <input
-                            placeholder="HR Email"
-                            className={`${inputClass} flex-1 min-w-32`}
-                            {...companyForm.register('hrContact')}
-                          />
-                          <button
-                            type="submit"
-                            disabled={busy === `editcompany-${c._id}`}
-                            className={`${btnClass('success', 'small')} disabled:opacity-50`}
-                          >
-                            {busy === `editcompany-${c._id}` ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingCompanyId(null)}
-                            className={btnClass('secondary', 'small')}
-                          >
-                            Cancel
-                          </button>
-                        </form>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={c._id} className={tableRowHover}>
-                      <td className={`${tableCell} font-medium`}>{c.name}</td>
-                      <td className={`${tableCell} text-gray-600`}>{c.industry || '—'}</td>
-                      <td className={`${tableCell} text-primary-600`}>{c.website || '—'}</td>
-                      <td className={`${tableCell} text-gray-600`}>{c.hrContact || '—'}</td>
-                      {isStaff && (
-                        <td className={`${tableCell} text-right`}>
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => startEditCompany(c)}
-                              disabled={
-                                busy === `editcompany-${c._id}` || busy === `delcompany-${c._id}`
-                              }
-                              className={btnClass('secondary', 'small')}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => onDeleteCompany(c._id)}
-                              disabled={busy === `delcompany-${c._id}`}
-                              className={btnClass('danger', 'small')}
-                            >
-                              {busy === `delcompany-${c._id}` ? '...' : 'Delete'}
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  )
+                ))}
+                {applications.length === 0 && (
+                  <Card className="md:col-span-2"><EmptyState title="No applications yet" hint="The marketplace is waiting." action={<button onClick={() => setTab('market')} className={btnClass('primary', 'small')}>Browse drives</button>} /></Card>
                 )}
-              </tbody>
-            </table>
-            {companies.length === 0 && <p className={emptyState}>No companies found.</p>}
-          </div>
-        </>
-      ) : (
-        <div className={`${cardClass} overflow-hidden`}>
-          <table className={tableClass}>
-            <thead className={tableHeadClass}>
-              <tr>
-                {isStaff && <th className={tableCellHead}>Student</th>}
-                <th className={tableCellHead}>Role / Company</th>
-                <th className={tableCellHead}>Applied On</th>
-                <th className={tableCellHead}>Stage</th>
-                {isStaff && <th className={tableCellHead}>Update Stage</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {applications.map((a) => {
-                const driveId = a.drive?._id || a.drive;
+              </div>
+            </div>
+          )}
+
+          {tab === 'market' && (
+            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {drives.map((d) => {
+                const applied = appliedDriveIds.has(String(d._id));
                 return (
-                  <tr key={a._id} className={tableRowHover}>
-                    {isStaff && (
-                      <td className={`${tableCell} font-medium`}>
-                        {a.student?.name || '—'}
-                        <span className="block text-xs text-gray-400 font-normal">
-                          {a.student?.profile?.rollNumber || ''}
-                        </span>
-                      </td>
-                    )}
-                    <td className={`${tableCell} font-medium`}>
-                      {a.drive?.role || '—'}
-                      <span className="block text-xs text-gray-400 font-normal">
-                        {a.drive?.company?.name || ''}
+                  <motion.article key={d._id} variants={staggerChild} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5 hover:shadow-3 hover:-translate-y-0.5 transition-all">
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-300 grid place-items-center shrink-0" aria-hidden>
+                        <Building2 size={19} />
                       </span>
-                    </td>
-                    <td className={tableCell}>{formatDate(a.createdAt)}</td>
-                    <td className={tableCell}>
-                      <span className={badge(statusColors[a.stage] || 'bg-gray-100 text-gray-700')}>
-                        {String(a.stage || 'applied').replace('_', ' ')}
+                      <div className="min-w-0">
+                        <h3 className="font-semibold leading-tight truncate">{d.role}</h3>
+                        <p className="text-xs text-[var(--cf-ink-mute)] truncate">{d.company?.name}</p>
+                      </div>
+                      <span className="ml-auto"><Badge status={d.status || 'active'}>{d.status || 'active'}</Badge></span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
+                      {d.packageLPA && <span className="flex items-center gap-1 font-semibold text-[var(--cf-ink)]"><Wallet size={13} /> {d.packageLPA} LPA</span>}
+                      {d.location && <span className="flex items-center gap-1"><MapPin size={13} /> {d.location}</span>}
+                      {d.jobType && <span className="capitalize">{d.jobType}</span>}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[var(--cf-ink-mute)]">Apply by {fmtDate(d.applicationDeadline)}</span>
+                      <span className="flex gap-1.5">
+                        <button onClick={() => openDetail(d)} className={btnClass('outline', 'small')}>Details</button>
+                        {isStudent && !applied && d.status === 'active' && (
+                          <button onClick={() => apply(d._id)} disabled={busy === `apply-${d._id}`} className={btnClass('primary', 'small')}>
+                            {busy === `apply-${d._id}` ? 'Applying…' : 'Apply now'}
+                          </button>
+                        )}
+                        {isStudent && applied && <Badge status="applied">Applied</Badge>}
                       </span>
-                    </td>
-                    {isStaff && (
-                      <td className={`${tableCell} text-right`}>
-                        <select
-                          value={a.stage || 'applied'}
-                          disabled={!driveId || busy === `stage-${a._id}`}
-                          onChange={(e) => updateStage(a._id, driveId, e.target.value)}
-                          className="px-2.5 py-1.5 border border-gray-200 rounded-xl text-xs"
-                        >
-                          {APPLICATION_STAGES.map((s) => (
-                            <option key={s} value={s}>
-                              {s.replace('_', ' ')}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    )}
-                  </tr>
+                    </div>
+                  </motion.article>
                 );
               })}
-            </tbody>
-          </table>
-          {applications.length === 0 && (
-            <p className={emptyState}>
-              {isStudent ? 'You have not applied to any drives yet.' : 'No applications yet.'}
-            </p>
+              {drives.length === 0 && (
+                <Card className="md:col-span-2 xl:col-span-3"><EmptyState title="No drives posted" hint={isStaff ? 'Post the first drive to activate the board.' : 'Check back soon.'} /></Card>
+              )}
+            </motion.div>
           )}
-        </div>
+
+          {tab === 'apps' && (
+            <Card className="overflow-hidden p-0">
+              <ul className="divide-y divide-[var(--cf-line)]">
+                {applications.map((a) => (
+                  <li key={a._id}>
+                    <button onClick={() => setAppDetail(a)} className="w-full text-left px-4 py-3.5 flex items-center gap-3 hover:bg-black/[.02] dark:hover:bg-white/[.03] transition">
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium truncate">{a.student?.name || 'Applicant'} → {a.drive?.role || 'Drive'}</span>
+                        <span className="block text-xs text-[var(--cf-ink-mute)]">{a.drive?.company?.name || ''}</span>
+                      </span>
+                      <Badge status={a.stage || 'applied'}>{(a.stage || 'applied').replace(/_/g, ' ')}</Badge>
+                      <ArrowRight size={15} className="text-[var(--cf-ink-mute)]" />
+                    </button>
+                  </li>
+                ))}
+                {applications.length === 0 && <li><EmptyState title="No applications" hint="Applications will stream in here." /></li>}
+              </ul>
+            </Card>
+          )}
+        </>
       )}
+
+      {/* Job detail */}
+      <Modal open={Boolean(detail)} onClose={() => setDetail(null)} title={detail ? `${detail.role} · ${detail.company?.name || ''}` : ''} wide>
+        {detail && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+              {detail.packageLPA && <span className="font-bold text-lg">{detail.packageLPA} LPA</span>}
+              {detail.location && <span className="flex items-center gap-1 text-[var(--cf-ink-soft)]"><MapPin size={14} /> {detail.location}</span>}
+              {detail.jobType && <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{detail.jobType}</Badge>}
+              <Badge status={detail.status || 'active'}>{detail.status || 'active'}</Badge>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl border border-[var(--cf-line)] p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Eligibility</p>
+                <ul className="space-y-1 text-[var(--cf-ink-soft)]">
+                  <li>Min CGPA: {detail.eligibility?.minCGPA ?? '—'}</li>
+                  <li>Max backlogs: {detail.eligibility?.maxBacklogs ?? '—'}</li>
+                  <li>Graduation: {detail.eligibility?.graduationYear ?? '—'}</li>
+                </ul>
+                {eligibility && (
+                  <p className={cn('mt-2 text-xs font-medium', eligibility.eligible === false ? 'text-amber-600 dark:text-amber-300' : 'text-green-600 dark:text-green-400')}>
+                    {eligibility.eligible === false
+                      ? `Heads up: ${(eligibility.failures || []).join('; ') || 'you may not meet all criteria'} — you can still apply.`
+                      : 'You meet the listed criteria.'}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-xl border border-[var(--cf-line)] p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Timeline</p>
+                <p className="text-[var(--cf-ink-soft)]">Apply by {fmtDate(detail.applicationDeadline)}</p>
+                <p className="text-xs text-[var(--cf-ink-mute)] mt-1">Process: applied → shortlisted → assessment → interview → offer → placed.</p>
+              </div>
+            </div>
+            {isStudent && !appliedDriveIds.has(String(detail._id)) && detail.status === 'active' && (
+              <button onClick={() => { apply(detail._id); }} disabled={busy === `apply-${detail._id}`} className={btnClass('glow', 'large') + ' w-full'}>
+                {busy === `apply-${detail._id}` ? 'Applying…' : 'Apply now'}
+              </button>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Application detail */}
+      <Modal open={Boolean(appDetail)} onClose={() => setAppDetail(null)} title={appDetail ? `${appDetail.student?.name || 'Application'} → ${appDetail.drive?.role || ''}` : ''}>
+        {appDetail && (
+          <div className="space-y-4">
+            <PipelineLabels current={appDetail.stage || 'applied'} />
+            <WorkflowTimeline steps={appTimeline(appDetail)} />
+            {isStaff && appDetail.stage !== 'placed' && appDetail.stage !== 'rejected' && (
+              <div>
+                <label className="block mb-1.5 text-sm font-medium" htmlFor="stage-select">Move to stage</label>
+                <select
+                  id="stage-select"
+                  className={selectClass}
+                  value={appDetail.stage || 'applied'}
+                  disabled={busy === `stage-${appDetail._id}`}
+                  onChange={(e) => updateStage(appDetail._id, appDetail.drive?._id || appDetail.drive, e.target.value)}
+                >
+                  {STAGES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Staff create modals */}
+      <Modal open={showCompany} onClose={() => setShowCompany(false)} title="Add company">
+        <form onSubmit={companyForm.handleSubmit(onCreateCompany)} className="space-y-3">
+          {['name', 'website', 'industry', 'hrContact'].map((f) => (
+            <div key={f}>
+              <label className={labelClass} htmlFor={`co-${f}`}>{f === 'hrContact' ? 'HR contact' : f[0].toUpperCase() + f.slice(1)}</label>
+              <input id={`co-${f}`} className={inputClass} {...companyForm.register(f, { required: f === 'name' })} />
+            </div>
+          ))}
+          <button type="submit" className={btnClass('success', 'medium') + ' w-full'}>Add company</button>
+        </form>
+      </Modal>
+
+      <Modal open={showDrive} onClose={() => setShowDrive(false)} title="Post drive" wide>
+        <form onSubmit={driveForm.handleSubmit(onCreateDrive)} className="grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className={labelClass} htmlFor="dr-company">Company</label>
+            <select id="dr-company" className={selectClass} {...driveForm.register('company', { required: true })}>
+              <option value="">Select company</option>
+              {companies.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-role">Role</label>
+            <input id="dr-role" className={inputClass} placeholder="SDE Intern" {...driveForm.register('role', { required: true })} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-type">Type</label>
+            <select id="dr-type" className={selectClass} {...driveForm.register('jobType')}>
+              {JOB_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-pkg">Package (LPA)</label>
+            <input id="dr-pkg" type="number" step="0.1" className={inputClass} {...driveForm.register('packageLPA')} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-loc">Location</label>
+            <input id="dr-loc" className={inputClass} {...driveForm.register('location')} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-cgpa">Min CGPA</label>
+            <input id="dr-cgpa" type="number" step="0.1" className={inputClass} {...driveForm.register('minCGPA')} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-deadline">Deadline</label>
+            <input id="dr-deadline" type="date" className={inputClass} {...driveForm.register('applicationDeadline')} />
+          </div>
+          <button type="submit" className={btnClass('success', 'medium') + ' sm:col-span-2'}>Post drive</button>
+        </form>
+      </Modal>
     </div>
   );
 }
-
-export default Placement;

@@ -87,7 +87,7 @@ function Courses() {
       {showForm && (
         <form
           onSubmit={handleSubmit(onCreate)}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-5 gap-3"
+          className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-5 gap-3"
         >
           <input
             placeholder="Course Name"
@@ -145,16 +145,16 @@ function Courses() {
                 <th className={tableCellHead}>Semesters</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--cf-line)]">
               {courses.map((course) => (
                 <tr key={course._id} className={tableRowHover}>
                   <td className={`${tableCell} font-medium`}>{course.name}</td>
                   <td className={tableCell}>
-                    <span className="bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                    <span className="bg-black/[.05] dark:bg-white/10 px-2 py-0.5 rounded-full text-xs">
                       {course.code}
                     </span>
                   </td>
-                  <td className={`${tableCell} text-gray-600`}>
+                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
                     {course.department?.name || '—'}
                   </td>
                   <td className={tableCell}>{course.durationYears} yrs</td>

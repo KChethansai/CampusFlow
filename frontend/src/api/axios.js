@@ -4,8 +4,17 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
 });
 
+const safeReadAuth = () => {
+  try {
+    return JSON.parse(localStorage.getItem('cf_auth') || 'null');
+  } catch {
+    localStorage.removeItem('cf_auth');
+    return null;
+  }
+};
+
 api.interceptors.request.use((config) => {
-  const auth = JSON.parse(localStorage.getItem('cf_auth') || 'null');
+  const auth = safeReadAuth();
   if (auth?.accessToken) {
     config.headers.Authorization = `Bearer ${auth.accessToken}`;
   }
@@ -21,7 +30,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
-      const auth = JSON.parse(localStorage.getItem('cf_auth') || 'null');
+      const auth = safeReadAuth();
 
       if (auth?.refreshToken) {
         try {

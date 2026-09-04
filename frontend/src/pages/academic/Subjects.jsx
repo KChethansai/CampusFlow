@@ -52,21 +52,21 @@ function Subjects() {
                 <th className={tableCellHead}>Faculty</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--cf-line)]">
               {subjects.map((s) => (
                 <tr key={s._id} className={tableRowHover}>
                   <td className={`${tableCell} font-medium`}>{s.name}</td>
                   <td className={tableCell}>
-                    <span className="bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                    <span className="bg-black/[.05] dark:bg-white/10 px-2 py-0.5 rounded-full text-xs">
                       {s.code}
                     </span>
                   </td>
-                  <td className={`${tableCell} text-gray-600`}>
+                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
                     {s.course?.name || '—'}
                   </td>
                   <td className={tableCell}>{s.semester}</td>
                   <td className={tableCell}>{s.credits}</td>
-                  <td className={`${tableCell} text-gray-600`}>
+                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
                     {s.faculty?.name || '—'}
                   </td>
                 </tr>

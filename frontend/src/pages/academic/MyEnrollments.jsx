@@ -10,6 +10,7 @@ import {
   loadingState,
   pageHeading,
   pageSubheading,
+  statusColors,
   tableCell,
   tableCellHead,
   tableClass,
@@ -90,10 +91,10 @@ function MyEnrollments() {
         <p className={loadingState}>Loading...</p>
       ) : (
         <>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Enrolled</h2>
+          <h2 className="text-lg font-semibold text-[var(--cf-ink)] mb-3">Enrolled</h2>
           {myEnrollments.length === 0 ? (
             <div className={`${cardClass} p-6 mb-8`}>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--cf-ink-mute)]">
                 You are not enrolled in any courses yet. Pick one from the
                 catalog below.
               </p>
@@ -110,23 +111,23 @@ function MyEnrollments() {
                     <th className={tableCellHead} />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[var(--cf-line)]">
                   {myEnrollments.map((e) => (
                     <tr key={e._id} className={tableRowHover}>
                       <td className={`${tableCell} font-medium`}>
                         {e.course?.name || '—'}
-                        <span className="block text-xs text-gray-400 font-normal">
+                        <span className="block text-xs text-[var(--cf-ink-mute)] font-normal">
                           {e.course?.code || ''}
                         </span>
                       </td>
-                      <td className={`${tableCell} text-gray-600`}>
+                      <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
                         {e.course?.department?.name || '—'}
                       </td>
                       <td className={tableCell}>
                         {e.academicYear} / Sem {e.semester}
                       </td>
                       <td className={tableCell}>
-                        <span className={badge('bg-green-100 text-green-800')}>
+                        <span className={badge(statusColors.active)}>
                           {e.status}
                         </span>
                       </td>
@@ -146,7 +147,7 @@ function MyEnrollments() {
             </div>
           )}
 
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          <h2 className="text-lg font-semibold text-[var(--cf-ink)] mb-3">
             Course Catalog
           </h2>
           <div className={`${cardClass} overflow-hidden`}>
@@ -160,18 +161,18 @@ function MyEnrollments() {
                   <th className={tableCellHead} />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--cf-line)]">
                 {courses.map((course) => {
                   const enrolled = activeEnrollmentIds.has(String(course._id));
                   return (
                     <tr key={course._id} className={tableRowHover}>
                       <td className={`${tableCell} font-medium`}>{course.name}</td>
                       <td className={tableCell}>
-                        <span className="bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                        <span className="bg-black/[.05] dark:bg-white/10 px-2 py-0.5 rounded-full text-xs">
                           {course.code}
                         </span>
                       </td>
-                      <td className={`${tableCell} text-gray-600`}>
+                      <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
                         {course.department?.name || '—'}
                       </td>
                       <td className={tableCell}>
