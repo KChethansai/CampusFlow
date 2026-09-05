@@ -91,7 +91,7 @@ export default function Landing() {
             </button>
             <Link to="/login" className="hidden sm:block text-sm font-medium px-3 py-2 rounded-full hover:bg-black/[.05] dark:hover:bg-white/10 transition">Sign in</Link>
             <MagneticButton className={cn(btnClass('primary', 'small'))}>
-              <Link to="/signup" className="flex items-center gap-1">Apply now <ArrowUpRight size={14} /></Link>
+              <Link to="/login" className="flex items-center gap-1">Apply now <ArrowUpRight size={14} /></Link>
             </MagneticButton>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function Landing() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <MagneticButton className={cn(btnClass('glow', 'large'))}>
-                <Link to="/signup" className="flex items-center gap-2">Explore CampusFlow <ArrowRight size={17} /></Link>
+                <Link to="/login" className="flex items-center gap-2">Explore CampusFlow <ArrowRight size={17} /></Link>
               </MagneticButton>
               <a href="#campus" className={cn(btnClass('outline', 'large'))}>See how it works</a>
             </div>
@@ -206,14 +206,13 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Get started — real signup, real product */}
+        {/* Get started — provisioned accounts, real product */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center" aria-label="Get started">
           <p className="cf-kicker">Begin</p>
           <h2 className="cf-statement-sm mt-3">Your campus, <em>finally in focus.</em></h2>
-          <p className="mt-3 text-[var(--cf-ink-mute)] max-w-md mx-auto">Create an account and step into the operating system — students, faculty and staff each get their own command center.</p>
+          <p className="mt-3 text-[var(--cf-ink-mute)] max-w-md mx-auto">Accounts are provisioned by your institution — sign in to step into the operating system, where students, faculty and staff each get their own command center.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className={cn(btnClass('glow', 'large'))}>Create account <ArrowRight size={17} /></Link>
-            <Link to="/login" className={cn(btnClass('outline', 'large'))}>Sign in</Link>
+            <Link to="/login" className={cn(btnClass('glow', 'large'))}>Sign in <ArrowRight size={17} /></Link>
           </div>
         </section>
       </main>

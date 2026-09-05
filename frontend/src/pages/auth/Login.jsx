@@ -35,7 +35,7 @@ function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to your digital campus."
-      footer={<>New here? <Link to="/signup" className="font-medium text-primary-600 hover:underline">Create an account</Link></>}
+      footer={<>New here? Accounts are provisioned by your institution administrator.</>}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input

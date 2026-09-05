@@ -1,107 +1,75 @@
 # CampusFlow — Smart College Management Platform
 
-A multi-tenant, AI-enabled College Management Platform: Express REST API +
-MongoDB backend, React (Vite) frontend.
-
-## Overview
-
-CampusFlow connects five key stakeholders within a single application while enforcing strict tenant and role isolation:
-
-- **Super Admin** — Institutions, platform configuration, system-wide analytics
-- **College Admin** — Departments, faculty, students, courses, institutional reports
-- **Faculty** — Subjects, attendance, assignments, grading, announcements
-- **Student** — Courses, attendance, assignments, requests, placements, study assistance
-- **Placement Officer** — Companies, job drives, applications, eligibility, outcomes
+Multi-tenant college management: Express + MongoDB REST API (`backend/`),
+React + Vite frontend (`frontend/`). Five roles: super admin, college admin,
+faculty, student, placement officer.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js v20 LTS |
-| Database | MongoDB + Mongoose |
-| Backend | Express.js |
-| Frontend | React (Vite) + Zustand |
-| Styling | Tailwind CSS |
-| 3D / Motion | Three.js (lazy) + Motion.dev |
-| AI | OpenAI (optional — graceful placeholder fallback without a key) |
-| Auth | JWT (access + refresh rotation, DB-backed) |
+| Backend | Express.js, Mongoose, JWT access + DB-backed refresh rotation |
+| Frontend | React 18 (Vite), Zustand, Tailwind, Motion.dev, lazy Three.js |
+| Database | MongoDB (Atlas in production) |
+| AI | OpenAI optional — reports degrade gracefully without a key |
 
 ## Quick Start
 
 ```bash
-git clone <repo-url>
-cd CampusFlow
-npm install              # single root lockfile covers both workspaces
+# Backend
+cd backend
+cp .env.example .env        # fill DB_URL + JWT secrets (see below)
+npm install
+npm run seed                # demo data (drops existing data first)
+npm run dev                 # http://localhost:<PORT>/api/health (PORT in .env)
 
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-# Edit both .env files (DB_URL, JWT secrets, VITE_API_URL — see below)
-
-npm run seed --workspace=backend   # demo data (drops existing data first)
-npm run dev                        # backend + frontend together
+# Frontend (new terminal)
+cd frontend
+cp .env.example .env        # set VITE_API_URL=http://localhost:<PORT>/api/v1
+npm install
+npm run dev                 # http://localhost:5173
 ```
-
-- Backend: `http://localhost:<PORT>/api/health` (`PORT` from `backend/.env`, default 5000)
-- Frontend: `http://localhost:5173` (proxied by `VITE_API_URL` in `frontend/.env`)
 
 Seed logins: `superadmin@campusflow.app` / `admin@sit.edu` / `placement@sit.edu`
 (`Admin@123`), `faculty1@sit.edu` (`Faculty@123`), `student1@sit.edu` (`Student@123`).
 
-## Architecture
+## Environment
 
-### Key Patterns
+Backend (`backend/.env`): `PORT`, `DB_URL` (or `MONGO_URI`), `SECRET_KEY`,
+`SECRET_KEY_REFRESH` (`openssl rand -hex 32`), `CLIENT_URL` (comma-separated
+origins), `ACCESS_TOKEN_EXPIRES`, `REFRESH_TOKEN_EXPIRES_DAYS`, optional
+`SMTP_*`, `OPENAI_API_KEY`, `UPLOAD_DIR`, `MAX_FILE_MB`. Missing `DB_URL` or
+JWT secrets → the server refuses to boot (by design).
 
-1. **Multi-Tenancy Boundary** — Every entity includes an `institution` ObjectId;
-   single-object reads/mutations are scoped with `findOne({_id, institution})`
-   (`backend/utils/scope.js`), so a valid ObjectId never implies authorization.
-2. **Workflow State Machines** — Assignment, Request and JobApplication follow
-   explicit server-enforced status transitions.
-3. **Grounded AI + rule-based study help** — AI reports use verified snapshots
-   with hash validation; `/study/plan` is deterministic computation over real
-   records (scores, attendance, deadlines), labeled as such.
-4. **Auth hardening** — Role is re-checked from the database per request
-   (never trusted from the JWT claim); deactivated users and post-password-change
-   sessions are rejected; refresh tokens rotate with reuse detection.
-
-## Project Structure
-
-```
-CampusFlow/
-├── docker-compose.yml      # local full-stack (expects backend/.env)
-├── Procfile                # backend process type
-├── backend/
-│   ├── server.js           # entrypoint (connect DB, then listen)
-│   ├── app.js              # Express wiring, rate limits, /api/health
-│   ├── APIs/               # route wiring (one router per resource)
-│   ├── config/             # env validation, DB, security middleware
-│   ├── controllers/        # business logic (tenant-scoped, allowlisted writes)
-│   ├── middlewares/        # verifyToken (DB role check), auditLog, errorHandler
-│   ├── models/             # 20 Mongoose models
-│   ├── services/           # AI, email, eligibility, notification, activity log
-│   ├── utils/              # scope (tenant/pagination), sanitize, tokens
-│   ├── seed/seed.js        # demo dataset (npm run seed --workspace=backend)
-│   └── tests/              # jest + supertest + mongodb-memory-server
-└── frontend/
-    ├── vercel.json         # SPA fallback (deploy frontend/ as project root)
-    ├── src/
-    │   ├── api/            # Axios client (VITE_API_URL, refresh interceptor)
-    │   ├── store/          # Zustand auth session
-    │   ├── shell/          # App shell, ⌘K palette, notifications, quick actions
-    │   ├── system/         # Design tokens, motion language, theme
-    │   ├── components/     # ui primitives, editorial, spatial (lazy 3D), data views
-    │   ├── pages/          # routes: landing, auth, dashboards, academics,
-    │   │                   # placement, requests, events, study, admin, profile
-    │   └── styles/         # legacy re-export shim (use system/tokens)
-    └── index.html
-```
+Frontend (`frontend/.env`): `VITE_API_URL` — must include the `/api/v1`
+suffix, e.g. `http://localhost:4000/api/v1`. `.env` files are gitignored and
+have never been committed.
 
 ## Testing
 
 ```bash
-npm test --workspace=backend     # jest (memory server; no external DB needed)
-npm run build --workspace=frontend
+cd backend && npm test      # jest + supertest + mongodb-memory-server (54 tests)
+cd frontend && npm run build
 ```
 
-## Deployment
+## Deployment (Atlas → Render → Vercel)
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) (Atlas → Render → Vercel).
+- **Render (backend)**: root directory `backend`, build `npm ci`, start
+  `npm start`. Set `NODE_ENV=production` (Render injects `PORT`), `DB_URL`,
+  secrets, `CLIENT_URL=https://<your-app>.vercel.app`.
+- **Vercel (frontend)**: root directory `frontend`, preset Vite, build
+  `npm run build`, output `dist`. `frontend/vercel.json` adds the SPA
+  fallback (`/(.*)` → `/index.html`). Set `VITE_API_URL` to the Render URL
+  with `/api/v1` suffix.
+- Smoke: `GET {backend}/api/health` → `{"status":"ok"}`; login; spot-check
+  dashboard, assignments, placement, requests.
+
+## Security model
+
+Tenant isolation on every object route (`findOne({_id, institution})`);
+role re-checked from DB per request (never the JWT claim); deactivated and
+post-password-change sessions rejected; refresh rotation with reuse detection;
+allowlisted writes; server-enforced workflow transitions; per-endpoint rate
+limits; `http(s)`-only URL fields. Details + accepted risks:
+`backend/` controllers use `utils/scope.js` / `utils/sanitize.js`; adversarial
+coverage lives in `backend/tests/security.test.js`.

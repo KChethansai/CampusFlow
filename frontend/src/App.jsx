@@ -5,7 +5,6 @@ import ProtectedRoute from './components/routing/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
-import Signup from './pages/auth/Signup';
 import Onboarding from './pages/auth/Onboarding';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import Dashboard from './pages/Dashboard';
@@ -43,7 +42,6 @@ function App() {
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
