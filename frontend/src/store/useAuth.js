@@ -84,25 +84,6 @@ export const useAuth = create((set) => ({
     }
   },
 
-  registerUser: async (payload) => {
-    set({ loading: true, error: null });
-    try {
-      const { data } = await api.post('/auth/register', payload);
-      if (data.accessToken && data.user) {
-        const session = { user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken };
-        localStorage.setItem('cf_auth', JSON.stringify(session));
-        set({ ...session, isAuthenticated: true, loading: false, error: null });
-      } else {
-        set({ loading: false });
-      }
-      return data;
-    } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed';
-      set({ loading: false, error: message });
-      throw err;
-    }
-  },
-
   forgotPassword: async (email) => {
     const { data } = await api.post('/auth/forgot-password', { email });
     return data;

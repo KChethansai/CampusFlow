@@ -27,4 +27,6 @@ Thumbs.db
 .idea/
 
 # Git
-*.origgraphify-out/
+*.orig
+
+graphify-out/
