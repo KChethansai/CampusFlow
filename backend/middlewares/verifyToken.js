@@ -18,18 +18,32 @@ export const verifyToken = (...allowedRoles) => {
 
       const decoded = jwt.verify(token, env.secretKey)
 
-      if (allowedRoles.length > 0 && !allowedRoles.includes(decoded.role)) {
-        const err = new Error(
-          `User role '${decoded.role}' is unauthorized to perform this action`
-        )
-        err.status = 403
-        return next(err)
-      }
-
       const user = await UserModel.findById(decoded.sub).select('-password')
       if (!user) {
         const err = new Error('User not found')
         err.status = 401
+        return next(err)
+      }
+
+      // Never trust the JWT role claim: re-check role, active flag and
+      // password-change recency against the database on every request.
+      if (!user.isActive) {
+        const err = new Error('Account deactivated. Contact system admin.')
+        err.status = 403
+        return next(err)
+      }
+
+      if (typeof user.changedPasswordAfter === 'function' && user.changedPasswordAfter(decoded.iat)) {
+        const err = new Error('Session expired after password change, please log in again')
+        err.status = 401
+        return next(err)
+      }
+
+      if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+        const err = new Error(
+          `User role '${user.role}' is unauthorized to perform this action`
+        )
+        err.status = 403
         return next(err)
       }
 

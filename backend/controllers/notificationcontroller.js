@@ -9,10 +9,11 @@ export const getMyNotifications = asyncHandler(async (req, res) => {
   res.json({ success: true, data: notifications });
 });
 
-// Mark notification as read
+// Mark notification as read — recipient-scoped so IDs can't be enumerated
+// across users (IDOR guard).
 export const markAsRead = asyncHandler(async (req, res) => {
-  const notification = await Notification.findByIdAndUpdate(
-    req.params.id,
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, recipient: req.user._id },
     { isRead: true },
     { new: true },
   );

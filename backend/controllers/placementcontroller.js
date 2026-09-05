@@ -10,7 +10,7 @@ export const checkEligibilityForDrive = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
   const student = req.user;
 
-  const drive = await JobDrive.findById(driveId);
+  const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
   if (!drive) throw new ApiError(404, 'Job drive not found');
 
   const result = checkEligibility(student, drive);
@@ -40,7 +40,7 @@ export const applyForJob = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
   const student = req.user;
 
-  const drive = await JobDrive.findById(driveId);
+  const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
   if (!drive) throw new ApiError(404, 'Job drive not found');
 
   const existing = await JobApplication.findOne({
@@ -71,7 +71,7 @@ export const applyForJob = asyncHandler(async (req, res) => {
 export const getApplications = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
 
-  const drive = await JobDrive.findById(driveId);
+  const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
   if (!drive) throw new ApiError(404, 'Job drive not found');
 
   const applications = await JobApplication.find({ drive: driveId })
@@ -102,8 +102,11 @@ export const updateApplicationStage = asyncHandler(async (req, res) => {
   const application = await JobApplication.findOne({
     _id: applicationId,
     drive: driveId
-  }).populate('student');
+  }).populate('student').populate('drive');
   if (!application) throw new ApiError(404, 'Application not found');
+  if (String(application.drive?.institution) !== String(req.user.institution)) {
+    throw new ApiError(404, 'Application not found');
+  }
 
   application.stage = stage;
   application.history.push({

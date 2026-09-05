@@ -55,7 +55,9 @@ const gatherPerformanceData = async (studentId) => {
 };
 
 export const getAIReports = asyncHandler(async (req, res) => {
-  const reports = await AIReport.find()
+  // Tenant-scoped via the report's student.
+  const studentIds = await User.find({ institution: req.user.institution }).select('_id');
+  const reports = await AIReport.find({ student: { $in: studentIds.map((s) => s._id) } })
     .populate('student', 'name email')
     .populate('generatedBy', 'name')
     .sort('-createdAt')
@@ -67,7 +69,7 @@ export const generateReport = asyncHandler(async (req, res) => {
   const { studentId } = req.body;
   if (!studentId) throw new ApiError(400, 'studentId is required');
 
-  const student = await User.findById(studentId);
+  const student = await User.findOne({ _id: studentId, institution: req.user.institution });
   if (!student) throw new ApiError(404, 'Student not found');
 
   const { student: withProfile, data } = await gatherPerformanceData(studentId);

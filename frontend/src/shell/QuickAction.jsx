@@ -14,7 +14,7 @@ const ACTIONS = {
   faculty: [
     { label: 'Take attendance', to: '/attendance' },
     { label: 'Create assignment', to: '/assignments' },
-    { label: 'Post announcement', to: '/requests' }
+    { label: 'Post announcement', to: '/events' }
   ],
   super_admin: [
     { label: 'Add user', to: '/users' },

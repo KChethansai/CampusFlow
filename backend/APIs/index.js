@@ -17,6 +17,7 @@ import { requestApp } from './requestAPI.js'
 import { announcementApp } from './announcementAPI.js'
 import { notificationApp } from './notificationAPI.js'
 import { aiReportApp } from './aiReportAPI.js'
+import { studyApp } from './studyAPI.js'
 
 const router = Router()
 
@@ -37,5 +38,6 @@ router.use('/requests', requestApp)
 router.use('/announcements', announcementApp)
 router.use('/notifications', notificationApp)
 router.use('/ai-reports', aiReportApp)
+router.use('/study', studyApp)
 
 export default router

@@ -42,7 +42,7 @@ export const Input = forwardRef(function Input({ label, error, id, className, ..
   );
 });
 
-export function Select({ label, error, id, className, children, ...props }) {
+export const Select = forwardRef(function Select({ label, error, id, className, children, ...props }, ref) {
   return (
     <div>
       {label && (
@@ -50,15 +50,15 @@ export function Select({ label, error, id, className, children, ...props }) {
           {label}
         </label>
       )}
-      <select id={id} className={cn(inputClass, className)} {...props}>
+      <select id={id} ref={ref} className={cn(inputClass, className)} {...props}>
         {children}
       </select>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
-}
+});
 
-export function Textarea({ label, error, id, className, ...props }) {
+export const Textarea = forwardRef(function Textarea({ label, error, id, className, ...props }, ref) {
   return (
     <div>
       {label && (
@@ -66,11 +66,11 @@ export function Textarea({ label, error, id, className, ...props }) {
           {label}
         </label>
       )}
-      <textarea id={id} rows={4} className={cn(inputClass, className)} {...props} />
+      <textarea id={id} ref={ref} rows={4} className={cn(inputClass, className)} {...props} />
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
-}
+});
 
 export function Badge({ tone, status, role, className, children }) {
   if (status) return <span className={cn(statusBadgeFn(status), className)}>{children ?? status.replace(/_/g, ' ')}</span>;

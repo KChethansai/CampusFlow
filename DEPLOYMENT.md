@@ -24,25 +24,27 @@ Mongoose) and `frontend/` (React + Vite). The recommended split is
 
    | Setting | Value |
    | --- | --- |
-   | Root directory | `backend` (or use the root with workspaces — see note) |
-   | Build command | `npm install` (root, installs workspaces) |
-   | Start command | `npm run start --workspace backend` |
+   | Root directory | repo root (uses npm workspaces) |
+   | Build command | `npm ci` |
+   | Start command | `npm run start --workspace=backend` |
 
-   Alternatively, if you deploy with a root-level Procfile, the included
-   `Procfile` already runs the same start command.
+   (The included `Procfile` runs the same start command.)
 
 2. Environment variables (all defined in `backend/.env.example`):
 
    - `NODE_ENV=production`
-   - `PORT=10000` (Render injects `PORT`; the app respects it)
-   - `DB_URL` — Atlas connection string
+   - Do **not** set `PORT` — Render injects it and the app respects `process.env.PORT`
+   - `DB_URL` — Atlas connection string (`MONGO_URI` also accepted)
    - `SECRET_KEY` and `SECRET_KEY_REFRESH` — long random strings
-     (`openssl rand -hex 32`)
+     (`openssl rand -hex 32`); legacy `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` work too
    - `CLIENT_URL` — comma-separated allowed origins, e.g.
      `https://campusflow.vercel.app`
    - `ACCESS_TOKEN_EXPIRES`, `REFRESH_TOKEN_EXPIRES_DAYS`
-   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` (optional)
-   - `OPENAI_API_KEY` (optional — AI reports degrade gracefully without it)
+     (legacy `JWT_ACCESS_EXPIRES` / `JWT_REFRESH_EXPIRES_DAYS` also read)
+   - `COOKIE_SAME_SITE` (optional; defaults to `none` in production)
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` (optional —
+     password-reset falls back to in-app notifications without SMTP)
+   - `OPENAI_API_KEY`, `OPENAI_MODEL` (optional — AI reports degrade gracefully without them)
    - `UPLOAD_DIR`, `MAX_FILE_MB` (optional)
 
 3. The production start path is plain `node server.js` (no nodemon), the
@@ -51,11 +53,13 @@ Mongoose) and `frontend/` (React + Vite). The recommended split is
 
 ## 3. Vercel (frontend)
 
-1. Import the repo in Vercel; framework preset **Vite**.
+1. Import the repo in Vercel; framework preset **Vite**; set the project
+   **Root Directory to `frontend/`**.
 2. Set the env variable `VITE_API_URL` to your Render URL, e.g.
    `https://campusflow-backend.onrender.com/api/v1` (no trailing slash).
-3. Build output is `dist` (Vite's default — no config change needed).
-   If you deploy `frontend/` as the root directory, keep `npm run build`.
+3. Build command `npm run build`, output `dist` (defaults). `frontend/vercel.json`
+   adds the SPA fallback (`/(.*)` → `/index.html`) so deep links and refreshes
+   on `/login`, `/dashboard/*`, etc. resolve client-side.
 
 `src/api/axios.js` reads `import.meta.env.VITE_API_URL` and falls back to
 `http://localhost:5000/api/v1` for local development only.

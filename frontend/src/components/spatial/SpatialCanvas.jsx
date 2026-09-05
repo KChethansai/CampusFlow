@@ -1,5 +1,5 @@
 // SpatialCanvas: lazy 3D host. Never blocks paint; static atmosphere fallback
-// on mobile, reduced-motion, or WebGL failure.
+// on mobile, reduced-motion, WebGL failure, or GPU context loss.
 import { Suspense, lazy, useState } from 'react';
 import { useReducedMotion } from '../../system/motion';
 import { DOMAINS } from './domains';
@@ -25,6 +25,8 @@ export function DomainHint({ domain }) {
 export default function SpatialCanvas({ className, style, compact }) {
   const reduced = useReducedMotion();
   const [failed, setFailed] = useState(false);
+  const [contextLost, setContextLost] = useState(false);
+  const [sceneKey, setSceneKey] = useState(0);
   const [hovered, setHovered] = useState(null);
   const [started, setStarted] = useState(false);
 
@@ -32,6 +34,7 @@ export default function SpatialCanvas({ className, style, compact }) {
   const lite =
     reduced ||
     failed ||
+    contextLost ||
     (typeof window !== 'undefined' && window.innerWidth < 768 && compact !== false);
 
   return (
@@ -79,7 +82,17 @@ export default function SpatialCanvas({ className, style, compact }) {
             }
           >
             <div className="relative w-full h-full">
-              <Scene onHover={setHovered} autoRotate={!reduced} className="w-full h-full" />
+              <Scene
+                key={sceneKey}
+                onHover={setHovered}
+                autoRotate={!reduced}
+                className="w-full h-full"
+                onContextLost={() => setContextLost(true)}
+                onContextRestored={() => {
+                  setContextLost(false);
+                  setSceneKey((k) => k + 1); // fresh renderer on restore
+                }}
+              />
               <div className="absolute left-3 bottom-3 right-3 cf-glass rounded-2xl border border-[var(--cf-line)] px-3 py-2 pointer-events-none">
                 <DomainHint domain={hovered} />
               </div>

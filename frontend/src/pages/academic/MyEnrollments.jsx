@@ -180,8 +180,8 @@ function MyEnrollments() {
                       </td>
                       <td className={`${tableCell} text-right`}>
                         {enrolled ? (
-                          <span className="text-xs font-medium text-green-600">
-                            ✓ Enrolled
+                          <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                            Enrolled
                           </span>
                         ) : (
                           <button

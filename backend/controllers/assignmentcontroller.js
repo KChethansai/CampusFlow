@@ -1,6 +1,7 @@
 import { AssignmentModel as Assignment } from '../models/AssignmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
+import { pick, scopedOne } from '../utils/scope.js';
 
 // List all assignments scoped to institution
 export const getAllAssignments = asyncHandler(async (req, res) => {
@@ -10,12 +11,9 @@ export const getAllAssignments = asyncHandler(async (req, res) => {
   res.json({ success: true, data: assignments });
 });
 
-// Get single assignment
+// Get single assignment (tenant-scoped)
 export const getAssignmentById = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findById(req.params.id)
-    .populate('subject')
-    .populate('createdBy');
-  if (!assignment) throw new ApiError(404, 'Assignment not found');
+  const assignment = await scopedOne(Assignment, req, req.params.id, ['subject', 'createdBy']);
   res.json({ success: true, data: assignment });
 });
 
@@ -36,19 +34,20 @@ export const createAssignment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: assignment });
 });
 
-// Update assignment
+// Update assignment — tenant-scoped, allowlisted (no institution/createdBy/status override)
 export const updateAssignment = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const assignment = await Assignment.findOneAndUpdate(
+    { _id: req.params.id, institution: req.user.institution },
+    pick(req.body, ['subject', 'title', 'description', 'maxScore', 'dueDate', 'allowResubmission', 'maxResubmissions']),
+    { new: true, runValidators: true },
+  );
   if (!assignment) throw new ApiError(404, 'Assignment not found');
   res.json({ success: true, data: assignment });
 });
 
-// Delete assignment
+// Delete assignment (tenant-scoped)
 export const deleteAssignment = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findByIdAndDelete(req.params.id);
+  const assignment = await Assignment.findOneAndDelete({ _id: req.params.id, institution: req.user.institution });
   if (!assignment) throw new ApiError(404, 'Assignment not found');
   res.json({ success: true, message: 'Assignment deleted' });
 });

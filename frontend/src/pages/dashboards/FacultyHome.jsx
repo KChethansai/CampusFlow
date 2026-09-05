@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { BookMarked, CalendarCheck, ClipboardList, Inbox, Megaphone } from 'lucide-react';
+import { BookMarked, CalendarCheck, ClipboardList, Inbox } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { Badge, Card, LoadingState, Stat } from '../../components/ui/primitives';
@@ -69,7 +69,7 @@ export default function FacultyHome() {
           { to: '/attendance', Icon: CalendarCheck, label: 'Take attendance', hint: 'Mark today’s classes' },
           { to: '/assignments', Icon: ClipboardList, label: 'Create assignment', hint: 'Publish in minutes' },
           { to: '/assignments', Icon: BookMarked, label: 'Review submissions', hint: `${gradeQueue.length} pending` },
-          { to: '/requests', Icon: Megaphone, label: 'Requests', hint: `${pendingRequests.length} awaiting you` }
+          { to: '/requests', Icon: Inbox, label: 'Requests', hint: `${pendingRequests.length} awaiting you` }
         ].map(({ to, Icon, label, hint }) => (
           <motion.div key={label} variants={staggerChild}>
             <Link to={to} className="block p-4 rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 hover:shadow-3 hover:-translate-y-0.5 transition-all">

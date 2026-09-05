@@ -36,6 +36,9 @@ export default function Placement() {
   const [appDetail, setAppDetail] = useState(null);
   const [showCompany, setShowCompany] = useState(false);
   const [showDrive, setShowDrive] = useState(false);
+  const [editingDrive, setEditingDrive] = useState(null);
+  const [editingCompany, setEditingCompany] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const companyForm = useForm({ defaultValues: { name: '', website: '', industry: '', hrContact: '' } });
   const driveForm = useForm({
@@ -67,7 +70,7 @@ export default function Placement() {
       const { data } = await api.post(`/job-applications/drives/${driveId}/apply`);
       const elig = data.eligibility || data.data?.eligibility;
       if (elig && elig.eligible === false) {
-        toast(`Applied with warnings: ${(elig.failures || []).join('; ') || 'check eligibility'}`, { icon: '⚠️' });
+        toast(`Applied with warnings: ${(elig.failures || []).join('; ') || 'check eligibility'}`, { icon: '!' });
       } else {
         toast.success('Application submitted');
       }
@@ -122,25 +125,80 @@ export default function Placement() {
 
   const onCreateCompany = async (form) => {
     try {
-      await api.post('/companies', form);
-      toast.success('Company added');
+      if (editingCompany) {
+        await api.patch(`/companies/${editingCompany._id}`, form);
+        toast.success('Company updated');
+      } else {
+        await api.post('/companies', form);
+        toast.success('Company added');
+      }
       setShowCompany(false);
+      setEditingCompany(null);
       companyForm.reset();
       fetchAll();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to add company');
+      toast.error(err.response?.data?.message || 'Failed to save company');
     }
+  };
+
+  const startEditCompany = (c) => {
+    setEditingCompany(c);
+    companyForm.reset({ name: c.name || '', website: c.website || '', industry: c.industry || '', hrContact: c.hrContact || '' });
+    setShowCompany(true);
   };
 
   const onCreateDrive = async (form) => {
     try {
-      await api.post('/job-drives', buildDrivePayload(form));
-      toast.success('Job drive created');
+      if (editingDrive) {
+        await api.patch(`/job-drives/${editingDrive._id}`, buildDrivePayload(form));
+        toast.success('Drive updated');
+      } else {
+        await api.post('/job-drives', buildDrivePayload(form));
+        toast.success('Job drive created');
+      }
       setShowDrive(false);
+      setEditingDrive(null);
       driveForm.reset();
       fetchAll();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create drive');
+      toast.error(err.response?.data?.message || 'Failed to save drive');
+    }
+  };
+
+  const startEditDrive = (d) => {
+    setEditingDrive(d);
+    setDetail(null);
+    driveForm.reset({
+      company: d.company?._id || d.company || '',
+      role: d.role || '',
+      jobType: d.jobType || 'full-time',
+      packageLPA: d.packageLPA ?? '',
+      location: d.location || '',
+      minCGPA: d.eligibility?.minCGPA ?? '',
+      maxBacklogs: d.eligibility?.maxBacklogs ?? '',
+      graduationYear: d.eligibility?.graduationYear ?? '',
+      applicationDeadline: d.applicationDeadline ? new Date(d.applicationDeadline).toISOString().slice(0, 10) : '',
+      status: d.status || 'active'
+    });
+    setShowDrive(true);
+  };
+
+  const askDelete = (kind, row) => setConfirmDelete({ kind, row });
+
+  const doDelete = async () => {
+    if (!confirmDelete) return;
+    const { kind, row } = confirmDelete;
+    setBusy(`del-${row._id}`);
+    try {
+      await api.delete(kind === 'drive' ? `/job-drives/${row._id}` : `/companies/${row._id}`);
+      toast.success(`${kind === 'drive' ? 'Drive' : 'Company'} deleted`);
+      if (kind === 'drive' && detail?._id === row._id) setDetail(null);
+      setConfirmDelete(null);
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -166,7 +224,8 @@ export default function Placement() {
   const TABS = [
     { key: 'board', label: isStudent ? 'My journey' : 'Pipeline' },
     { key: 'market', label: 'Marketplace' },
-    { key: 'apps', label: isStudent ? 'My applications' : 'Applicants' }
+    { key: 'apps', label: isStudent ? 'My applications' : 'Applicants' },
+    ...(isStaff ? [{ key: 'companies', label: 'Companies' }] : [])
   ];
 
   return (
@@ -287,6 +346,24 @@ export default function Placement() {
               </ul>
             </Card>
           )}
+
+          {tab === 'companies' && isStaff && (
+            <Card className="overflow-hidden p-0">
+              <ul className="divide-y divide-[var(--cf-line)]">
+                {companies.map((c) => (
+                  <li key={c._id} className="px-4 py-3.5 flex items-center gap-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium truncate">{c.name}</span>
+                      <span className="block text-xs text-[var(--cf-ink-mute)] truncate">{c.industry || ''}{c.website ? ` · ${c.website.replace(/^https?:\/\//, '')}` : ''}</span>
+                    </span>
+                    <button onClick={() => startEditCompany(c)} className={btnClass('outline', 'small')}>Edit</button>
+                    <button onClick={() => askDelete('company', c)} className={btnClass('danger', 'small')}>Delete</button>
+                  </li>
+                ))}
+                {companies.length === 0 && <li><EmptyState title="No companies yet" hint="Add the first hiring partner." /></li>}
+              </ul>
+            </Card>
+          )}
         </>
       )}
 
@@ -327,6 +404,12 @@ export default function Placement() {
                 {busy === `apply-${detail._id}` ? 'Applying…' : 'Apply now'}
               </button>
             )}
+            {isStaff && (
+              <div className="flex gap-2">
+                <button onClick={() => startEditDrive(detail)} className={btnClass('outline', 'medium') + ' flex-1'}>Edit drive</button>
+                <button onClick={() => askDelete('drive', detail)} className={btnClass('danger', 'medium') + ' flex-1'}>Delete</button>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -355,20 +438,20 @@ export default function Placement() {
         )}
       </Modal>
 
-      {/* Staff create modals */}
-      <Modal open={showCompany} onClose={() => setShowCompany(false)} title="Add company">
+      {/* Staff create/edit modals */}
+      <Modal open={showCompany} onClose={() => { setShowCompany(false); setEditingCompany(null); companyForm.reset(); }} title={editingCompany ? 'Edit company' : 'Add company'}>
         <form onSubmit={companyForm.handleSubmit(onCreateCompany)} className="space-y-3">
           {['name', 'website', 'industry', 'hrContact'].map((f) => (
             <div key={f}>
               <label className={labelClass} htmlFor={`co-${f}`}>{f === 'hrContact' ? 'HR contact' : f[0].toUpperCase() + f.slice(1)}</label>
-              <input id={`co-${f}`} className={inputClass} {...companyForm.register(f, { required: f === 'name' })} />
+              <input id={`co-${f}`} className={inputClass} placeholder={f === 'website' ? 'https://example.com' : undefined} {...companyForm.register(f, { required: f === 'name' })} />
             </div>
           ))}
-          <button type="submit" className={btnClass('success', 'medium') + ' w-full'}>Add company</button>
+          <button type="submit" className={btnClass('success', 'medium') + ' w-full'}>{editingCompany ? 'Save changes' : 'Add company'}</button>
         </form>
       </Modal>
 
-      <Modal open={showDrive} onClose={() => setShowDrive(false)} title="Post drive" wide>
+      <Modal open={showDrive} onClose={() => { setShowDrive(false); setEditingDrive(null); driveForm.reset(); }} title={editingDrive ? 'Edit drive' : 'Post drive'} wide>
         <form onSubmit={driveForm.handleSubmit(onCreateDrive)} className="grid sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="dr-company">Company</label>
@@ -400,11 +483,40 @@ export default function Placement() {
             <input id="dr-cgpa" type="number" step="0.1" className={inputClass} {...driveForm.register('minCGPA')} />
           </div>
           <div>
+            <label className={labelClass} htmlFor="dr-backlogs">Max backlogs</label>
+            <input id="dr-backlogs" type="number" className={inputClass} {...driveForm.register('maxBacklogs')} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-year">Graduation year</label>
+            <input id="dr-year" type="number" className={inputClass} placeholder="2026" {...driveForm.register('graduationYear')} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="dr-status">Status</label>
+            <select id="dr-status" className={selectClass} {...driveForm.register('status')}>
+              {['active', 'closed', 'archived'].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
             <label className={labelClass} htmlFor="dr-deadline">Deadline</label>
             <input id="dr-deadline" type="date" className={inputClass} {...driveForm.register('applicationDeadline')} />
           </div>
-          <button type="submit" className={btnClass('success', 'medium') + ' sm:col-span-2'}>Post drive</button>
+          <button type="submit" className={btnClass('success', 'medium') + ' sm:col-span-2'}>{editingDrive ? 'Save changes' : 'Post drive'}</button>
         </form>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal open={Boolean(confirmDelete)} onClose={() => setConfirmDelete(null)} title={`Delete ${confirmDelete?.kind === 'drive' ? 'drive' : 'company'}?`}>
+        <p className="text-sm text-[var(--cf-ink-soft)]">
+          {confirmDelete?.kind === 'drive'
+            ? `“${confirmDelete?.row.role}” and its pipeline view will be removed. Applications already submitted are kept.`
+            : `“${confirmDelete?.row.name}” will be removed from the directory.`}
+        </p>
+        <div className="flex gap-2 mt-5">
+          <button onClick={() => setConfirmDelete(null)} className={btnClass('outline', 'medium') + ' flex-1'}>Keep</button>
+          <button onClick={doDelete} disabled={busy === `del-${confirmDelete?.row._id}`} className={btnClass('danger', 'medium') + ' flex-1'}>
+            {busy === `del-${confirmDelete?.row._id}` ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
       </Modal>
     </div>
   );

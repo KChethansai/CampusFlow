@@ -1,6 +1,6 @@
 // Dashboard: routes each role to its command center. No metric-card grid.
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../store/useAuth';
+import { Forbidden } from '../components/routing/ProtectedRoute';
 import StudentHome from './dashboards/StudentHome';
 import FacultyHome from './dashboards/FacultyHome';
 import AdminHome from './dashboards/AdminHome';
@@ -19,7 +19,8 @@ function Dashboard() {
     case 'college_admin':
       return <AdminHome />;
     default:
-      return <Navigate to="/login" replace />;
+      // Authenticated but role unknown — real 403, never a login loop.
+      return <Forbidden />;
   }
 }
 

@@ -1,4 +1,5 @@
-// NotificationsCenter: grouped inbox (Academic/Placement/Requests/Campus/System).
+// NotificationsCenter: grouped inbox — server notifications plus live campus
+// announcements/events (real endpoints, not keyword guesses).
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
@@ -7,11 +8,11 @@ import api from '../api/axios';
 import { motionVariants } from '../system/motion';
 
 const groupOf = (n) => {
+  if (n._campus) return 'Campus';
   const t = `${n.title ?? ''} ${n.message ?? ''} ${n.type ?? ''}`.toLowerCase();
   if (/assign|grade|attend|subject|course|exam/.test(t)) return 'Academic';
   if (/placement|drive|offer|interview|application|company/.test(t)) return 'Placement';
   if (/request|leave|bonafide|revaluation|approv/.test(t)) return 'Requests';
-  if (/event|announce|campus/.test(t)) return 'Campus';
   return 'System';
 };
 
@@ -24,21 +25,55 @@ export default function NotificationsCenter() {
   const [filter, setFilter] = useState('All');
   const unread = items.filter((n) => !n.isRead).length;
 
+  const refresh = async () => {
+    const [n, a, e] = await Promise.allSettled([
+      api.get('/notifications'),
+      api.get('/announcements'),
+      api.get('/events')
+    ]);
+    const rows = n.status === 'fulfilled' ? [...(n.value.data.data || [])] : [];
+    if (a.status === 'fulfilled') {
+      (a.value.data.data || []).slice(0, 5).forEach((x) => rows.push({
+        _id: `an-${x._id}`, _campus: true, isRead: true,
+        title: x.title, message: x.body, link: '/events'
+      }));
+    }
+    if (e.status === 'fulfilled') {
+      const now = Date.now();
+      (e.value.data.data || [])
+        .filter((x) => !x.startAt || new Date(x.startAt).getTime() >= now - 86400000)
+        .slice(0, 5)
+        .forEach((x) => rows.push({
+          _id: `ev-${x._id}`, _campus: true, isRead: true,
+          title: x.title,
+          message: x.startAt ? `Starts ${new Date(x.startAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : '',
+          link: '/events'
+        }));
+    }
+    setItems(rows);
+  };
+
   useEffect(() => {
     if (!open || items.length) return;
-    api.get('/notifications').then(({ data }) => setItems(data.data || [])).catch(() => {});
+    refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open ]);
 
   // Poll unread count lightly while mounted.
   useEffect(() => {
-    const id = setInterval(() => {
-      api.get('/notifications').then(({ data }) => setItems(data.data || [])).catch(() => {});
-    }, 60000);
+    const id = setInterval(refresh, 60000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => clearInterval(id);
   }, []);
 
   const openItem = async (n) => {
+    if (n._campus) {
+      if (n.link?.startsWith('/')) {
+        setOpen(false);
+        navigate(n.link);
+      }
+      return;
+    }
     if (!n.isRead) {
       try {
         await api.patch(`/notifications/${n._id}/read`);

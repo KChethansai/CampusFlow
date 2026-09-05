@@ -28,18 +28,23 @@ app.use(express.urlencoded({ extended: true }))
 app.use(mongoSanitize())
 app.use(rejectUnsafePayload)
 
-// stricter limit for credential endpoints
-const authLimiter = rateLimit({
+// stricter per-endpoint limits for credential endpoints (separate instances
+// so one endpoint's traffic never starves another's budget)
+const credentialLimiter = (message) => rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many login attempts, please try again later' }
+  message: { message }
 })
 
 app.use('/uploads', express.static(path.join(__dirname, env.upload.dir)))
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }))
-app.use('/api/v1/auth/login', authLimiter)
+app.use('/api/v1/auth/login', credentialLimiter('Too many login attempts, please try again later'))
+app.use('/api/v1/auth/register', credentialLimiter('Too many requests, please try again later'))
+app.use('/api/v1/auth/refresh', credentialLimiter('Too many requests, please try again later'))
+app.use('/api/v1/auth/forgot-password', credentialLimiter('Too many requests, please try again later'))
+app.use('/api/v1/auth/reset-password', credentialLimiter('Too many requests, please try again later'))
 app.use('/api/v1', routes)
 
 app.use(notFound)
