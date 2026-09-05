@@ -1,11 +1,19 @@
 import mongoose from 'mongoose';
 import { AttendanceSessionModel as AttendanceSession } from '../models/AttendanceSessionModel.js';
+import { SubjectModel as Subject } from '../models/SubjectModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
+import { scopedOne } from '../utils/scope.js';
 
 // Mark (create) an attendance session
 export const markSession = asyncHandler(async (req, res) => {
   const { subject, date, period, records } = req.body;
+
+  // Subject must belong to the caller's institution.
+  const subjectDoc = await Subject.findOne({ _id: subject, institution: req.user.institution });
+  if (!subjectDoc) {
+    throw new ApiError(404, 'Subject not found');
+  }
 
   const session = await AttendanceSession.create({
     institution: req.user.institution,
@@ -34,18 +42,24 @@ export const getSessions = asyncHandler(async (req, res) => {
     .populate('subject')
     .populate('markedBy');
 
+  // Students see only their own rows (peer records stay private).
+  if (req.user.role === 'student') {
+    const mine = sessions.map((s) => {
+      const obj = s.toObject();
+      obj.records = (obj.records || []).filter(
+        (r) => String(r.student) === String(req.user._id)
+      );
+      return obj;
+    });
+    return res.json({ success: true, data: mine });
+  }
+
   res.json({ success: true, data: sessions });
 });
 
-// Get single session by ID
+// Get single session by ID (tenant-scoped)
 export const getSessionById = asyncHandler(async (req, res) => {
-  const session = await AttendanceSession.findById(req.params.id)
-    .populate('subject')
-    .populate('markedBy');
-
-  if (!session) {
-    throw new ApiError(404, 'Attendance session not found');
-  }
+  const session = await scopedOne(AttendanceSession, req, req.params.id, ['subject', 'markedBy']);
 
   res.json({ success: true, data: session });
 });
@@ -53,6 +67,12 @@ export const getSessionById = asyncHandler(async (req, res) => {
 // Aggregate attendance for a single student across subjects
 export const getStudentAttendance = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
+
+  // Students may only query themselves; staff stay within the tenant
+  // (the aggregate below is institution-matched).
+  if (req.user.role === 'student' && String(studentId) !== String(req.user._id)) {
+    throw new ApiError(403, 'Access denied');
+  }
 
   const attendance = await AttendanceSession.aggregate([
     {

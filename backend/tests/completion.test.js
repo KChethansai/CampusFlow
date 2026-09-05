@@ -61,7 +61,7 @@ beforeAll(async () => {
     durationYears: 4,
     totalSemesters: 8
   });
-  company = await Company.create({ name: 'Acme Corp', website: 'acme.dev', institution: institution._id });
+  company = await Company.create({ name: 'Acme Corp', website: 'https://acme.dev', institution: institution._id });
   drive = await JobDrive.create({
     company: company._id,
     role: 'SDE Intern',
@@ -216,10 +216,10 @@ describe('Placement staff edits (PATCH)', () => {
     const updatedCompany = await request(app)
       .patch(`/api/v1/companies/${company._id}`)
       .set('Authorization', `Bearer ${officerToken}`)
-      .send({ industry: 'Software', website: 'acme.example.com' });
+      .send({ industry: 'Software', website: 'https://acme.example.com' });
     expect(updatedCompany.status).toBe(200);
     expect(updatedCompany.body.data.industry).toBe('Software');
-    expect(updatedCompany.body.data.website).toBe('acme.example.com');
+    expect(updatedCompany.body.data.website).toBe('https://acme.example.com');
   });
 
   it('blocks students from editing placement resources', async () => {

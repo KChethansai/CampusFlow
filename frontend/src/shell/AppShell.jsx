@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from '../store/useAuth';
 import { useTheme } from '../system/theme';
-import { MOBILE_NAV, visibleNav } from './navigation';
+import { visibleMobileNav, visibleNav } from './navigation';
 import CommandPalette, { useCommandPalette } from './CommandPalette';
 import NotificationsCenter from './NotificationsCenter';
 import QuickAction from './QuickAction';
@@ -176,7 +176,7 @@ export default function AppShell() {
       {/* Mobile bottom nav */}
       <nav aria-label="Mobile sections" className="lg:hidden fixed bottom-0 inset-x-0 z-40 cf-glass border-t border-[var(--cf-line)]">
         <div className="grid grid-cols-5 max-w-lg mx-auto">
-          {MOBILE_NAV.map(({ label, to, Icon }) => (
+          {visibleMobileNav(user?.role).map(({ label, to, Icon }) => (
             <NavLink
               key={to}
               to={to}

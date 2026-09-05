@@ -21,8 +21,11 @@ import Placement from './pages/placement/Placement';
 import Requests from './pages/requests/Requests';
 import Profile from './pages/Profile';
 import Directory from './pages/Directory';
+import Events from './pages/Events';
+import Study from './pages/Study';
 
 const adminRoles = ['super_admin', 'college_admin'];
+const learnRoles = [...adminRoles, 'faculty', 'student'];
 
 function HomeRoute() {
   const { isAuthenticated } = useAuth();
@@ -53,8 +56,16 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/directory" element={<Directory />} />
+        <Route path="/events" element={<Events />} />
+        <Route
+          path="/study"
+          element={
+            <ProtectedRoute allowedRoles={learnRoles}>
+              <Study />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/users"
@@ -139,6 +150,16 @@ function App() {
           }
         />
       </Route>
+
+      {/* Onboarding: authenticated but outside the app shell */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

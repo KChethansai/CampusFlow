@@ -90,6 +90,9 @@ export default function Onboarding() {
           <button onClick={finish} className={btnClass('glow', 'large') + ' flex-1'}>Enter CampusFlow</button>
         )}
       </div>
+      <p className="mt-4 text-[11px] text-center text-[var(--cf-ink-mute)]">
+        Preferences are saved on this device. Official records (roll number, department, enrollment) are managed by your administrator.
+      </p>
     </AuthLayout>
   );
 }

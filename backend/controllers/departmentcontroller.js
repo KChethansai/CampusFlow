@@ -1,6 +1,7 @@
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
+import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../utils/scope.js';
 
 // Create department
 export const createDepartment = asyncHandler(async (req, res) => {
@@ -17,31 +18,35 @@ export const createDepartment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: department });
 });
 
-// List all departments scoped to institution
+// List all departments scoped to institution (paginated)
 export const getAllDepartments = asyncHandler(async (req, res) => {
-  const departments = await Department.find({ institution: req.user.institution })
-    .populate('hod');
+  const { page, limit, skip } = pageParams(req);
+  const filter = tenantFilter(req);
+  const [departments, total] = await Promise.all([
+    Department.find(filter).populate('hod').skip(skip).limit(limit),
+    Department.countDocuments(filter),
+  ]);
 
-  res.json({ success: true, data: departments });
+  pagedResponse(res, departments, total, { page, limit });
 });
 
-// Get single department by ID
+// Get single department by ID (tenant-scoped)
 export const getDepartmentById = asyncHandler(async (req, res) => {
-  const department = await Department.findById(req.params.id).populate('hod');
-
-  if (!department) {
-    throw new ApiError(404, 'Department not found');
-  }
+  const department = await scopedOne(Department, req, req.params.id, 'hod');
 
   res.json({ success: true, data: department });
 });
 
-// Update department
+// Update department (tenant-scoped, allowlisted)
 export const updateDepartment = asyncHandler(async (req, res) => {
-  const department = await Department.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const department = await Department.findOneAndUpdate(
+    { _id: req.params.id, institution: req.user.institution },
+    pick(req.body, ['name', 'code', 'hod', 'description', 'isActive']),
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
   if (!department) {
     throw new ApiError(404, 'Department not found');
@@ -50,9 +55,12 @@ export const updateDepartment = asyncHandler(async (req, res) => {
   res.json({ success: true, data: department });
 });
 
-// Delete department
+// Delete department (tenant-scoped)
 export const deleteDepartment = asyncHandler(async (req, res) => {
-  const department = await Department.findByIdAndDelete(req.params.id);
+  const department = await Department.findOneAndDelete({
+    _id: req.params.id,
+    institution: req.user.institution,
+  });
 
   if (!department) {
     throw new ApiError(404, 'Department not found');

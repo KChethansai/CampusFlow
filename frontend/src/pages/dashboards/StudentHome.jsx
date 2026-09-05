@@ -54,20 +54,25 @@ export default function StudentHome() {
     return assignments.filter((x) => x.dueDate && new Date(x.dueDate).getTime() < now && !['graded', 'closed', 'archived'].includes(x.status));
   }, [assignments]);
 
+  // /attendance/student/:id returns per-subject aggregates:
+  // [{subject, subjectId, totalSessions, present, absent, late, percentage}]
   const health = useMemo(() => {
-    const recs = attendance.flatMap((s) => s.records || (Array.isArray(s) ? [s] : []));
-    if (!recs.length) return null;
-    const present = recs.filter((r) => r.status === 'present' || r.status === 'late').length;
-    return Math.round((present / recs.length) * 100);
+    const total = attendance.reduce((n, s) => n + (s.totalSessions || 0), 0);
+    if (!total) return null;
+    const present = attendance.reduce((n, s) => n + (s.present || 0) + (s.late || 0), 0);
+    return Math.round((present / total) * 100);
+  }, [attendance]);
+
+  const weakest = useMemo(() => {
+    return [...attendance]
+      .filter((s) => s.totalSessions > 0)
+      .sort((a, b) => (a.percentage ?? 100) - (b.percentage ?? 100))
+      .slice(0, 3);
   }, [attendance]);
 
   const trend = useMemo(() => {
-    // Per-session present-rate trend (last 8 sessions).
-    return attendance.slice(-8).map((s) => {
-      const recs = s.records || [];
-      if (!recs.length) return 0;
-      return Math.round((recs.filter((r) => r.status === 'present').length / recs.length) * 100);
-    });
+    // Aggregates carry no time series — show per-subject rates instead.
+    return attendance.filter((s) => s.totalSessions > 0).map((s) => Math.round(s.percentage ?? 0));
   }, [attendance]);
 
   const hour = new Date().getHours();
@@ -145,8 +150,21 @@ export default function StudentHome() {
                 <AttendanceRing value={health} />
                 {trend.length > 1 && (
                   <div className="mt-3">
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1">Recent trend</p>
+                    <p className="text-[11px] uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1">By subject</p>
                     <Sparkline points={trend} />
+                  </div>
+                )}
+                {weakest.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[11px] uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Watch list</p>
+                    <ul className="space-y-1.5">
+                      {weakest.map((w) => (
+                        <li key={w.subjectId} className="flex items-center justify-between text-xs">
+                          <Link to="/study" className="font-medium truncate hover:text-primary-600 transition">{w.subject}</Link>
+                          <span className="text-[var(--cf-ink-mute)]">{Math.round(w.percentage ?? 0)}%</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </>

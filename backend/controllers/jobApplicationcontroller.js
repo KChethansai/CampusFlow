@@ -2,9 +2,14 @@ import { JobApplicationModel as JobApplication } from '../models/JobApplicationM
 import { JobDriveModel as JobDrive } from '../models/JobDriveModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
+import { pageParams, pagedResponse, pick } from '../utils/scope.js';
+import { cleanUrl } from '../utils/sanitize.js';
 
-// List job applications scoped to role and institution
+// List job applications scoped to role and institution (paginated).
+// Applications carry no institution field, so staff visibility is derived
+// from the drives in their tenant.
 export const getAllJobApplications = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   let query = {};
 
   if (req.user.role === 'student') {
@@ -17,19 +22,26 @@ export const getAllJobApplications = asyncHandler(async (req, res) => {
     query = { drive: { $in: drives.map((d) => d._id) } };
   }
 
-  const jobApplications = await JobApplication.find(query)
-    .populate('drive')
-    .populate('student')
-    .sort('-createdAt');
-  res.json({ success: true, data: jobApplications });
+  const [jobApplications, total] = await Promise.all([
+    JobApplication.find(query)
+      .populate('drive')
+      .populate('student')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limit),
+    JobApplication.countDocuments(query),
+  ]);
+  pagedResponse(res, jobApplications, total, { page, limit });
 });
 
-// Get single job application
+// Get single job application (tenant-scoped through the drive)
 export const getJobApplicationById = asyncHandler(async (req, res) => {
   const jobApplication = await JobApplication.findById(req.params.id)
     .populate('drive')
     .populate('student');
-  if (!jobApplication) throw new ApiError(404, 'Job application not found');
+  if (!jobApplication || String(jobApplication.drive?.institution) !== String(req.user.institution)) {
+    throw new ApiError(404, 'Job application not found');
+  }
   res.json({ success: true, data: jobApplication });
 });
 
@@ -49,7 +61,7 @@ export const createJobApplication = asyncHandler(async (req, res) => {
     drive,
     student: req.user._id,
     stage: 'applied',
-    resumeUrl,
+    resumeUrl: cleanUrl(resumeUrl, 'resumeUrl'),
     history: [
       { stage: 'applied', at: new Date(), remarks: 'Application submitted' }
     ]
@@ -57,13 +69,17 @@ export const createJobApplication = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: jobApplication });
 });
 
-// Update job application (placement officer updates stage)
+// Update job application (placement officer updates stage — tenant-scoped
+// through the drive, allowlisted to stage/outcome fields only)
 export const updateJobApplication = asyncHandler(async (req, res) => {
+  const existing = await JobApplication.findById(req.params.id).populate('drive');
+  if (!existing || String(existing.drive?.institution) !== String(req.user.institution)) {
+    throw new ApiError(404, 'Job application not found');
+  }
   const jobApplication = await JobApplication.findByIdAndUpdate(
     req.params.id,
-    req.body,
+    pick(req.body, ['stage', 'outcome', 'offerPackageLPA', 'history']),
     { new: true, runValidators: true }
   );
-  if (!jobApplication) throw new ApiError(404, 'Job application not found');
   res.json({ success: true, data: jobApplication });
 });

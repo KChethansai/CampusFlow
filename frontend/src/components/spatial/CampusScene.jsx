@@ -91,13 +91,25 @@ export function CampusSceneInner({ onHover, autoRotate }) {
   );
 }
 
-export default function CampusScene({ onHover, autoRotate = true, className, style }) {
+export default function CampusScene({ onHover, autoRotate = true, className, style, onContextLost, onContextRestored }) {
   return (
     <div className={className} style={style}>
       <Canvas
-        dpr={[1, 1.75]}
+        dpr={[1, 1.5]}
         camera={{ position: [5.2, 4.2, 6.4], fov: 42 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          const el = gl.domElement;
+          // Browsers reclaim GPU contexts under pressure (tab switch, sleep,
+          // weak hardware). Recover gracefully instead of freezing a dead canvas.
+          el.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault(); // allows a later restore
+            onContextLost?.();
+          });
+          el.addEventListener('webglcontextrestored', () => {
+            onContextRestored?.();
+          });
+        }}
       >
         <CampusSceneInner onHover={onHover} autoRotate={autoRotate} />
       </Canvas>

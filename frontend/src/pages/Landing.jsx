@@ -1,7 +1,7 @@
 // Landing: NOTA-grade editorial narrative — one promise per viewport,
-// scroll-scrubbed 3D hero, statement splits, counter slider, kit, prospectus.
+// scroll-scrubbed 3D hero, statement splits, journey, kit. Every CTA is real.
 // Original copy throughout; NOTA supplies structure and craft, never content.
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import {
@@ -17,9 +17,7 @@ import {
   Users
 } from 'lucide-react';
 import SpatialCanvas from '../components/spatial/SpatialCanvas';
-import { CounterCarousel, MagneticButton, Marquee, Preloader, SplitReveal } from '../components/ui/editorial';
-import { Modal } from '../components/ui/Modal';
-import { Input } from '../components/ui/primitives';
+import { MagneticButton, Preloader, SplitReveal } from '../components/ui/editorial';
 import { useTheme } from '../system/theme';
 import { btnClass, cardClass, cn } from '../system/tokens';
 
@@ -28,7 +26,7 @@ const NAV = [
   { label: "Who it's for", href: '#audience' },
   { label: 'Campus', href: '#campus' },
   { label: 'Inside', href: '#inside' },
-  { label: 'Stories', href: '#stories' }
+  { label: 'Journey', href: '#journey' }
 ];
 
 const SPECS = [
@@ -50,13 +48,11 @@ const SPLITS = [
   { n: '04', Icon: Sparkles, claim: ['Quiet intelligence,', '<em>loud clarity.</em>'], body: 'Attendance dips, placement surges, at-risk cohorts — surfaced with reasons and next actions, then out of your way.', tint: 'from-amber-500/20 via-amber-500/5 to-transparent' }
 ];
 
-const RECRUITERS = ['Infosys', 'TCS', 'Wipro', 'Zoho', 'Freshworks', 'Flipkart', 'Razorpay', 'CRED', 'Swiggy', 'L&T'];
-
-const STORIES = [
-  { quote: 'Attendance stopped being a fight. I mark it walking out of class and the patterns just appear.', who: 'Faculty, Computer Science', tint: 'from-primary-500/20 to-transparent' },
-  { quote: 'I stopped checking five portals. My morning is one screen: what’s due, where I stand, what’s open.', who: 'Student, 3rd year', tint: 'from-accent-violet/20 to-transparent' },
-  { quote: 'Our drive pipeline went from spreadsheets to a board everyone trusts. Offers are up a third.', who: 'Placement Officer', tint: 'from-green-500/20 to-transparent' },
-  { quote: 'For the first time I can see the whole institution on a Monday morning and know what needs me.', who: 'College Admin', tint: 'from-amber-500/20 to-transparent' }
+const JOURNEY = [
+  { n: '01', title: 'Enroll', body: 'Admissions, departments and courses — one record per student from day one.' },
+  { n: '02', title: 'Learn', body: 'Attendance, assignments and feedback flow into a living academic profile.' },
+  { n: '03', title: 'Get placed', body: 'Drives, eligibility and interviews move down a visible pipeline.' },
+  { n: '04', title: 'See clearly', body: 'Every step leaves evidence — reports, timelines and insight, not guesses.' }
 ];
 
 const KIT = [
@@ -66,54 +62,13 @@ const KIT = [
   { title: 'Intelligence', body: 'Signals with evidence. What changed, why, what next.' }
 ];
 
-function EnquireModal({ open, onClose }) {
-  const [state, setState] = useState('idle');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const submit = (e) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) { setState('required'); return; }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setState('error'); return; }
-    try { localStorage.setItem('cf_enquiry', JSON.stringify({ name, email, at: new Date().toISOString() })); } catch { /* ignore */ }
-    setState('success');
-  };
-  return (
-    <Modal open={open} onClose={onClose} title="Book a campus tour">
-      {state === 'success' ? (
-        <div className="text-center py-6">
-          <p className="cf-display italic text-3xl">All set.</p>
-          <p className="mt-2 text-sm text-[var(--cf-ink-mute)]">We’ll be in touch shortly, {name.split(' ')[0] || 'friend'}.</p>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="space-y-3" noValidate>
-          <Input label="Your name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Aarav Sharma"
-            error={state === 'required' && !name.trim() ? 'This field is required' : undefined} />
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@institution.edu"
-            error={state === 'required' && !email.trim() ? 'This field is required' : state === 'error' ? 'That email doesn’t look right — try again' : undefined} />
-          <button type="submit" className={cn(btnClass('glow', 'large'), 'w-full')}>Request tour <ArrowUpRight size={16} /></button>
-        </form>
-      )}
-    </Modal>
-  );
-}
-
 export default function Landing() {
   const { theme, toggle } = useTheme();
-  const [enquire, setEnquire] = useState(false);
-  const [prospect, setProspect] = useState('idle');
-  const [prospectEmail, setProspectEmail] = useState('');
   const heroRef = useRef(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, reduced ? 1 : 1.12]);
   const heroFade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  const prospectSubmit = (e) => {
-    e.preventDefault();
-    if (!prospectEmail.trim()) { setProspect('required'); return; }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(prospectEmail)) { setProspect('error'); return; }
-    setProspect('success');
-  };
 
   return (
     <div className="min-h-screen bg-[var(--cf-bg)] text-[var(--cf-ink)]">
@@ -135,8 +90,8 @@ export default function Landing() {
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <Link to="/login" className="hidden sm:block text-sm font-medium px-3 py-2 rounded-full hover:bg-black/[.05] dark:hover:bg-white/10 transition">Sign in</Link>
-            <MagneticButton onClick={() => setEnquire(true)} className={cn(btnClass('primary', 'small'))}>
-              Apply now <ArrowUpRight size={14} />
+            <MagneticButton className={cn(btnClass('primary', 'small'))}>
+              <Link to="/signup" className="flex items-center gap-1">Apply now <ArrowUpRight size={14} /></Link>
             </MagneticButton>
           </div>
         </div>
@@ -155,8 +110,8 @@ export default function Landing() {
               people and insight, moving together in real time.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <MagneticButton onClick={() => setEnquire(true)} className={cn(btnClass('glow', 'large'))}>
-                Explore CampusFlow <ArrowRight size={17} />
+              <MagneticButton className={cn(btnClass('glow', 'large'))}>
+                <Link to="/signup" className="flex items-center gap-2">Explore CampusFlow <ArrowRight size={17} /></Link>
               </MagneticButton>
               <a href="#campus" className={cn(btnClass('outline', 'large'))}>See how it works</a>
             </div>
@@ -221,28 +176,19 @@ export default function Landing() {
           ))}
         </div>
 
-        {/* Recruiter marquee */}
-        <section className="py-16 sm:py-20" aria-label="Hiring partners">
-          <p className="cf-kicker text-center mb-6">Hiring on CampusFlow</p>
-          <Marquee label="Hiring partners">
-            {RECRUITERS.map((r) => (
-              <span key={r} className="px-6 py-3 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)] text-sm font-semibold whitespace-nowrap">{r}</span>
+        {/* Journey — what the product actually does, step by step */}
+        <section id="journey" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24" aria-label="How CampusFlow works">
+          <p className="cf-kicker">How it works</p>
+          <SplitReveal className="cf-statement-sm mt-3 max-w-2xl" lines={['From admission', 'to <em>offer letter.</em>']} />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
+            {JOURNEY.map((j) => (
+              <article key={j.n} className={cn(cardClass, 'p-6')}>
+                <p className="cf-display italic text-4xl opacity-30" aria-hidden>{j.n}</p>
+                <h3 className="font-semibold mt-2">{j.title}</h3>
+                <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">{j.body}</p>
+              </article>
             ))}
-          </Marquee>
-        </section>
-
-        {/* Stories slider */}
-        <section id="stories" className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24" aria-label="Stories">
-          <p className="cf-kicker">Stories</p>
-          <CounterCarousel
-            label="Campus voices"
-            slides={STORIES.map((s) => (
-              <figure className={cn('rounded-3xl border border-[var(--cf-line)] bg-gradient-to-br p-8 sm:p-12 cf-grain', s.tint)}>
-                <blockquote className="cf-statement-sm">“{s.quote}”</blockquote>
-                <figcaption className="mt-5 text-sm text-[var(--cf-ink-mute)]">{s.who}</figcaption>
-              </figure>
-            ))}
-          />
+          </div>
         </section>
 
         {/* Inside the box */}
@@ -260,27 +206,15 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Prospectus */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center" aria-label="Stay ahead">
-          <p className="cf-kicker">Stay ahead</p>
-          <h2 className="cf-statement-sm mt-3">Admissions open. <em>Get the prospectus.</em></h2>
-          {prospect === 'success' ? (
-            <p className="mt-6 text-sm">All set. We’ll keep you posted.</p>
-          ) : (
-            <form onSubmit={prospectSubmit} className="mt-6 flex flex-col sm:flex-row gap-2 max-w-md mx-auto" noValidate>
-              <input
-                type="email"
-                value={prospectEmail}
-                onChange={(e) => setProspectEmail(e.target.value)}
-                placeholder="you@example.com"
-                aria-label="Email for prospectus"
-                className="flex-1 px-4 py-3 rounded-full text-sm bg-[var(--cf-surface)] border border-[var(--cf-line)] focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <button type="submit" className={cn(btnClass('primary', 'medium'))}>Notify me</button>
-            </form>
-          )}
-          {prospect === 'required' && <p role="alert" className="mt-2 text-xs">This field is required.</p>}
-          {prospect === 'error' && <p role="alert" className="mt-2 text-xs">Something went wrong! Try again.</p>}
+        {/* Get started — real signup, real product */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center" aria-label="Get started">
+          <p className="cf-kicker">Begin</p>
+          <h2 className="cf-statement-sm mt-3">Your campus, <em>finally in focus.</em></h2>
+          <p className="mt-3 text-[var(--cf-ink-mute)] max-w-md mx-auto">Create an account and step into the operating system — students, faculty and staff each get their own command center.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link to="/signup" className={cn(btnClass('glow', 'large'))}>Create account <ArrowRight size={17} /></Link>
+            <Link to="/login" className={cn(btnClass('outline', 'large'))}>Sign in</Link>
+          </div>
         </section>
       </main>
 
@@ -297,7 +231,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      <EnquireModal open={enquire} onClose={() => setEnquire(false)} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken, sha256, randomTo
 import { sendPasswordResetEmail, isSmtpConfigured } from '../services/email.service.js';
 import { createNotification } from '../services/notification.service.js';
 import { logActivity } from '../services/activityLog.service.js';
+import { env } from '../config/env.js';
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -29,7 +30,7 @@ export const login = asyncHandler(async (req, res) => {
   await RefreshToken.create({
     user: user._id,
     tokenHash: sha256(refreshToken),
-    expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000),
+    expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000),
     userAgent: req.headers['user-agent'],
     ip: req.ip
   });
@@ -65,19 +66,26 @@ export const refresh = asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Invalid or expired refresh token');
   }
 
+  if (payload.type !== 'refresh') {
+    throw new ApiError(401, 'Invalid or expired refresh token');
+  }
+
   const stored = await RefreshToken.findOne({
     user: payload.sub,
     tokenHash: sha256(refreshToken),
     revokedAt: { $exists: false }
   });
 
-  if (!stored) {
+  if (!stored || (stored.expiresAt && stored.expiresAt.getTime() <= Date.now())) {
     await RefreshToken.updateMany({ user: payload.sub }, { revokedAt: new Date() });
     throw new ApiError(401, 'Token reuse detected. All sessions revoked. Please log in again.');
   }
 
   stored.revokedAt = new Date();
   const user = await User.findById(payload.sub);
+  if (!user || !user.isActive) {
+    throw new ApiError(401, 'Invalid or expired refresh token');
+  }
   const newAccessToken = signAccessToken(user);
   const newRefreshToken = signRefreshToken(user);
 
@@ -87,7 +95,7 @@ export const refresh = asyncHandler(async (req, res) => {
   await RefreshToken.create({
     user: user._id,
     tokenHash: sha256(newRefreshToken),
-    expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000)
+    expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000)
   });
 
   res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
@@ -100,6 +108,16 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Invalid role');
   }
 
+  // Privilege-escalation guard: only a super_admin may mint super_admins,
+  // and non-super callers cannot place users outside their own institution.
+  const callerIsSuper = req.user.role === 'super_admin';
+  if (role === 'super_admin' && !callerIsSuper) {
+    throw new ApiError(403, 'Only super_admin can create super_admin users');
+  }
+  const resolvedInstitution = callerIsSuper
+    ? (institution || req.user.institution)
+    : req.user.institution;
+
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new ApiError(409, 'Email already registered');
@@ -110,7 +128,7 @@ export const register = asyncHandler(async (req, res) => {
     email,
     password,
     role,
-    institution,
+    institution: resolvedInstitution,
     department,
     profile,
     isEmailVerified: true
@@ -122,7 +140,7 @@ export const register = asyncHandler(async (req, res) => {
   await RefreshToken.create({
     user: user._id,
     tokenHash: sha256(refreshToken),
-    expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000),
+    expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000),
     userAgent: req.headers['user-agent'],
     ip: req.ip
   });
@@ -136,7 +154,11 @@ export const register = asyncHandler(async (req, res) => {
     institution: user.institution
   });
 
-  res.status(201).json({ success: true, user, accessToken, refreshToken });
+  // Never return the password hash (User.create result includes it).
+  const created = user.toObject();
+  delete created.password;
+
+  res.status(201).json({ success: true, user: created, accessToken, refreshToken });
 });
 
 export const logout = asyncHandler(async (req, res) => {
