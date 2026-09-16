@@ -1,6 +1,7 @@
 // CampusFlow UI primitives — every external pattern is normalized here.
 // Typography / spacing / radius / motion always come from system/tokens.
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
+import { useReducedMotion } from 'motion/react';
 import {
   badge as badgeFn,
   btnClass,
@@ -9,7 +10,6 @@ import {
   emptyState,
   inputClass,
   labelClass,
-  loadingState,
   pageHeading,
   pageSubheading,
   roleBadge as roleBadgeFn,
@@ -80,7 +80,7 @@ export function Badge({ tone, status, role, className, children }) {
 
 export function Card({ className, children, ...props }) {
   return (
-    <section className={cn(cardClass, 'p-5', className)} {...props}>
+    <section className={cn(cardClass, 'cf-card-spot p-5', className)} {...props}>
       {children}
     </section>
   );
@@ -114,11 +114,11 @@ export function EmptyState({ title = 'Nothing here yet', hint, action, editorial
 
 export function LoadingState({ label = 'Loading…' }) {
   return (
-    <div className="py-10" role="status" aria-live="polite">
-      <div className="flex items-center justify-center gap-2">
-        <span className="w-4 h-4 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" aria-hidden />
-        <span className={loadingState}>{label}</span>
-      </div>
+    <div className="py-10 space-y-3" role="status" aria-live="polite" aria-label={label}>
+      <div className="cf-shimmer h-4 rounded-lg bg-black/[.06] dark:bg-white/10 w-2/3" aria-hidden />
+      <div className="cf-shimmer h-4 rounded-lg bg-black/[.06] dark:bg-white/10 w-full" aria-hidden style={{ animationDelay: '.2s' }} />
+      <div className="cf-shimmer h-4 rounded-lg bg-black/[.06] dark:bg-white/10 w-1/2" aria-hidden style={{ animationDelay: '.4s' }} />
+      <span className="sr-only">{label}</span>
     </div>
   );
 }
@@ -141,11 +141,31 @@ export function Skeleton({ className }) {
 }
 
 export function Stat({ label, value, sub }) {
+  const numeric = typeof value === 'number';
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-ink-mute)]">{label}</p>
-      <p className="text-2xl font-bold tracking-tight text-[var(--cf-ink)] mt-0.5">{value}</p>
+      <p className="text-2xl font-bold tracking-tight tabular-nums text-[var(--cf-ink)] mt-0.5">
+        {numeric ? <AnimatedNumber value={value} /> : value}
+      </p>
       {sub && <p className="text-xs text-[var(--cf-ink-mute)] mt-0.5">{sub}</p>}
     </div>
   );
+}
+
+function AnimatedNumber({ value }) {
+  const reduced = useReducedMotion();
+  const [display, setDisplay] = useState(reduced ? value : 0);
+  useEffect(() => {
+    if (reduced) { setDisplay(value); return; }
+    let raf; const start = performance.now(); const dur = 900;
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / dur);
+      setDisplay(value * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, reduced]);
+  return <>{Math.round(display)}</>;
 }

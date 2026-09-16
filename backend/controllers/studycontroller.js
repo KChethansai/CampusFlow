@@ -148,3 +148,65 @@ export const getLearningResources = asyncHandler(async (req, res) => {
   ]);
   pagedResponse(res, resources, total, { page, limit });
 });
+
+// POST /learning-resources — faculty/admin curated library writes.
+// Accepts JSON (external `url`) or multipart (`file` attachment for
+// PDFs/docs, plus fields). At least one of url/file is required.
+export const createLearningResource = asyncHandler(async (req, res) => {
+  const { subject, topic, title, url, type, difficulty } = req.body;
+  if (!subject) throw new ApiError(422, 'subject is required');
+  const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+  const subj = await Subject.findOne({ _id: subject, institution: req.user.institution });
+  if (!subj) {
+    const { discardUploadedFile } = await import('../config/multer.js');
+    discardUploadedFile(req);
+    throw new ApiError(404, 'Subject not found');
+  }
+  const { cleanUrl } = await import('../utils/sanitize.js');
+  if (!url && !req.file) throw new ApiError(422, 'Provide an external url or attach a file');
+  const doc = await LearningResource.create({
+    institution: req.user.institution,
+    subject: subj._id,
+    topic,
+    title,
+    url: cleanUrl(url),
+    // server-generated local path (never client-supplied, so cleanUrl exempt)
+    fileUrl: req.file ? `/uploads/${req.file.filename}` : undefined,
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size,
+    type: type || (req.file ? 'document' : undefined),
+    difficulty,
+  });
+  res.status(201).json({ success: true, data: doc });
+});
+
+// PATCH /learning-resources/:id — tenant-scoped, allowlisted (+ file swap)
+export const updateLearningResource = asyncHandler(async (req, res) => {
+  const { pick } = await import('../utils/scope.js');
+  const { cleanUrl } = await import('../utils/sanitize.js');
+  const patch = pick(req.body, ['topic', 'title', 'url', 'type', 'difficulty']);
+  if (patch.url !== undefined) patch.url = cleanUrl(patch.url);
+  if (req.file) {
+    patch.fileUrl = `/uploads/${req.file.filename}`;
+    patch.fileName = req.file.originalname;
+    patch.fileSize = req.file.size;
+    if (!patch.type) patch.type = 'document';
+  }
+  const doc = await LearningResource.findOneAndUpdate(
+    { _id: req.params.id, institution: req.user.institution },
+    patch,
+    { new: true, runValidators: true }
+  );
+  if (!doc) throw new ApiError(404, 'LearningResource not found');
+  res.json({ success: true, data: doc });
+});
+
+// DELETE /learning-resources/:id — tenant-scoped
+export const deleteLearningResource = asyncHandler(async (req, res) => {
+  const doc = await LearningResource.findOneAndDelete({
+    _id: req.params.id,
+    institution: req.user.institution,
+  });
+  if (!doc) throw new ApiError(404, 'LearningResource not found');
+  res.json({ success: true, message: 'Learning resource deleted' });
+});

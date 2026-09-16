@@ -18,8 +18,9 @@ export const useReducedMotion = () => {
 
 const noMotion = { duration: 0.01 };
 
-export const spring = { type: 'spring', stiffness: 380, damping: 32, mass: 0.9 };
+export const spring = { type: 'spring', stiffness: 350, damping: 25, mass: 0.9 };
 export const softSpring = { type: 'spring', stiffness: 260, damping: 28 };
+export const luxeSpring = { type: 'spring', stiffness: 350, damping: 25 };
 
 export const motionVariants = {
   page: {

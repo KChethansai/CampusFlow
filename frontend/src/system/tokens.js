@@ -41,6 +41,12 @@ export const cardClass =
   'bg-[var(--cf-surface)] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,.06),0_1px_3px_rgba(16,24,40,.08)] border border-[var(--cf-line)]';
 export const floatClass =
   'bg-[var(--cf-surface)] rounded-2xl shadow-[0_12px_32px_-8px_rgba(16,24,40,.18)] border border-[var(--cf-line)]';
+// Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
+export const glassCard =
+  'cf-glass bg-[var(--cf-surface)]/70 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-white/10 shadow-card';
+export const spotCard = 'cf-card-spot cf-spotlight';
+export const glowFocus = 'cf-glow-focus';
+export const bentoClass = cn(cardClass, spotCard, 'p-5 sm:p-6');
 export const tableClass = 'w-full text-sm';
 export const tableHeadClass = 'text-[var(--cf-ink-mute)] border-b border-[var(--cf-line)]';
 export const tableCellHead = 'px-4 py-3 text-left font-medium text-xs uppercase tracking-wide';

@@ -77,7 +77,7 @@ export default function Directory() {
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {rows.map(({ source, row }) => (
-            <Card key={source.key + (row._id || titleOf(row))} className="p-4">
+            <Card key={source.key + (row._id || titleOf(row))} className="p-4 group">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-semibold truncate">{titleOf(row)}</p>
@@ -87,6 +87,12 @@ export default function Directory() {
                 <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{source.label.slice(0, -1)}</Badge>
               </div>
               <p className="mt-2 text-xs text-[var(--cf-ink-mute)]">{source.kind(row)}</p>
+              {row.email && (
+                <div className="mt-3 flex gap-2 opacity-100 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-y-0 transition-all">
+                  <a href={`mailto:${row.email}`} className="px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--cf-line)] hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition">Email</a>
+                  <button onClick={() => navigator.clipboard?.writeText(row.email).catch(() => {})} className="px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--cf-line)] hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition">Copy</button>
+                </div>
+              )}
             </Card>
           ))}
         </div>

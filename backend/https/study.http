@@ -1,0 +1,53 @@
+# CampusFlow learning resources — manual REST Client flows (faculty/admin).
+@base = http://localhost:5000/api/v1
+@subjectId = <subject-id>
+
+### Login as faculty
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "faculty@institution.edu",
+  "password": "Faculty@123"
+}
+
+### Create resource with PDF attachment (multipart)
+POST {{base}}/study/learning-resources
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=cf-boundary
+Content-Disposition: form-data; name="subject"
+
+{{subjectId}}
+--cf-boundary
+Content-Disposition: form-data; name="topic"
+
+Week 4 revision
+--cf-boundary
+Content-Disposition: form-data; name="title"
+
+Lecture notes
+--cf-boundary
+Content-Disposition: form-data; name="file"; filename="notes.pdf"
+Content-Type: application/pdf
+
+< ./notes.pdf
+--cf-boundary--
+
+### Create resource with external link (JSON)
+POST {{base}}/study/learning-resources
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "{{subjectId}}",
+  "topic": "Week 4 revision",
+  "title": "Reference article",
+  "url": "https://example.com/article",
+  "type": "link",
+  "difficulty": "beginner"
+}
+
+### List resources
+GET {{base}}/study/learning-resources?subject={{subjectId}}
+Authorization: Bearer {{login.response.body.accessToken}}

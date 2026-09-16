@@ -6,6 +6,9 @@ const learningResourceSchema = new Schema({
   topic: { type: String, required: true, trim: true },
   title: { type: String, required: true, trim: true },
   url: String,
+  fileUrl: String,
+  fileName: String,
+  fileSize: Number,
   type: {
     type: String,
     enum: ['video', 'document', 'link', 'podcast', 'other'],

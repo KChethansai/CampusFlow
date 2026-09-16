@@ -1,7 +1,7 @@
 // Editorial motion primitives — NOTA-grade reveals, scrub, carousels, loader.
 // All Motion.dev, all reduced-motion safe. Normalized to CampusFlow tokens.
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '../../system/tokens';
 
@@ -212,4 +212,117 @@ export function MagneticButton({ children, className, ...props }) {
 export function useParallax(ref, distance = 60) {
   const progress = useScrubProgress(ref);
   return useTransform(progress, [0, 1], [distance, -distance]);
+}
+
+// --- Luxury primitives (Stitch Loop Step 3: kinetic physics + tokens) ---
+
+/** AnimatedCounter: rAF count-up, reduced-motion safe. No fake precision — pass real values only. */
+export function AnimatedCounter({ value = 0, decimals = 0, suffix = '', prefix = '', className, duration = 1200 }) {
+  const reduced = useReducedMotion();
+  const [display, setDisplay] = useState(reduced ? value : 0);
+  useEffect(() => {
+    if (reduced) { setDisplay(value); return; }
+    let raf; const start = performance.now(); const from = 0;
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(from + (value - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration, reduced]);
+  return (
+    <span className={cn('tabular-nums', className)}>
+      {prefix}{Number(display).toFixed(decimals)}{suffix}
+    </span>
+  );
+}
+
+/** SpotCard: mouse-tracked radial spotlight via CSS vars (no re-render). */
+export function SpotCard({ className, children, ...props }) {
+  const ref = useRef(null);
+  return (
+    <div
+      ref={ref}
+      onMouseMove={(e) => {
+        const el = ref.current; if (!el) return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        el.style.setProperty('--my', `${e.clientY - r.top}px`);
+      }}
+      className={cn('cf-card-spot', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** TiltCard: 3D tilt with motion values (no useState on pointer path). */
+export function TiltCard({ className, children, max = 7, ...props }) {
+  const reduced = useReducedMotion();
+  const ref = useRef(null);
+  const rx = useMotionValue(0); const ry = useMotionValue(0);
+  const srx = useSpring(rx, { stiffness: 350, damping: 25 });
+  const sry = useSpring(ry, { stiffness: 350, damping: 25 });
+  if (reduced) return <div className={className} {...props}>{children}</div>;
+  return (
+    <motion.div
+      ref={ref}
+      style={{ rotateX: srx, rotateY: sry, transformPerspective: 900 }}
+      onMouseMove={(e) => {
+        const r = ref.current?.getBoundingClientRect(); if (!r) return;
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        rx.set(-py * max * 2); ry.set(px * max * 2);
+      }}
+      onMouseLeave={() => { rx.set(0); ry.set(0); }}
+      className={cn('cf-tilt', className)}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** BentoGrid / BentoCell: rhythm-first grid helpers (exact cell count = content count). */
+export function BentoGrid({ className, children }) {
+  return <div className={cn('grid gap-4 md:grid-cols-6', className)}>{children}</div>;
+}
+export function BentoCell({ span = 'md:col-span-2', className, children, spot = true }) {
+  return (
+    <SpotCard className={cn('bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] p-5 sm:p-6 shadow-card', span, className)}>
+      {children}
+    </SpotCard>
+  );
+}
+
+/** HeroBackdrop: ambient beams + grid + meteors (CSS-only, zero deps). */
+export function HeroBackdrop({ meteors = 3, className }) {
+  const reduced = useReducedMotion();
+  return (
+    <div aria-hidden className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}>
+      <div className="absolute inset-0 bg-grid-black/[0.04] dark:bg-grid-white/[0.02]" />
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-[420px] w-[720px] rounded-full bg-primary-500/15 dark:bg-primary-500/25 blur-[110px]" />
+      <div className="absolute top-20 -left-24 h-72 w-72 rounded-full bg-accent-violet/15 blur-[100px]" />
+      <div className="absolute bottom-0 right-0 h-72 w-96 rounded-full bg-accent-cyan/10 blur-[100px]" />
+      {!reduced && Array.from({ length: meteors }).map((_, i) => (
+        <span
+          key={i}
+          className="absolute top-10 h-px w-40 rotate-[215deg] bg-gradient-to-r from-primary-400 to-transparent animate-meteor"
+          style={{ left: `${18 + i * 28}%`, animationDelay: `${i * 1.6}s`, opacity: .7 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** BeamCard: animated gradient border wrapper (Magic-UI beam, tokenized). */
+export function BeamCard({ className, children, ...props }) {
+  return (
+    <div className={cn('cf-beam rounded-2xl', className)} {...props}>
+      <div className="rounded-[calc(1rem-1px)] bg-[var(--cf-surface)] h-full">{children}</div>
+    </div>
+  );
 }

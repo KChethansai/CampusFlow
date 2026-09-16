@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, ContactShadows } from '@react-three/drei';
 import { DOMAINS } from './domains';
+import ErrorBoundary from './ErrorBoundary';
 
 export { DOMAINS };
 
@@ -91,9 +92,10 @@ export function CampusSceneInner({ onHover, autoRotate }) {
   );
 }
 
-export default function CampusScene({ onHover, autoRotate = true, className, style, onContextLost, onContextRestored }) {
+export default function CampusScene({ onHover, autoRotate = true, className, style, onContextLost, onContextRestored, fallback = null }) {
   return (
-    <div className={className} style={style}>
+    <ErrorBoundary onError={onContextLost} fallback={fallback}>
+      <div className={className} style={style}>
       <Canvas
         dpr={[1, 1.5]}
         camera={{ position: [5.2, 4.2, 6.4], fov: 42 }}
@@ -113,6 +115,7 @@ export default function CampusScene({ onHover, autoRotate = true, className, sty
       >
         <CampusSceneInner onHover={onHover} autoRotate={autoRotate} />
       </Canvas>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

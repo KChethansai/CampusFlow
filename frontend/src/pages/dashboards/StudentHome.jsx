@@ -10,6 +10,14 @@ import { AttendanceRing, Sparkline } from '../../components/data/views';
 import { staggerChild, staggerParent } from '../../system/motion';
 
 const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : '—';
+const dueIn = (d) => {
+  const ms = new Date(d).getTime() - Date.now();
+  if (ms <= 0) return 'due now';
+  const h = Math.floor(ms / 3600000);
+  if (h < 24) return `in ${h}h`;
+  const days = Math.floor(h / 24);
+  return days === 1 ? 'in 1 day' : `in ${days} days`;
+};
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -113,7 +121,7 @@ export default function StudentHome() {
                     <Link to="/assignments" className="flex items-center gap-3 py-2.5 group">
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium truncate group-hover:text-primary-600 transition">{a.title}</span>
-                        <span className="block text-xs text-[var(--cf-ink-mute)]">{a.subject?.name || ''} · {a.maxScore} pts</span>
+                        <span className="block text-xs text-[var(--cf-ink-mute)]">{a.subject?.name || ''} · {a.maxScore} pts · <span className="tabular-nums">{dueIn(a.dueDate)}</span></span>
                       </span>
                       <Badge status={new Date(a.dueDate).getTime() - Date.now() < 86400000 * 2 ? 'pending' : 'open'}>{fmtDay(a.dueDate)}</Badge>
                     </Link>
