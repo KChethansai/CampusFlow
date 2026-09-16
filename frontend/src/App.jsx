@@ -5,6 +5,7 @@ import ProtectedRoute from './components/routing/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import Onboarding from './pages/auth/Onboarding';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import Dashboard from './pages/Dashboard';
@@ -28,7 +29,22 @@ const learnRoles = [...adminRoles, 'faculty', 'student'];
 
 function HomeRoute() {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />;
+  if (!isAuthenticated) return <Landing />;
+  try {
+    if (!localStorage.getItem('cf_onboarding')) return <Navigate to="/onboarding" replace />;
+  } catch { /* storage unavailable — let dashboard through */ }
+  return <Navigate to="/dashboard" replace />;
+}
+
+function RequireOnboarding({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return children;
+  try {
+    if (!localStorage.getItem('cf_onboarding')) {
+      return <Navigate to="/onboarding" replace />;
+    }
+  } catch { /* ignore */ }
+  return children;
 }
 
 function App() {
@@ -42,13 +58,16 @@ function App() {
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         element={
           <ProtectedRoute>
-            <Layout />
+            <RequireOnboarding>
+              <Layout />
+            </RequireOnboarding>
           </ProtectedRoute>
         }
       >

@@ -1,5 +1,7 @@
 // Shared data views: timeline, pipeline, ring, sparkline, heatmap.
 // Pure SVG — no chart dependency. All normalized to CampusFlow tokens.
+import { useRef, useState } from 'react';
+import { UploadCloud } from 'lucide-react';
 import { normalizeStage, PIPELINE_STAGES, statusBadge } from '../../system/tokens';
 import { cn } from '../../system/tokens';
 
@@ -141,6 +143,46 @@ export function Heatmap({ weeks = [], legend = ['Less', 'More'] }) {
         ))}
         <span>{legend[1]}</span>
       </div>
+    </div>
+  );
+}
+
+/** Dropzone: drag-and-drop submission with progress feedback. Controlled by parent via onFiles. */
+export function Dropzone({ onFiles, accept, multiple = true, progress = null, label = 'Drop files to submit' }) {
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef(null);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); onFiles?.(e.dataTransfer.files); }}
+      className={cn(
+        'rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer',
+        dragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10 scale-[1.01]' : 'border-[var(--cf-line)] hover:border-primary-300 hover:bg-black/[.02] dark:hover:bg-white/[.04]'
+      )}
+    >
+      <UploadCloud size={22} className="mx-auto text-primary-500" aria-hidden />
+      <p className="mt-2 text-sm font-medium">{label}</p>
+      <p className="text-xs text-[var(--cf-ink-mute)]">or click to browse</p>
+      <input
+        ref={inputRef}
+        type="file"
+        className="sr-only"
+        accept={accept}
+        multiple={multiple}
+        onChange={(e) => onFiles?.(e.target.files)}
+        tabIndex={-1}
+      />
+      {progress != null && (
+        <div className="mt-3 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
+          <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
+      )}
     </div>
   );
 }

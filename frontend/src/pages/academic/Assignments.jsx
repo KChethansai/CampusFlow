@@ -8,7 +8,11 @@ import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Dropzone } from '../../components/data/views';
 import { Modal } from '../../components/ui/Modal';
+
+// Mirrors backend/middlewares/upload.js SUBMISSION_EXTS — keep in sync.
+const SUBMISSION_ACCEPT = '.pdf,.doc,.docx,.txt,.md,.csv,.zip,.png,.jpg,.jpeg';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
 
@@ -36,6 +40,7 @@ export default function Assignments() {
   const [view, setView] = useState('All');
   const [showForm, setShowForm] = useState(false);
   const [submitFor, setSubmitFor] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [gradeFor, setGradeFor] = useState(null);
   const { register, handleSubmit, reset } = useForm({
     defaultValues: { subject: '', title: '', description: '', maxScore: 100, dueDate: '' }
@@ -81,16 +86,30 @@ export default function Assignments() {
     }
   };
 
-  const submit = async (e, id) => {
-    e.preventDefault();
-    const text = new FormData(e.target).get('notes');
+  const submitFiles = async ({ id, files, notes }) => {
+    const form = new FormData();
+    if (files?.[0]) form.append('file', files[0]);
+    form.append('comments', notes || '');
     try {
-      await api.post('/submissions', { assignment: id, textNotes: text });
-      toast.success('Submitted');
+      await api.post(`/submissions/assignments/${id}`, form, {
+        onUploadProgress: (ev) => {
+          if (!ev.total) return;
+          setUploadProgress(ev.loaded / ev.total);
+        }
+      });
+      toast.success(files?.[0] ? 'File submitted' : 'Submitted');
       setSubmitFor(null);
+      setUploadProgress(null);
       fetchAll();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to submit');
+      const status = err.response?.status;
+      setUploadProgress(null);
+      toast.error(
+        status === 413 ? 'File too large — try a smaller file.' :
+        status === 415 ? 'Unsupported file type — use PDF, Word, text, CSV, ZIP or an image.' :
+        !err.response ? 'Network error — check your connection and retry.' :
+        err.response?.data?.message || 'Failed to submit'
+      );
     }
   };
 
@@ -214,14 +233,13 @@ export default function Assignments() {
         </form>
       </Modal>
 
-      <Modal open={Boolean(submitFor)} onClose={() => setSubmitFor(null)} title={`Submit — ${submitFor?.title}`}>
-        <form onSubmit={(e) => submit(e, submitFor._id)} className="space-y-3">
-          <div>
-            <label className={labelClass} htmlFor="sub-notes">Notes / answer link</label>
-            <textarea id="sub-notes" name="notes" className={inputClass} rows={4} placeholder="Paste your answer, repo link, or notes…" required />
-          </div>
-          <button type="submit" className={btnClass('primary', 'medium') + ' w-full'}>Submit assignment</button>
-        </form>
+      <Modal open={Boolean(submitFor)} onClose={() => { setSubmitFor(null); setUploadProgress(null); }} title={`Submit — ${submitFor?.title}`}>
+        <SubmitForm
+          key={submitFor?._id}
+          assignment={submitFor}
+          progress={uploadProgress}
+          onSubmit={submitFiles}
+        />
       </Modal>
 
       <Modal open={Boolean(gradeFor)} onClose={() => setGradeFor(null)} title={`Submissions — ${gradeFor?.title}`} wide>
@@ -253,5 +271,47 @@ export default function Assignments() {
         )}
       </Modal>
     </div>
+  );
+}
+
+function SubmitForm({ assignment, progress, onSubmit }) {
+  const [files, setFiles] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (busy) return;
+        setBusy(true);
+        try { await onSubmit({ id: assignment._id, files, notes }); }
+        finally { setBusy(false); }
+      }}
+    >
+      <Dropzone
+        onFiles={setFiles}
+        accept={SUBMISSION_ACCEPT}
+        progress={progress}
+        label={files?.[0] ? files[0].name : 'Drop your file to submit'}
+      />
+      <div>
+        <label className={labelClass} htmlFor="sub-notes">Notes / answer link</label>
+        <textarea
+          id="sub-notes"
+          className={inputClass}
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Paste your answer, repo link, or notes…"
+        />
+      </div>
+      <button type="submit" disabled={busy} className={btnClass('primary', 'medium') + ' w-full'}>
+        {busy ? 'Submitting…' : 'Submit assignment'}
+      </button>
+      {!files?.[0] && !notes.trim() && (
+        <p className="text-xs text-[var(--cf-ink-mute)]">Attach a file or add notes to enable submission.</p>
+      )}
+    </form>
   );
 }

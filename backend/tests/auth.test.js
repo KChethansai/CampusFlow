@@ -243,3 +243,41 @@ describe('404 Handler', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('Public registration', () => {
+  it('should register a student and issue tokens', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register-public')
+      .send({ name: 'New Student', email: 'newstudent@test.edu', password: 'Student@123', role: 'student', rollNumber: 'PUB001' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.accessToken).toBeDefined();
+    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.user.password).toBeUndefined();
+  });
+
+  it('should reject duplicate email', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register-public')
+      .send({ name: 'Dupe', email: 'newstudent@test.edu', password: 'Student@123', role: 'student' });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('should block admin role self-registration', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register-public')
+      .send({ name: 'Hacker', email: 'hacker@test.edu', password: 'Password@123', role: 'super_admin' });
+
+    expect([403, 422]).toContain(res.status);
+  });
+
+  it('should reject invalid institution code', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register-public')
+      .send({ name: 'Lost', email: 'lost@test.edu', password: 'Student@123', role: 'student', institutionCode: 'NOPE' });
+
+    expect(res.status).toBe(422);
+  });
+});

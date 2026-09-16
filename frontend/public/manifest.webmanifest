@@ -1,0 +1,17 @@
+{
+  "name": "CampusFlow",
+  "short_name": "CampusFlow",
+  "description": "The operating system for your campus.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f7",
+  "theme_color": "#0071e3",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

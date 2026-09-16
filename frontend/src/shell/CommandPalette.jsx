@@ -1,8 +1,9 @@
-// ⌘K / Ctrl+K command center. Grouped results, full keyboard nav.
+// ⌘K / Ctrl+K command center. Fuzzy grouped results, role quick actions, full keyboard nav.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search } from 'lucide-react';
+import { ArrowRight, Search, Zap } from 'lucide-react';
+import { useAuth } from '../store/useAuth';
 import api from '../api/axios';
 import { motionVariants } from '../system/motion';
 
@@ -13,13 +14,31 @@ const GROUPS = [
   { key: 'ops', label: 'Requests & Reports', endpoints: [['Requests', '/requests']] }
 ];
 
+const QUICK_BY_ROLE = {
+  student: [['View my assignments', '/assignments'], ['Open placement board', '/placement'], ['Check attendance', '/attendance']],
+  faculty: [['Grade assignments', '/assignments'], ['Mark attendance', '/attendance'], ['My subjects', '/subjects']],
+  college_admin: [['Manage users', '/users'], ['View AI reports', '/ai-reports'], ['Manage courses', '/courses']],
+  super_admin: [['Manage users', '/users'], ['View AI reports', '/ai-reports'], ['Manage courses', '/courses']],
+  placement_officer: [['Open placement board', '/placement'], ['Manage users', '/users'], ['View events', '/events']]
+};
+
+// Fuzzy subsequence score with prefix/contiguous bonuses (Raycast-feel, zero deps).
 const score = (q, text) => {
   const t = text.toLowerCase();
   const query = q.toLowerCase().trim();
   if (!query) return 0;
-  if (t.startsWith(query)) return 3;
-  if (t.includes(query)) return 2;
-  return query.split(/\s+/).every((w) => t.includes(w)) ? 1 : 0;
+  if (t.startsWith(query)) return 100 + query.length;
+  if (t.includes(query)) return 60 + query.length;
+  let ti = 0, matched = 0, contiguous = 0, best = 0;
+  for (let qi = 0; qi < query.length; qi++) {
+    const idx = t.indexOf(query[qi], ti);
+    if (idx === -1) return 0;
+    if (idx === ti) { contiguous += 1; best = Math.max(best, contiguous); }
+    else contiguous = 0;
+    ti = idx + 1; matched += 1;
+  }
+  if (matched !== query.replace(/\s/g, '').length && !query.split(/\s+/).every((w) => t.includes(w))) return 0;
+  return 20 + best * 4 + Math.max(0, 10 - t.length / 12);
 };
 
 export function useCommandPalette() {
@@ -39,6 +58,7 @@ export function useCommandPalette() {
 
 export default function CommandPalette({ open, onClose }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [cache, setCache] = useState({});
@@ -67,8 +87,11 @@ export default function CommandPalette({ open, onClose }) {
 
   const results = useMemo(() => {
     const out = [];
+    const role = user?.role;
+    const quick = (QUICK_BY_ROLE[role] || QUICK_BY_ROLE.student).map(([title, link]) => ({ title, sub: 'Quick action', link, quick: true }));
     if (!query.trim()) {
       return [
+        ...(quick.length ? [{ group: 'Quick actions', items: quick }] : []),
         { group: 'Go to', items: [
           { title: 'Dashboard', sub: 'Home', link: '/dashboard' },
           { title: 'Assignments', sub: 'All · upcoming · graded', link: '/assignments' },
@@ -102,7 +125,7 @@ export default function CommandPalette({ open, onClose }) {
       if (items.length) out.push({ group: g.label, items: items.slice(0, 6) });
     });
     return out;
-  }, [query, cache]);
+  }, [query, cache, user?.role]);
 
   const flat = useMemo(() => results.flatMap((r) => r.items), [results]);
 
@@ -127,7 +150,7 @@ export default function CommandPalette({ open, onClose }) {
           <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm cursor-default" />
           <motion.div
             {...motionVariants.popover}
-            className="relative w-full max-w-xl bg-[var(--cf-surface)] border border-[var(--cf-line)] rounded-2xl shadow-4 overflow-hidden"
+            className="relative w-full max-w-xl cf-glass backdrop-blur-xl bg-[var(--cf-surface)]/90 border border-white/10 rounded-2xl shadow-4 overflow-hidden"
           >
             <div className="flex items-center gap-2 px-4 border-b border-[var(--cf-line)]">
               <Search size={16} className="text-[var(--cf-ink-mute)]" aria-hidden />
@@ -167,17 +190,25 @@ export default function CommandPalette({ open, onClose }) {
                         aria-selected={gi === index}
                         onMouseEnter={() => setIndex(gi)}
                         onClick={() => go(item)}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between gap-2 text-sm transition ${
+                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center gap-2 text-sm transition ${
                           gi === index ? 'bg-primary-50 dark:bg-primary-500/15 text-[var(--cf-ink)]' : 'text-[var(--cf-ink-soft)]'
                         }`}
                       >
-                        <span className="truncate font-medium">{item.title}</span>
+                        {item.quick ? <Zap size={14} className="text-primary-500 shrink-0" aria-hidden /> : null}
+                        <span className="truncate font-medium flex-1">{item.title}</span>
                         <span className="text-[11px] text-[var(--cf-ink-mute)] shrink-0">{item.sub}</span>
+                        {gi === index && <ArrowRight size={14} className="text-[var(--cf-ink-mute)]" aria-hidden />}
                       </button>
                     );
                   })}
                 </div>
               ))}
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-t border-[var(--cf-line)] text-[11px] text-[var(--cf-ink-mute)]">
+              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">↑↓</kbd> navigate</span>
+              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">↵</kbd> open</span>
+              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">esc</kbd> close</span>
+              <span className="ml-auto">Ctrl/⌘ K to toggle</span>
             </div>
           </motion.div>
         </motion.div>

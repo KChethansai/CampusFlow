@@ -1,0 +1,43 @@
+# CampusFlow file submissions — manual REST Client flows.
+# Set @base, then run Login to populate @token before the calls below.
+@base = http://localhost:5000/api/v1
+@assignmentId = <assignment-id>
+
+### Login as student
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "student@institution.edu",
+  "password": "Student@123"
+}
+
+### Submit a PDF with comments (multipart)
+POST {{base}}/submissions/assignments/{{assignmentId}}
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=cf-boundary
+Content-Disposition: form-data; name="comments"
+
+My solution attached
+--cf-boundary
+Content-Disposition: form-data; name="file"; filename="solution.pdf"
+Content-Type: application/pdf
+
+< ./solution.pdf
+--cf-boundary--
+
+### Submit notes only (no file)
+POST {{base}}/submissions/assignments/{{assignmentId}}
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=cf-boundary
+
+--cf-boundary
+Content-Disposition: form-data; name="comments"
+
+https://example.com/my-work
+--cf-boundary--
+
+### List my submissions
+GET {{base}}/submissions
+Authorization: Bearer {{login.response.body.accessToken}}

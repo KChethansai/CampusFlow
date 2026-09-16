@@ -27,6 +27,12 @@ export const errorHandler = (err, req, res, _next) => {
   } else if (err.name === 'TokenExpiredError') {
     statusCode = 401
     message = message || 'Token expired, please log in again'
+  } else if (err.name === 'MulterError') {
+    // file-upload failures: oversized payloads and upload protocol errors
+    statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
+    message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File too large — reduce the file size and try again'
+      : message || 'File upload failed'
   }
 
   logger.error(`${statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`)

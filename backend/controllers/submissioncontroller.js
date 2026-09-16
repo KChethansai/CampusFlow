@@ -64,6 +64,36 @@ export const createSubmission = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: submission });
 });
 
+// Submit assignment files (student, multipart) — creates or updates the
+// student's submission for the assignment. `studentId` in the payload is
+// accepted but ignored: identity always comes from the session. `comments`
+// maps to textNotes. Status is `late` when past the due date.
+export const submitAssignmentFiles = asyncHandler(async (req, res) => {
+  const assignment = await Assignment.findById(req.params.assignmentId);
+  if (!assignment || String(assignment.institution) !== String(req.user.institution)) {
+    const { discardUploadedFile } = await import('../config/multer.js');
+    discardUploadedFile(req);
+    throw new ApiError(404, 'Assignment not found');
+  }
+  const comments = (req.body.comments ?? req.body.textNotes ?? '').toString().slice(0, 5000);
+  if (!req.file && !comments.trim()) {
+    throw new ApiError(422, 'Attach a file or add comments to submit');
+  }
+  const late = assignment.dueDate && new Date(assignment.dueDate).getTime() < Date.now();
+  const existing = await Submission.findOne({ assignment: assignment._id, student: req.user._id });
+  const patch = {
+    textNotes: comments || existing?.textNotes,
+    submittedAt: new Date(),
+    status: late ? 'late' : 'submitted',
+    attempt: (existing?.attempt || 0) + 1,
+  };
+  if (req.file) patch.fileUrl = `/uploads/${req.file.filename}`;
+  const submission = existing
+    ? await Submission.findByIdAndUpdate(existing._id, patch, { new: true, runValidators: true })
+    : await Submission.create({ assignment: assignment._id, student: req.user._id, ...patch });
+  res.status(201).json({ success: true, data: submission });
+});
+
 // Update submission (faculty grades) — allowlisted, visibility-checked
 export const updateSubmission = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id).populate('assignment');

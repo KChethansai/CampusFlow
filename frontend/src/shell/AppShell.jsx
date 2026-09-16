@@ -1,7 +1,7 @@
-// AppShell: unified spatial shell — brand, contextual nav, search, bell, theme, profile.
+// AppShell: collapsible sleek sidebar (layoutId pill), top bar, command center.
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Command, LogOut, Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Command, LogOut, Menu, Moon, Search, Sun, X } from 'lucide-react';
 import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from '../store/useAuth';
@@ -10,7 +10,7 @@ import { visibleMobileNav, visibleNav } from './navigation';
 import CommandPalette, { useCommandPalette } from './CommandPalette';
 import NotificationsCenter from './NotificationsCenter';
 import QuickAction from './QuickAction';
-import { roleBadge } from '../system/tokens';
+import { cn, roleBadge } from '../system/tokens';
 import { motionVariants, useReducedMotion } from '../system/motion';
 
 function Brand() {
@@ -32,6 +32,9 @@ export default function AppShell() {
   const { theme, toggle } = useTheme();
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('cf_sidebar') === 'collapsed'; } catch { return false; }
+  });
   const location = useLocation();
   const reduced = useReducedMotion();
   const items = visibleNav(user?.role);
@@ -41,12 +44,29 @@ export default function AppShell() {
     navigate('/login');
   };
 
-  const linkCls = ({ isActive }) =>
-    `flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition ${
-      isActive
-        ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300'
-        : 'text-[var(--cf-ink-soft)] hover:bg-black/[.04] dark:hover:bg-white/[.07]'
-    }`;
+  const toggleSidebar = () => {
+    setCollapsed((c) => {
+      try { localStorage.setItem('cf_sidebar', c ? 'expanded' : 'collapsed'); } catch {}
+      return !c;
+    });
+  };
+
+  const linkInner = ({ isActive }, { label, Icon }, compact) => (
+    <span className={cn('relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition w-full', isActive ? 'text-primary-700 dark:text-primary-300' : 'text-[var(--cf-ink-soft)] hover:bg-black/[.04] dark:hover:bg-white/[.07]')}>
+      {isActive && (
+        <motion.span
+          layoutId="cf-nav-pill"
+          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+          className="absolute inset-0 rounded-xl bg-primary-50 dark:bg-primary-500/15 border border-primary-500/20"
+          aria-hidden
+        />
+      )}
+      <span className="relative flex items-center gap-2.5">
+        <Icon size={17} aria-hidden />
+        {!compact && label}
+      </span>
+    </span>
+  );
 
   return (
     <div className="min-h-screen cf-atmosphere text-[var(--cf-ink)]">
@@ -109,15 +129,22 @@ export default function AppShell() {
       </header>
 
       <div className="max-w-[1400px] mx-auto px-3 sm:px-5 flex gap-5">
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:block w-60 shrink-0 py-6" aria-label="Primary">
+        {/* Desktop sidebar — collapsible, sliding pill */}
+        <aside className={cn('hidden lg:block shrink-0 py-6 transition-all duration-300', collapsed ? 'w-16' : 'w-60')} aria-label="Primary">
           <nav className="sticky top-24 flex flex-col gap-0.5">
-            {items.map(({ label, to, Icon }) => (
-              <NavLink key={to + label} to={to} className={linkCls}>
-                <Icon size={17} aria-hidden />
-                {label}
+            {items.map((item) => (
+              <NavLink key={item.to + item.label} to={item.to} title={collapsed ? item.label : undefined}>
+                {(state) => linkInner(state, item, collapsed)}
               </NavLink>
             ))}
+            <button
+              onClick={toggleSidebar}
+              aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+              aria-expanded={!collapsed}
+              className="mt-3 flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[var(--cf-ink-mute)] hover:bg-black/[.04] dark:hover:bg-white/[.07] transition"
+            >
+              {collapsed ? <ChevronsRight size={17} /> : <><ChevronsLeft size={17} /> Collapse</>}
+            </button>
           </nav>
         </aside>
 
@@ -157,9 +184,12 @@ export default function AppShell() {
                 </button>
               </div>
               {items.map(({ label, to, Icon }) => (
-                <NavLink key={to + label} to={to} onClick={() => setMobileOpen(false)} className={linkCls}>
-                  <Icon size={17} aria-hidden />
-                  {label}
+                <NavLink key={to + label} to={to} onClick={() => setMobileOpen(false)}>
+                  {(state) => (
+                    <span className={cn('flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition', state.isActive ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300' : 'text-[var(--cf-ink-soft)]')}>
+                      <Icon size={17} aria-hidden />{label}
+                    </span>
+                  )}
                 </NavLink>
               ))}
               <button
