@@ -20,7 +20,7 @@ announcementApp.get('/', getAllAnnouncements);
 announcementApp.get('/:id', getAnnouncementById);
 
 // Write routes — restricted
-announcementApp.post('/', verifyToken('faculty', 'college_admin'), createAnnouncement);
-announcementApp.patch('/:id', verifyToken('faculty', 'college_admin'), updateAnnouncement);
-announcementApp.delete('/:id', verifyToken('faculty', 'college_admin'), deleteAnnouncement);
+announcementApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty'), createAnnouncement);
+announcementApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), updateAnnouncement);
+announcementApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteAnnouncement);
 

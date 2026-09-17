@@ -21,9 +21,9 @@ eventApp.get('/', getAllEvents);
 eventApp.get('/:id', getEventById);
 
 // Write routes — restricted
-eventApp.post('/', verifyToken('college_admin', 'faculty'), createEvent);
-eventApp.patch('/:id', verifyToken('college_admin', 'faculty'), updateEvent);
-eventApp.delete('/:id', verifyToken('college_admin', 'faculty'), deleteEvent);
+eventApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty'), createEvent);
+eventApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), updateEvent);
+eventApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteEvent);
 
 // Student event registration
 eventApp.post('/:id/register', verifyToken('student'), registerForEvent);

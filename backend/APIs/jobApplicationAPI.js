@@ -34,15 +34,15 @@ jobApplicationApp.patch(
   updateApplicationStage
 );
 
-// GET routes — placement_officer, college_admin, student
+// GET routes — placement_officer, college_admin, student, super_admin
 jobApplicationApp.get(
   '/',
-  verifyToken('placement_officer', 'college_admin', 'student'),
+  verifyToken('super_admin', 'placement_officer', 'college_admin', 'student'),
   getAllJobApplications
 );
 jobApplicationApp.get(
   '/:id',
-  verifyToken('placement_officer', 'college_admin', 'student'),
+  verifyToken('super_admin', 'placement_officer', 'college_admin', 'student'),
   getJobApplicationById
 );
 

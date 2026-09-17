@@ -20,7 +20,7 @@ jobDriveApp.get('/', getAllJobDrives);
 jobDriveApp.get('/:id', getJobDriveById);
 
 // Write routes — restricted
-jobDriveApp.post('/', verifyToken('placement_officer', 'college_admin'), createJobDrive);
-jobDriveApp.patch('/:id', verifyToken('placement_officer', 'college_admin'), updateJobDrive);
-jobDriveApp.delete('/:id', verifyToken('placement_officer', 'college_admin'), deleteJobDrive);
+jobDriveApp.post('/', verifyToken('super_admin', 'placement_officer', 'college_admin'), createJobDrive);
+jobDriveApp.patch('/:id', verifyToken('super_admin', 'placement_officer', 'college_admin'), updateJobDrive);
+jobDriveApp.delete('/:id', verifyToken('super_admin', 'placement_officer', 'college_admin'), deleteJobDrive);
 
