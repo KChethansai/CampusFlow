@@ -1,12 +1,14 @@
 // ⌘K / Ctrl+K command center. Fuzzy grouped results, role quick actions, action items, full keyboard nav.
+// Reskin only: scale/fade panel, Kokonut-AI-input-style search field, SmoothUI-dropdown-like rows.
+// NOTE: components/ui/{buttons,cards,overlays}/ do not exist in this repo — composed locally.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Download, Flag, Moon, Printer, Search, Sun, Zap } from 'lucide-react';
+import { ArrowRight, Compass, Download, Flag, Moon, Printer, Search, Sparkles, Sun, Zap } from 'lucide-react';
 import { useAuth } from '../store/useAuth';
 import { useTheme } from '../system/theme';
 import api from '../api/axios';
-import { motionVariants } from '../system/motion';
+import { motionVariants, useReducedMotion } from '../system/motion';
 
 const GROUPS = [
   { key: 'academics', label: 'Academics', endpoints: [['Courses', '/courses'], ['Subjects', '/subjects'], ['Assignments', '/assignments']] },
@@ -67,6 +69,13 @@ const linkFor = (label) =>
   label === 'Companies' ? '/placement' :
   label === 'Applications' ? '/placement' : '/requests';
 
+const rowIcon = (item) => {
+  if (item.Icon) return item.Icon;
+  if (item.quick) return Zap;
+  if (item.run) return Compass;
+  return Compass;
+};
+
 export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTour }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -75,6 +84,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
   const [index, setIndex] = useState(0);
   const [cache, setCache] = useState({});
   const inputRef = useRef(null);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (open) {
@@ -165,65 +175,83 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={reduced ? { duration: 0.01 } : { duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
           role="dialog"
           aria-modal="true"
           aria-label="Command center"
         >
           <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default" />
           <motion.div
-            {...motionVariants.modal}
-            className="cf-glass relative w-full max-w-xl rounded-3xl border border-[var(--cf-line)] shadow-[0_24px_80px_-16px_rgba(16,24,40,0.4)] overflow-hidden"
+            {...(reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : motionVariants.modal)}
+            className="glass-card relative w-full max-w-xl rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/90 backdrop-blur-2xl shadow-[0_24px_80px_-16px_rgba(0,0,0,0.65)] overflow-hidden"
           >
-            <div className="flex items-center gap-2 px-4 border-b border-[var(--cf-line)]">
-              <Search size={16} className="text-[var(--cf-ink-mute)] shrink-0" aria-hidden />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); setIndex(0); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowDown') { e.preventDefault(); setIndex((i) => Math.min(i + 1, flat.length - 1)); }
-                  if (e.key === 'ArrowUp') { e.preventDefault(); setIndex((i) => Math.max(i - 1, 0)); }
-                  if (e.key === 'Enter') go(flat[index]);
-                  if (e.key === 'Escape') onClose();
-                }}
-                placeholder="Search students, courses, drives, requests…"
-                className="w-full py-3.5 bg-transparent rounded-[14px] text-sm font-medium text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="cf-palette-list"
-                aria-activedescendant={flat[index] ? `cf-opt-${index}` : undefined}
-              />
-              <kbd className="rounded-md border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70 font-mono text-[10px] font-semibold px-1.5 py-0.5 text-[var(--cf-ink-mute)]">ESC</kbd>
+            {/* Kokonut-AI-input-style search field: hero input with icon tile + hints */}
+            <div className="p-3 pb-0">
+              <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[#2563FF]/60 focus-within:ring-[3px] focus-within:ring-[#2563FF]/20">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]" aria-hidden>
+                  {query ? <Search size={16} /> : <Sparkles size={16} />}
+                </span>
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); setIndex(0); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowDown') { e.preventDefault(); setIndex((i) => Math.min(i + 1, flat.length - 1)); }
+                    if (e.key === 'ArrowUp') { e.preventDefault(); setIndex((i) => Math.max(i - 1, 0)); }
+                    if (e.key === 'Enter') go(flat[index]);
+                    if (e.key === 'Escape') onClose();
+                  }}
+                  placeholder="Ask or search students, courses, drives…"
+                  className="w-full bg-transparent py-2 text-sm font-medium text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none"
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls="cf-palette-list"
+                  aria-activedescendant={flat[index] ? `cf-opt-${index}` : undefined}
+                />
+                <kbd className="shrink-0 rounded-md border border-[var(--cf-line)] bg-[var(--cf-surface)] font-mono text-[10px] font-semibold px-1.5 py-0.5 text-[var(--cf-ink-mute)]">ESC</kbd>
+              </div>
             </div>
+            {/* SmoothUI-dropdown-like sectioned rows */}
             <div id="cf-palette-list" role="listbox" className="max-h-[46vh] overflow-y-auto p-2">
               {flat.length === 0 && (
                 <p className="text-center text-sm text-[var(--cf-ink-mute)] py-8">No results for “{query}”.</p>
               )}
               {results.map((g) => (
                 <div key={g.group} className="mb-1">
-                  <p className="px-2.5 pt-2 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
+                  <p className="flex items-center gap-2 px-2.5 pt-2 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">
+                    {g.group}
+                    <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70 px-1.5 py-px font-mono text-[10px] font-semibold tracking-normal" aria-hidden>
+                      {g.items.length}
+                    </span>
+                  </p>
                   {g.items.map((item) => {
                     const gi = flat.indexOf(item);
-                    const ItemIcon = item.Icon;
+                    const ItemIcon = rowIcon(item);
+                    const active = gi === index;
                     return (
                       <button
                         key={`${item.sub}-${item.title}-${gi}`}
                         id={`cf-opt-${gi}`}
                         role="option"
-                        aria-selected={gi === index}
+                        aria-selected={active}
                         onMouseEnter={() => setIndex(gi)}
                         onClick={() => go(item)}
-                        className={`w-full text-left px-2.5 min-h-11 py-2 rounded-xl flex items-center gap-2 text-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                          gi === index
-                            ? 'bg-[#2563FF]/10 text-[var(--cf-ink)]'
-                            : 'text-[var(--cf-ink-soft)]'
+                        className={`w-full text-left px-2 min-h-11 py-1.5 rounded-[14px] flex items-center gap-2.5 text-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                          active
+                            ? 'bg-[#2563FF]/10 text-[var(--cf-ink)] ring-1 ring-inset ring-[#2563FF]/25'
+                            : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
                         }`}
                       >
-                        {item.quick ? <Zap size={14} className="text-[#2563FF] shrink-0" aria-hidden /> : null}
-                        {ItemIcon ? <ItemIcon size={14} className="shrink-0" aria-hidden /> : null}
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors ${
+                          item.quick || active
+                            ? 'bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]'
+                            : 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]'
+                        }`} aria-hidden>
+                          <ItemIcon size={15} />
+                        </span>
                         <span className="truncate font-medium flex-1">{item.title}</span>
                         <span className="rounded-full bg-[var(--cf-surface-2)]/80 font-mono text-[10px] font-medium px-1.5 py-0.5 shrink-0 text-[var(--cf-ink-mute)]">{item.sub}</span>
-                        {gi === index && <ArrowRight size={14} className="text-[#2563FF]" aria-hidden />}
+                        {active && <ArrowRight size={14} className="text-[#2563FF] shrink-0" aria-hidden />}
                       </button>
                     );
                   })}

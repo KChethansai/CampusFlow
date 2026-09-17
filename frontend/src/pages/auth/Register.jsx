@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { btnClass, cn, inputClass, labelClass } from '../../system/tokens';
+import { btnClass, cn } from '../../system/tokens';
+import { Input, Select } from '../../components/ui/primitives';
 import AuthLayout from './AuthLayout';
 
 const ROLES = [
@@ -24,28 +25,6 @@ const strengthOf = (pw = '') => {
 };
 const STRENGTH_LABEL = ['Too weak', 'Weak', 'Fair', 'Strong', 'Excellent'];
 const STRENGTH_BG = ['bg-red-500', 'bg-orange-500', 'bg-amber-400', 'bg-[#2563FF]', 'bg-green-500'];
-
-const glassInput = (hasError) => cn(
-  inputClass,
-  'rounded-[14px]',
-  hasError && 'border-red-500 focus:ring-red-500/30 focus:border-red-500'
-);
-
-function GlassField({ id, label, error, errorId, ...props }) {
-  return (
-    <div>
-      {label && <label htmlFor={id} className={labelClass}>{label}</label>}
-      <input
-        id={id}
-        className={glassInput(Boolean(error))}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? errorId : undefined}
-        {...props}
-      />
-      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
-    </div>
-  );
-}
 
 function Register() {
   const navigate = useNavigate();
@@ -102,88 +81,101 @@ function Register() {
             );
           })}
         </div>
-        <GlassField
+        <Input
           label="Full name"
           id="name"
           autoComplete="name"
           placeholder="Aarav Kumar"
           error={errors.name && 'Enter your full name'}
-          errorId="name-error"
           {...register('name', { required: true })}
         />
-        <GlassField
+        <Input
           label="Email address"
           id="email"
           type="email"
           autoComplete="email"
           placeholder="you@institution.edu"
           error={errors.email && 'Enter a valid email'}
-          errorId="email-error"
           {...register('email', { required: true })}
         />
         <div>
-          <GlassField
+          <Input
             label="Password"
             id="password"
             type="password"
             autoComplete="new-password"
             placeholder="At least 8 characters"
             error={errors.password && 'Password must be at least 8 characters'}
-            errorId="password-error"
             {...register('password', { required: true, minLength: 8 })}
           />
-          {watchedPw && (
-            <div className="mt-2 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 p-2.5" aria-live="polite">
-              <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <motion.div
-                  className={cn('h-full rounded-full', STRENGTH_BG[strength])}
-                  initial={false}
-                  animate={{ width: `${(strength / 4) * 100}%` }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                />
-              </div>
-              <p className="mt-1 text-[11px] font-display font-semibold">Strength: {STRENGTH_LABEL[strength]}</p>
-            </div>
-          )}
+          <AnimatePresence initial={false}>
+            {watchedPw && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 p-2.5" aria-live="polite">
+                  <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <motion.div
+                      className={cn('h-full rounded-full', STRENGTH_BG[strength])}
+                      initial={false}
+                      animate={{ width: `${(strength / 4) * 100}%` }}
+                      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] font-display font-semibold">Strength: {STRENGTH_LABEL[strength]}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <div>
-          <label htmlFor="role" className={labelClass}>Role</label>
-          <select
-            id="role"
-            className={glassInput(Boolean(errors.role))}
-            aria-invalid={Boolean(errors.role)}
-            aria-describedby={errors.role ? 'role-error' : undefined}
-            {...register('role', { required: true })}
-          >
-            {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-          {errors.role && <p id="role-error" role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">Pick a role</p>}
-        </div>
+        <Select
+          label="Role"
+          id="role"
+          error={errors.role && 'Pick a role'}
+          {...register('role', { required: true })}
+        >
+          {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </Select>
         <div className="grid grid-cols-2 gap-3">
-          <GlassField
+          <Input
             label="Department"
             id="department"
             placeholder="CSE"
             {...register('department')}
           />
-          <GlassField
+          <Input
             label="ID / Roll number"
             id="rollNumber"
             placeholder="SITCSE001"
             {...register('rollNumber')}
           />
         </div>
-        <GlassField
+        <Input
           label="Institution code (optional)"
           id="institutionCode"
           placeholder="SIT"
           {...register('institutionCode')}
         />
-        {error && (
-          <div role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
-            {error}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {error && (
+            <motion.div
+              role="alert"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <p className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
+                {error}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <button type="submit" disabled={loading} className={btnClass('primary', 'large') + ' w-full'}>
           {loading ? 'Creating account…' : 'Create account →'}
         </button>

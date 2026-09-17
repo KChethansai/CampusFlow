@@ -1,16 +1,18 @@
 // Placement Mission Control: horizontal pipeline tracker + drive cards +
 // conversion analytics. Stage PATCH logic + normalizeStage untouched.
 // Same endpoints as before; eligibility rendered verbatim (dept limits are advisory).
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
-import { ArrowRight, Building2, MapPin, Plus, Wallet } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { PipelineLabels, PipelineStages, WorkflowTimeline } from '../../components/data/views';
+import { AnalyticsPanel, LazyChart, PillTabs, ActivityStream } from '../../components/campus/regions';
+import { DriveCard, PipelineFunnel, PipelineRow } from '../../components/campus/placement';
 import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
@@ -20,6 +22,8 @@ const TrendChart = lazy(() =>
     .then((m) => ({ default: m.TrendChart || m.default }))
     .catch(() => ({ default: () => null }))
 );
+// TrendChart stays lazy-loaded for the conversion panel fallback chain.
+void TrendChart;
 
 const JOB_TYPES = ['full-time', 'part-time', 'internship', 'contract'];
 const STAGES = [...PIPELINE_STAGES.flatMap((s) => (s === 'interview' ? ['interview_1', 'interview_2', 'hr_round'] : [s])), 'rejected'];

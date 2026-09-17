@@ -1,15 +1,23 @@
-// ProductPortal: "tour the product" panel, glass restyle. Same pattern —
-// top tab strip + 2x2 grid — and every cell is real product truth:
-// feature links to real routes, pipeline stage names from tokens.
-// No fake deadlines, percentages, or AI chat.
+// ProductPortal: role experiences switcher — Student ↔ Faculty ↔ Placement ↔
+// Admin. One Motion layout morph carries headline + KPI strip + cards + CTA,
+// no reload. Every cell stays real product truth: links to real routes,
+// stage names from tokens, counts computed from the panels themselves.
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowUpRight } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { PIPELINE_STAGES, cn, roleLabel } from '../../system/tokens';
 
 const TABS = ['student', 'faculty', 'placement', 'admin'];
 
 const stageLabel = (s) => roleLabel(s);
+
+const HEADLINES = {
+  student: 'Your day, in one glance.',
+  faculty: 'Teach, don’t file.',
+  placement: 'Drives to offers.',
+  admin: 'The operating picture.'
+};
 
 const PANELS = {
   student: [
@@ -149,7 +157,17 @@ const PANELS = {
 
 export default function ProductPortal() {
   const [tab, setTab] = useState('student');
+  const reduced = useReducedMotion();
   const cells = PANELS[tab];
+  const routeCount = cells.reduce((n, c) => n + c.links.length, 0);
+  const morph = reduced
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.01 } }
+    : {
+        initial: { opacity: 0, y: 18, scale: 0.99 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -12, scale: 0.995 },
+        transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] }
+      };
 
   return (
     <div className="cf-glass rounded-[32px] border border-black/10 dark:border-white/10 overflow-hidden select-none">
@@ -193,71 +211,89 @@ export default function ProductPortal() {
         </div>
       </div>
 
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 sm:p-5"
-        role="tabpanel"
-        aria-label={`${roleLabel(tab)} workspace tour`}
-      >
-        {cells.map((cell) => (
-          <div
-            key={cell.title}
-            className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-4 sm:p-5 flex flex-col justify-between gap-3"
-          >
-            <div>
-              <h3 className="font-display text-base font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
-                {cell.title}
-              </h3>
-              <p className="mt-1 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">
-                {cell.body}
-              </p>
-              {cell.stages && (
-                <ol
-                  className="mt-3 flex flex-wrap gap-1.5"
-                  aria-label="Placement pipeline stages"
-                >
-                  {PIPELINE_STAGES.map((s) => (
-                    <li
-                      key={s}
-                      className="px-2 py-0.5 rounded-full border border-black/10 dark:border-white/10 text-[10px] font-mono font-medium uppercase tracking-wide text-[#4B5563] dark:text-[#A7B0BF]"
-                    >
-                      {stageLabel(s)}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-            <ul className="space-y-1.5">
-              {cell.links.map((l) => (
-                <li key={l.to + l.label}>
-                  <Link
-                    to={l.to}
-                    className="group flex items-center justify-between px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold text-[#0A0D12] dark:text-[#F5F7FA] hover:border-[#2563FF]/50 hover:bg-[#2563FF]/[0.06] dark:hover:bg-[#2563FF]/10 transition-colors"
-                  >
-                    {l.label}
-                    <ArrowUpRight
-                      size={14}
-                      className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                      aria-hidden
-                    />
-                  </Link>
-                </li>
-              ))}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={tab} {...morph}>
+          <div className="flex flex-wrap items-end justify-between gap-3 px-5 sm:px-6 pt-5">
+            <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+              {HEADLINES[tab]}
+            </h3>
+            <ul className="flex flex-wrap gap-1.5" aria-label={`${roleLabel(tab)} workspace facts`}>
+              <li className="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
+                {cells.length} panels
+              </li>
+              <li className="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
+                {routeCount} live routes
+              </li>
             </ul>
           </div>
-        ))}
-      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-5 sm:px-6 py-3.5 border-t border-black/10 dark:border-white/10">
-        <p className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280] dark:text-[#707A89]">
-          Every link opens the real workspace
-        </p>
-        <Link
-          to="/login"
-          className="font-display text-xs font-semibold text-[#2563FF] dark:text-[#7DA6FF] hover:underline underline-offset-4"
-        >
-          Sign in to enter →
-        </Link>
-      </div>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 sm:p-5"
+            role="tabpanel"
+            aria-label={`${roleLabel(tab)} workspace tour`}
+          >
+            {cells.map((cell) => (
+              <div
+                key={cell.title}
+                className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-4 sm:p-5 flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <h4 className="font-display text-base font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+                    {cell.title}
+                  </h4>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">
+                    {cell.body}
+                  </p>
+                  {cell.stages && (
+                    <ol
+                      className="mt-3 flex flex-wrap gap-1.5"
+                      aria-label="Placement pipeline stages"
+                    >
+                      {PIPELINE_STAGES.map((s) => (
+                        <li
+                          key={s}
+                          className="px-2 py-0.5 rounded-full border border-black/10 dark:border-white/10 text-[10px] font-mono font-medium uppercase tracking-wide text-[#4B5563] dark:text-[#A7B0BF]"
+                        >
+                          {stageLabel(s)}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {cell.links.map((l) => (
+                    <li key={l.to + l.label}>
+                      <Link
+                        to={l.to}
+                        className="group flex items-center justify-between px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold text-[#0A0D12] dark:text-[#F5F7FA] hover:border-[#2563FF]/50 hover:bg-[#2563FF]/[0.06] dark:hover:bg-[#2563FF]/10 transition-colors"
+                      >
+                        {l.label}
+                        <ArrowUpRight
+                          size={14}
+                          className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 px-5 sm:px-6 pb-5">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280] dark:text-[#707A89]">
+              Every link opens the real workspace
+            </p>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#A7D700] text-[#0A0D12] text-xs font-display font-semibold hover:brightness-95 transition"
+            >
+              Open {tab === 'admin' ? 'Admin' : roleLabel(tab).split(' ')[0]} workspace <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

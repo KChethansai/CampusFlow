@@ -1,29 +1,19 @@
-// PlacementHome: hierarchical regions — R1 pipeline hero (macro motion +
-// conversion gauge + horizontal tracker), R2 conversion Area chart, R3 open
-// drives stream, R4 glance task cards.
+// PlacementHome: Mission Control — Bklit Funnel + conversion + drives.
+// Regions on campus shells (placement violet+blue).
 // Endpoints preserved: GET /job-drives, /job-applications, /companies.
 // PIPELINE_STAGES / normalizeStage untouched. Real data only.
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowRight, Briefcase, Building2 } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
-import { AnimatedCounter } from '../../components/ui/editorial';
+import { Badge, ErrorState, LoadingState } from '../../components/ui/primitives';
 import { AttendanceRing, PipelineLabels } from '../../components/data/views';
+import { AnalyticsPanel, LazyChart, RoleHero, SpotTask, TaskGrid, TaskStat, ActivityStream } from '../../components/campus/regions';
+import { PipelineFunnel } from '../../components/campus/placement';
 import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
 import { staggerChild, staggerParent } from '../../system/motion';
-
-const TrendChart = lazy(() =>
-  import('../../components/data/TrendChart')
-    .then((m) => ({ default: m.TrendChart || m.default }))
-    .catch(() => ({ default: () => null }))
-);
-
-const HERO = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden';
-const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
-const TASK = 'rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 export default function PlacementHome() {
   const { user } = useAuth();
@@ -101,86 +91,60 @@ export default function PlacementHome() {
     [drives]
   );
 
-  const maxStage = useMemo(
-    () => Math.max(1, ...PIPELINE_STAGES.map((s) => funnel.counts[s])),
-    [funnel]
-  );
-
   if (loading) return <LoadingState label="Mapping career paths…" />;
   if (failed) return <ErrorState message="Couldn't load placement data." onRetry={load} />;
 
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
-      {/* REGION 1 — pipeline hero */}
-      <motion.section variants={staggerChild} className={HERO} aria-label="Pipeline pulse">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0 flex-1 basis-64">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
-              {isStudent ? 'Your career track' : 'Placement control'}
-            </p>
-            <h1 className="mt-2 text-2xl sm:text-4xl font-bold tracking-tight">
-              Classroom to <em className="cf-display font-normal">career.</em>
-            </h1>
-            <p className="mt-2 text-4xl sm:text-5xl font-bold tabular-nums tracking-tight">
-              <AnimatedCounter value={funnel.total} />
-            </p>
-            <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
-              {isStudent
-                ? `application${funnel.total === 1 ? '' : 's'} in motion · ${openDrives.length} drives open.`
-                : `${drives.length} drives · ${companies.length} companies · ${funnel.total} applications in the ecosystem.`}
-            </p>
+      {/* REGION 1 — Mission Control hero: funnel + conversion gauge */}
+      <motion.div variants={staggerChild}>
+        <RoleHero
+          accent="placement"
+          kicker={isStudent ? 'Your career track' : 'Placement control'}
+          title={<>Classroom to <em className="cf-display font-normal">career.</em></>}
+          metric={funnel.total}
+          sub={
+            isStudent
+              ? `application${funnel.total === 1 ? '' : 's'} in motion · ${openDrives.length} drives open.`
+              : `${drives.length} drives · ${companies.length} companies · ${funnel.total} applications in the ecosystem.`
+          }
+          alert={
             <Link to="/placement" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#2563FF] hover:underline">
               Full board <ArrowRight size={13} aria-hidden />
             </Link>
-          </div>
-          {conversion != null && (
-            <AttendanceRing value={conversion} label="Offer conversion" />
-          )}
-        </div>
-        {/* horizontal pipeline tracker — real counts */}
-        <div className="mt-6 flex items-stretch gap-1.5" role="img" aria-label={`Pipeline counts: ${PIPELINE_STAGES.map((s) => `${s} ${funnel.counts[s]}`).join(', ')}`}>
-          {PIPELINE_STAGES.map((s) => (
-            <div key={s} className="flex-1 min-w-0">
-              <div className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/60 px-1 py-2.5 text-center">
-                <p className="text-xl font-bold tabular-nums leading-none"><AnimatedCounter value={funnel.counts[s]} /></p>
-                <div className="mx-2 mt-2 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" aria-hidden>
-                  <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((funnel.counts[s] / maxStage) * 100)}%`, background: funnel.counts[s] ? '#2563FF' : 'transparent' }} />
-                </div>
-              </div>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wide truncate text-center text-[var(--cf-ink-mute)]">{s}</p>
-            </div>
-          ))}
-        </div>
-        <PipelineLabels current={applications[0]?.stage || 'applied'} />
-      </motion.section>
+          }
+          gauge={conversion != null && <AttendanceRing value={conversion} label="Offer conversion" />}
+        >
+          <PipelineFunnel counts={funnel.counts} rejected={funnel.rejected} total={funnel.total} />
+          <PipelineLabels current={applications[0]?.stage || 'applied'} />
+        </RoleHero>
+      </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
-        {/* REGION 2 — conversion area chart (~65%) */}
-        <motion.section variants={staggerChild} className={`${PANEL} lg:col-span-2`} aria-label="Conversion analytics">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-display text-base font-semibold flex items-center gap-2">
-              <Briefcase size={17} className="text-[#8B5CF6]" aria-hidden /> Conversion analytics
-            </h2>
-            <Link to="/placement" className="text-xs font-medium text-[#2563FF] hover:underline">Marketplace</Link>
-          </div>
-          <p className="text-xs text-[var(--cf-ink-mute)] mb-3">Cumulative applications vs wins · {funnel.total} total.</p>
-          {conversionRows.length ? (
-            <Suspense fallback={<p className="text-sm text-[var(--cf-ink-mute)]">Loading chart…</p>}>
-              <TrendChart
-                data={conversionRows}
-                xKey="bucket"
-                lines={[{ key: 'applications', color: '#2563FF' }, { key: 'wins', color: '#8B5CF6' }]}
-                height={200}
-              />
-            </Suspense>
-          ) : (
-            <EmptyState title="No pipeline motion yet" hint="Applications will chart here." />
-          )}
-        </motion.section>
+        {/* REGION 2 — conversion analytics: is the pipeline compounding? */}
+        <motion.div variants={staggerChild} className="lg:col-span-2">
+          <AnalyticsPanel
+            title="Conversion analytics"
+            icon={<Briefcase size={17} className="text-[#8B5CF6]" aria-hidden />}
+            question="Is the pipeline compounding?"
+            period={`Cumulative applications vs wins · ${funnel.total} total`}
+            tooltip="Buckets applications oldest→newest; wins counts offers + placements. A widening gap means top-of-funnel without closes."
+            summary={conversion != null ? `${conversion}% of live applications convert to offer or better.` : undefined}
+            empty={conversionRows.length === 0 ? 'No pipeline motion yet' : null}
+            emptyHint="Applications will chart here."
+            action={<Link to="/placement" className="text-xs font-medium text-[#2563FF] hover:underline">Marketplace</Link>}
+          >
+            <LazyChart
+              data={conversionRows}
+              xKey="bucket"
+              series={[{ key: 'applications', color: '#2563FF' }, { key: 'wins', color: '#8B5CF6' }]}
+              height={200}
+            />
+          </AnalyticsPanel>
+        </motion.div>
 
-        {/* REGION 3 — open drives stream (~35%) */}
-        <motion.section variants={staggerChild} className={PANEL} aria-label="Open drives">
+        {/* REGION 3 — open drives stream */}
+        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-base font-semibold">Open drives</h2>
             <Link to="/placement" className="text-xs font-medium text-[#2563FF] hover:underline">All</Link>
@@ -188,39 +152,42 @@ export default function PlacementHome() {
           {openDrives.length === 0 ? (
             <p className="text-sm text-[var(--cf-ink-mute)] py-4 text-center">No open drives right now.</p>
           ) : (
-            <ul className="divide-y divide-[var(--cf-line)]">
-              {openDrives.map((d) => (
-                <li key={d._id}>
-                  <Link to="/placement" className="flex items-center gap-3 py-2.5 group">
-                    <span className="grid place-items-center w-9 h-9 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
-                      <Building2 size={17} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium truncate group-hover:text-[#2563FF] transition">{d.role} · {d.company?.name}</span>
-                      <span className="block text-xs text-[var(--cf-ink-mute)]">{d.location || ''}{d.packageLPA ? ` · ${d.packageLPA} LPA` : ''}</span>
-                    </span>
-                    <Badge status="open">Apply</Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <ActivityStream
+              label="Open drives"
+              items={openDrives}
+              renderItem={(d) => (
+                <Link to="/placement" className="flex items-center gap-3 py-2.5 group">
+                  <span className="grid place-items-center w-9 h-9 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                    <Building2 size={17} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium truncate group-hover:text-[#2563FF] transition">{d.role} · {d.company?.name}</span>
+                    <span className="block text-xs text-[var(--cf-ink-mute)]">{d.location || ''}{d.packageLPA ? ` · ${d.packageLPA} LPA` : ''}</span>
+                  </span>
+                  <Badge status="open">Apply</Badge>
+                </Link>
+              )}
+            />
           )}
         </motion.section>
       </div>
 
       {/* REGION 4 — glance task cards */}
-      <motion.div variants={staggerChild} className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-        {[
-          ['Open drives', openDrives.length],
-          ['Companies', companies.length],
-          ['Applications', funnel.total],
-          ['Offers', funnel.counts.offer + funnel.counts.placed]
-        ].map(([label, value]) => (
-          <div key={label} className={TASK}>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--cf-ink-mute)]">{label}</p>
-            <p className="text-3xl font-bold tabular-nums"><AnimatedCounter value={value} /></p>
-          </div>
-        ))}
+      <motion.div variants={staggerChild}>
+        <TaskGrid>
+          <SpotTask to="/placement" label="Open drives">
+            <TaskStat label="Open drives" value={openDrives.length} />
+          </SpotTask>
+          <SpotTask to="/placement" label="Open companies">
+            <TaskStat label="Companies" value={companies.length} />
+          </SpotTask>
+          <SpotTask to="/placement" label="Open applications">
+            <TaskStat label="Applications" value={funnel.total} />
+          </SpotTask>
+          <SpotTask to="/placement" label="Open offers">
+            <TaskStat label="Offers" value={funnel.counts.offer + funnel.counts.placed} />
+          </SpotTask>
+        </TaskGrid>
       </motion.div>
     </motion.div>
   );

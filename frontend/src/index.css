@@ -102,6 +102,8 @@
   --cf-bg: #F6F7F9;
   --cf-surface: #FFFFFF;
   --cf-surface-2: #EEF1F5;
+  --cf-elevated: #FFFFFF;
+  --cf-overlay: rgba(10, 13, 18, 0.45);
   --cf-ink: #0A0D12;
   --cf-ink-soft: #5E6673;
   --cf-ink-mute: #8C95A3;
@@ -113,6 +115,13 @@
   --cf-warning: #FFBD4A;
   --cf-danger: #FF5964;
   --cf-frame: #0A0D12;
+  --cf-glow-royal: 0 0 32px rgba(37,99,255,0.25);
+  --cf-glow-violet: 0 0 32px rgba(124,92,255,0.20);
+  --cf-glow-volt: 0 0 20px rgba(167,215,0,0.30);
+  --duration-hover: 160ms;
+  --duration-modal: 280ms;
+  --duration-page: 350ms;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: light;
 }
 
@@ -120,6 +129,8 @@
   --cf-bg: #07090D;
   --cf-surface: #0D1118;
   --cf-surface-2: #151C28;
+  --cf-elevated: #1a2233;
+  --cf-overlay: rgba(0, 0, 0, 0.75);
   --cf-ink: #F5F7FA;
   --cf-ink-soft: #A7B0BF;
   --cf-ink-mute: #707A89;
@@ -131,6 +142,9 @@
   --cf-warning: #FFBD4A;
   --cf-danger: #FF5964;
   --cf-frame: rgba(255,255,255,.08);
+  --cf-glow-royal: 0 0 32px rgba(37,99,255,0.40);
+  --cf-glow-violet: 0 0 32px rgba(124,92,255,0.35);
+  --cf-glow-volt: 0 0 20px rgba(167,215,0,0.45);
   color-scheme: dark;
 }
 
@@ -183,6 +197,20 @@ body {
   background: color-mix(in srgb, var(--cf-surface) 72%, transparent);
   backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+.cf-depth-0 { background: var(--cf-bg); }
+.cf-depth-1 { background: var(--cf-surface); border: 1px solid var(--cf-line); }
+.cf-depth-2 { background: var(--cf-surface); border: 1px solid var(--cf-line); box-shadow: 0 4px 20px -4px rgba(0,0,0,0.25); }
+.cf-depth-3 { background: var(--cf-surface); border: 1px solid var(--cf-line); box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5); }
+.cf-glow { box-shadow: var(--cf-glow-royal); }
+.cf-pulse-ring {
+  box-shadow: 0 0 0 0 rgba(37,99,255,0.4);
+  animation: pulse-ring 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(37,99,255,0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(37,99,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,99,255,0); }
 }
 
 /* Cinematic glass utilities */

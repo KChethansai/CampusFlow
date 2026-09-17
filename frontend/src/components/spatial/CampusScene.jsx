@@ -106,7 +106,8 @@ export default function CampusScene({ onHover, autoRotate = true, className, sty
       <Canvas
         dpr={[1, 1.5]}
         frameloop={running ? 'always' : 'never'}
-        camera={{ position: [5.2, 4.2, 6.4], fov: 42 }}
+        // framing: wider cinematic establishing shot for the landing hero
+        camera={{ position: [5.6, 3.6, 7.0], fov: 40 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           const el = gl.domElement;

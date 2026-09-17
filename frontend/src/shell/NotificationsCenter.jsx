@@ -1,11 +1,21 @@
 // NotificationsCenter: glass popover tray — category tabs, swipe-to-dismiss, volt unread dot.
+// Reskin only: Motion list transitions, categorized icons, volt dot retained.
+// NOTE: components/ui/{buttons,cards,overlays}/ do not exist in this repo — composed locally.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Bell } from 'lucide-react';
+import { Bell, Briefcase, GraduationCap, Inbox, Megaphone, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import api from '../api/axios';
 import { cn } from '../system/tokens';
-import { motionVariants } from '../system/motion';
+import { EASE_OUT, motionVariants } from '../system/motion';
+
+const CATEGORY_ICON = {
+  Academic: GraduationCap,
+  Placement: Briefcase,
+  Requests: Inbox,
+  Campus: Megaphone,
+  System: Settings2
+};
 
 const groupOf = (n) => {
   if (n._campus) return 'Campus';
@@ -119,7 +129,7 @@ export default function NotificationsCenter() {
           <>
             <button aria-label="Close notifications" onClick={() => setOpen(false)} className="fixed inset-0 z-30 cursor-default" />
             <motion.div
-              {...motionVariants.popover}
+              {...(reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : motionVariants.popover)}
               className="cf-glass absolute right-0 top-full mt-2 w-[22rem] max-w-[90vw] max-h-[70vh] overflow-hidden rounded-2xl border border-[var(--cf-line)] shadow-[0_24px_64px_-16px_rgba(16,24,40,0.35)] z-40 flex flex-col"
               role="dialog"
               aria-label="Notification center"
@@ -153,34 +163,58 @@ export default function NotificationsCenter() {
                 {grouped.length === 0 && (
                   <p className="px-4 py-10 text-center text-sm text-[var(--cf-ink-mute)]">You’re all caught up.</p>
                 )}
-                {grouped.map((g) => (
-                  <div key={g.group}>
-                    <p className="px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
-                    {g.rows.map((n) => (
-                      <motion.div
-                        key={n._id}
-                        drag={reduced ? false : 'x'}
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.7}
-                        onDragEnd={(_, info) => { if (info.offset.x < -70 || info.offset.x > 70) dismiss(n._id); }}
-                        className="border-b border-[var(--cf-line)]/60 last:border-0"
-                      >
-                        <button
-                          onClick={() => openItem(n)}
-                          className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
-                        >
-                          <span className="flex items-start gap-2">
-                            <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', n.isRead ? 'bg-[var(--cf-line)]' : 'bg-[#A7D700]')} aria-hidden />
-                            <span className="min-w-0">
-                              <span className="block text-sm font-semibold text-[var(--cf-ink)] truncate">{n.title}</span>
-                              {n.message && <span className="block text-xs text-[var(--cf-ink-mute)] line-clamp-2 mt-0.5">{n.message}</span>}
-                            </span>
-                          </span>
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                ))}
+                {grouped.map((g) => {
+                  const GroupIcon = CATEGORY_ICON[g.group] || Bell;
+                  return (
+                    <div key={g.group}>
+                      <p className="flex items-center gap-1.5 px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">
+                        <GroupIcon size={13} aria-hidden className="text-[#2563FF] dark:text-[#8db4ff]" />
+                        {g.group}
+                        <span className="ml-auto rounded-full border border-[var(--cf-line)] px-1.5 py-px text-[10px] tracking-normal" aria-hidden>
+                          {g.rows.length}
+                        </span>
+                      </p>
+                      <AnimatePresence initial={false}>
+                        {g.rows.map((n) => {
+                          const RowIcon = CATEGORY_ICON[groupOf(n)] || Bell;
+                          return (
+                            <motion.div
+                              key={n._id}
+                              layout={!reduced}
+                              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={reduced ? { opacity: 0 } : { opacity: 0, x: 64, transition: { duration: 0.18, ease: EASE_OUT } }}
+                              transition={{ duration: 0.22, ease: EASE_OUT }}
+                              drag={reduced ? false : 'x'}
+                              dragConstraints={{ left: 0, right: 0 }}
+                              dragElastic={0.7}
+                              onDragEnd={(_, info) => { if (info.offset.x < -70 || info.offset.x > 70) dismiss(n._id); }}
+                              className="border-b border-[var(--cf-line)]/60 last:border-0"
+                            >
+                              <button
+                                onClick={() => openItem(n)}
+                                className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
+                              >
+                                <span className="flex items-start gap-2">
+                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]')} aria-hidden>
+                                    <RowIcon size={14} />
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--cf-ink)]">
+                                      <span className="truncate">{n.title}</span>
+                                      {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[#A7D700]" aria-label="Unread" role="img" />}
+                                    </span>
+                                    {n.message && <span className="block text-xs text-[var(--cf-ink-mute)] line-clamp-2 mt-0.5">{n.message}</span>}
+                                  </span>
+                                </span>
+                              </button>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           </>

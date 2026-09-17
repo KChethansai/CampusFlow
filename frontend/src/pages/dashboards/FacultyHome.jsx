@@ -1,6 +1,5 @@
-// FacultyHome: hierarchical regions — R1 Teaching pulse hero (macro workload +
-// grading gauge), R2 grading queue (primary surface), R3 subjects + requests
-// stream, R4 actionable task cards.
+// FacultyHome: productivity — teaching pulse + grading queue + subjects +
+// requests. Regions on campus shells (faculty blue+cyan).
 // Endpoints preserved: GET /subjects, /assignments, /submissions,
 // /requests, /attendance. Real data only.
 import { useEffect, useMemo, useState } from 'react';
@@ -10,13 +9,10 @@ import { BookMarked, CalendarCheck, ClipboardList, Inbox } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
-import { AnimatedCounter } from '../../components/ui/editorial';
 import { AttendanceRing } from '../../components/data/views';
+import { AnimatedCounter } from '../../components/ui/editorial';
+import { AnalyticsPanel, LazyChart, RoleHero, SpotTask, TaskGrid, ActivityStream } from '../../components/campus/regions';
 import { staggerChild, staggerParent } from '../../system/motion';
-
-const HERO = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden';
-const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
-const TASK = 'rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg block';
 
 const ACTIONS = [
   { to: '/attendance', Icon: CalendarCheck, label: 'Take attendance', hint: 'Mark today’s classes' },
@@ -80,6 +76,17 @@ export default function FacultyHome() {
     return sessions.filter((s) => s.date && new Date(s.date).toDateString() === today);
   }, [sessions]);
 
+  // Which assignment buries you? Pending reviews per assignment (real submissions).
+  const loadRows = useMemo(() => {
+    const m = {};
+    gradeQueue.forEach((s) => {
+      const id = String(s.assignment?._id || s.assignment || 'other');
+      const title = s.assignment?.title || 'Ungrouped';
+      (m[id] = m[id] || { assignment: title.slice(0, 18), pending: 0 }).pending++;
+    });
+    return Object.values(m).sort((a, b) => b.pending - a.pending).slice(0, 6);
+  }, [gradeQueue]);
+
   if (loading) return <LoadingState label="Preparing your classes…" />;
   if (failed) return <ErrorState message="Couldn't load your dashboard." onRetry={load} />;
 
@@ -93,61 +100,36 @@ export default function FacultyHome() {
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
       {/* REGION 1 — Teaching pulse hero */}
-      <motion.section variants={staggerChild} className={HERO} aria-label="Teaching pulse">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0 flex-1 basis-64">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
-              Teaching Pulse
-            </p>
-            <h1 className="mt-2 text-2xl sm:text-4xl font-bold tracking-tight">
-              Namaste, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em>
-            </h1>
-            <p className="mt-2 text-4xl sm:text-5xl font-bold tabular-nums tracking-tight">
-              <AnimatedCounter value={pulse} />
-            </p>
-            <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
-              items need you · {todaySessions.length ? `${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''} on record today` : 'no sessions recorded today yet'}
-              {gradeQueue.length ? ` · ${gradeQueue.length} awaiting review` : ' · grading clear'}.
-            </p>
-          </div>
-          {gradedPct != null && (
-            <AttendanceRing value={gradedPct} label="Grading completion" />
-          )}
-        </div>
-      </motion.section>
+      <motion.div variants={staggerChild}>
+        <RoleHero
+          accent="faculty"
+          kicker="Teaching Pulse"
+          title={<>Namaste, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></>}
+          metric={pulse}
+          sub={`items need you · ${todaySessions.length ? `${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''} on record today` : 'no sessions recorded today yet'}${gradeQueue.length ? ` · ${gradeQueue.length} awaiting review` : ' · grading clear'}.`}
+          gauge={gradedPct != null && <AttendanceRing value={gradedPct} label="Grading completion" />}
+        />
+      </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
-        {/* REGION 2 — grading queue, primary surface (~65%) */}
-        <motion.section variants={staggerChild} className={`${PANEL} lg:col-span-2`} aria-label="Grading queue">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-base font-semibold">
-              Grading queue{' '}
-              <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white tabular-nums" style={{ background: gradeQueue.length ? '#FF5964' : '#25D890' }}>
-                {gradeQueue.length}
-              </span>
-            </h2>
-            <Link to="/assignments" className="text-xs font-medium text-[#2563FF] hover:underline">Open assignments</Link>
-          </div>
-          {gradeQueue.length === 0 ? (
-            <EmptyState title="Inbox zero" hint="Enjoy it while it lasts." />
-          ) : (
-            <ul className="divide-y divide-[var(--cf-line)]">
-              {gradeQueue.slice(0, 6).map((s) => (
-                <li key={s._id} className="py-2.5 flex items-center gap-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium truncate">{s.assignment?.title || 'Submission'}</span>
-                    <span className="block text-xs text-[var(--cf-ink-mute)]">{s.student?.name || 'Student'}</span>
-                  </span>
-                  <Badge status={s.status || 'submitted'}>{(s.status || 'submitted').replace(/_/g, ' ')}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </motion.section>
+        {/* REGION 2 — analytics: which assignment buries you? */}
+        <motion.div variants={staggerChild} className="lg:col-span-2">
+          <AnalyticsPanel
+            title="Grading load"
+            question="Which assignment buries you?"
+            period="Pending reviews · right now"
+            tooltip="Counts ungraded submissions per assignment from live submission statuses."
+            summary={loadRows.length ? `“${loadRows[0].assignment}” holds ${loadRows[0].pending} of ${gradeQueue.length} pending reviews — clear it first.` : undefined}
+            empty={loadRows.length === 0 ? 'Inbox zero' : null}
+            emptyHint="Enjoy it while it lasts."
+            action={<Link to="/assignments" className="text-xs font-medium text-[#2563FF] hover:underline">Open assignments</Link>}
+          >
+            <LazyChart kind="bar" data={loadRows} xKey="assignment" series={[{ key: 'pending', color: '#22d3ee' }]} height={200} />
+          </AnalyticsPanel>
+        </motion.div>
 
-        {/* REGION 3 — subjects + requests stream (~35%) */}
-        <motion.section variants={staggerChild} className={`${PANEL} space-y-4`} aria-label="Subjects and requests">
+        {/* REGION 3 — subjects + requests stream */}
+        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5 space-y-4" aria-label="Subjects and requests">
           <div>
             <h2 className="font-display text-base font-semibold mb-2">My subjects</h2>
             <div className="flex flex-wrap gap-1.5">
@@ -167,9 +149,29 @@ export default function FacultyHome() {
               </div>
             </div>
           </div>
+          <div>
+            <h2 className="font-semibold text-sm mb-2 flex items-center gap-1.5"><Inbox size={15} aria-hidden /> Grading queue</h2>
+            {gradeQueue.length === 0 ? (
+              <EmptyState title="Inbox zero" hint="Enjoy it while it lasts." />
+            ) : (
+              <ActivityStream
+                label="Submissions awaiting review"
+                items={gradeQueue.slice(0, 6)}
+                renderItem={(s) => (
+                  <span className="py-2.5 flex items-center gap-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium truncate">{s.assignment?.title || 'Submission'}</span>
+                      <span className="block text-xs text-[var(--cf-ink-mute)]">{s.student?.name || 'Student'}</span>
+                    </span>
+                    <Badge status={s.status || 'submitted'}>{(s.status || 'submitted').replace(/_/g, ' ')}</Badge>
+                  </span>
+                )}
+              />
+            )}
+          </div>
           {pendingRequests.length > 0 && (
             <div className="pt-3 border-t border-[var(--cf-line)]">
-              <h2 className="font-semibold text-sm mb-2 flex items-center gap-1.5"><Inbox size={15} aria-hidden /> Requests awaiting you</h2>
+              <h2 className="font-semibold text-sm mb-2">Requests awaiting you</h2>
               <ul className="space-y-2">
                 {pendingRequests.slice(0, 4).map((r) => (
                   <li key={r._id}>
@@ -185,17 +187,19 @@ export default function FacultyHome() {
         </motion.section>
       </div>
 
-      {/* REGION 4 — actionable task cards */}
-      <motion.div variants={staggerChild} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-        {ACTIONS.map(({ to, Icon, label, hint, hintKey }) => (
-          <Link key={label} to={to} className={TASK}>
-            <span className="inline-grid place-items-center w-9 h-9 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
-              <Icon size={18} />
-            </span>
-            <p className="mt-3 text-sm font-bold font-display">{label}</p>
-            <p className="text-xs text-[var(--cf-ink-mute)]">{hint || hintFor(hintKey)}</p>
-          </Link>
-        ))}
+      {/* REGION 4 — task cards */}
+      <motion.div variants={staggerChild}>
+        <TaskGrid>
+          {ACTIONS.map(({ to, Icon, label, hint, hintKey }) => (
+            <SpotTask key={label} to={to} label={label}>
+              <span className="inline-grid place-items-center w-9 h-9 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                <Icon size={18} />
+              </span>
+              <p className="mt-3 text-sm font-bold font-display">{label}</p>
+              <p className="text-xs text-[var(--cf-ink-mute)]">{hint || hintFor(hintKey)}</p>
+            </SpotTask>
+          ))}
+        </TaskGrid>
       </motion.div>
     </motion.div>
   );
