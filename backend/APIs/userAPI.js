@@ -11,16 +11,16 @@ import {
 
 export const userApp = Router();
 
-// All routes require verifyToken() + verifyToken('super_admin', 'college_admin')
-userApp.use(verifyToken('super_admin', 'college_admin'));
+// All routes require authenticated session
+userApp.use(verifyToken());
 userApp.use(auditLog);
 
 userApp.route('/')
-  .get(getAllUsers)
-  .post(createUser);
+  .get(verifyToken('super_admin', 'college_admin', 'faculty', 'placement_officer'), getAllUsers)
+  .post(verifyToken('super_admin', 'college_admin'), createUser);
 
 userApp.route('/:id')
-  .get(getUserById)
-  .patch(updateUser)
-  .delete(deleteUser);
+  .get(verifyToken('super_admin', 'college_admin', 'faculty', 'placement_officer'), getUserById)
+  .patch(verifyToken('super_admin', 'college_admin'), updateUser)
+  .delete(verifyToken('super_admin', 'college_admin'), deleteUser);
 

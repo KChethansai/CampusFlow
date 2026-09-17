@@ -61,7 +61,10 @@ const TRANSITIONS = {
 };
 
 export const updateAssignmentStatus = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findOne({ _id: req.params.id, createdBy: req.user._id });
+  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
+    ? { _id: req.params.id, institution: req.user.institution }
+    : { _id: req.params.id, createdBy: req.user._id };
+  const assignment = await Assignment.findOne(filter);
   if (!assignment) throw new ApiError(404, 'Assignment not found');
 
   const allowed = TRANSITIONS[assignment.status] || [];
