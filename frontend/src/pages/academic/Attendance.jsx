@@ -1,18 +1,20 @@
 // Attendance: health-first experience — ring, trend, heatmap, course comparison.
 // Faculty: mark attendance (POST /attendance).
 // Endpoints preserved: GET /attendance, POST /attendance, GET /subjects,
-// GET /users. Role gates unchanged.
+// GET /users. Role gates + marking logic unchanged. Heatmap matrix restyled
+// to the glass/royal/violet surface.
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { AttendanceRing, Heatmap, Sparkline } from '../../components/data/views';
 import { btnClass, inputClass, labelClass, selectClass, statusBadge } from '../../system/tokens';
 
 const STATUSES = ['present', 'absent', 'late', 'od'];
+const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
 
 export default function Attendance() {
   const { user } = useAuth();
@@ -140,23 +142,30 @@ export default function Attendance() {
       />
 
       {loading ? <LoadingState /> : health == null ? (
-        <div className="card-brutal p-5"><EmptyState title="No attendance yet" hint={isFaculty ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></div>
+        <div className={GLASS}><EmptyState title="No attendance yet" hint={isFaculty ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></div>
       ) : (
         <>
-          <div className="grid lg:grid-cols-3 gap-4 mb-4">
-            <Card className="role-card-animated lg:col-span-1">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">Health</p>
-              <AttendanceRing value={health} />
-            </Card>
-            <Card className="role-card-animated lg:col-span-2">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">Trend · last {trend.length} sessions</p>
-              {trend.length > 1 ? <Sparkline points={trend} width={460} height={96} /> : <p className="text-sm text-[var(--cf-ink-mute)]">Not enough sessions for a trend yet.</p>}
-              <div className="mt-4 border-t-2 border-[var(--cf-ink)] pt-3"><Heatmap weeks={weeks} /></div>
-            </Card>
-          </div>
+          {/* Hero pulse: health gauge + trajectory + glass heatmap matrix */}
+          <section className={`${GLASS} mb-4`} aria-label="Attendance pulse">
+            <div className="flex flex-wrap items-start gap-8">
+              <div>
+                <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+                  Health
+                </p>
+                <AttendanceRing value={health} />
+              </div>
+              <div className="min-w-0 flex-1 basis-64">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">Trend · last {trend.length} sessions</p>
+                {trend.length > 1 ? <Sparkline points={trend} width={460} height={96} /> : <p className="text-sm text-[var(--cf-ink-mute)]">Not enough sessions for a trend yet.</p>}
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mt-4 mb-2">Activity matrix · last 4 weeks</p>
+                <Heatmap weeks={weeks} />
+              </div>
+            </div>
+          </section>
 
           <div className="grid lg:grid-cols-2 gap-4">
-            <Card className="role-card-animated">
+            <section className={GLASS} aria-label="Course comparison">
               <h2 className="font-display font-semibold mb-3">Course comparison</h2>
               <ul className="space-y-3">
                 {byCourse.map((c) => (
@@ -165,19 +174,19 @@ export default function Attendance() {
                       <span className="font-medium truncate">{c.name}</span>
                       <span className="text-xs text-[var(--cf-ink-mute)] tabular-nums">{c.pct}% · {c.n} records</span>
                     </div>
-                    <div className="h-2.5 rounded-full border border-[var(--cf-ink)] bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
-                      <div className="h-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#16a34a' : c.pct >= 60 ? '#d97706' : '#dc2626' }} />
+                    <div className="h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#2563FF' : c.pct >= 60 ? '#FFBD4A' : '#FF5964' }} />
                     </div>
                   </li>
                 ))}
               </ul>
               {health < 75 && (
-                <p className="card-brutal mt-4 bg-gold px-3 py-2.5 text-xs font-semibold text-coal">
+                <p className="rounded-[14px] border border-[var(--cf-line)] bg-[#FFBD4A]/10 px-3 py-2.5 mt-4 text-xs font-semibold">
                   Projected risk: below the 75% threshold. Attend every upcoming class to recover.
                 </p>
               )}
-            </Card>
-            <Card>
+            </section>
+            <section className={GLASS} aria-label="Recent sessions">
               <h2 className="font-display font-semibold mb-3">Recent sessions</h2>
               <ul className="divide-y divide-[var(--cf-line)]">
                 {mine.slice(-6).reverse().map((s) => (
@@ -192,7 +201,7 @@ export default function Attendance() {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </section>
           </div>
         </>
       )}
@@ -215,7 +224,7 @@ export default function Attendance() {
             ))}
           </div>
         </div>
-        <ul className="max-h-64 overflow-y-auto divide-y divide-[var(--cf-line)] rounded-xl border-2 border-[var(--cf-ink)]">
+        <ul className="max-h-64 overflow-y-auto divide-y divide-[var(--cf-line)] rounded-[14px] border border-[var(--cf-line)]">
           {students.map((s) => (
             <li key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <span className="flex-1 truncate font-medium">{s.name}</span>
@@ -227,7 +236,7 @@ export default function Attendance() {
                     role="radio"
                     aria-checked={(marks[s._id] || 'present') === st}
                     onClick={() => setMarks((m) => ({ ...m, [s._id]: st }))}
-                    className={`brutal-tag px-2 py-1 text-[11px] font-bold capitalize transition ${(marks[s._id] || 'present') === st ? 'bg-frame text-white' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]'}`}
+                    className={cn2((marks[s._id] || 'present') === st)}
                   >
                     {st}
                   </button>
@@ -244,3 +253,6 @@ export default function Attendance() {
     </div>
   );
 }
+
+const cn2 = (active) =>
+  `rounded-full px-2.5 py-1 text-[11px] font-bold capitalize border transition ${active ? 'bg-[#2563FF] text-white border-transparent' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;

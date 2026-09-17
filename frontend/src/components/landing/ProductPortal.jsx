@@ -1,7 +1,7 @@
-// ProductPortal: "tour the product" panel. Layout nods to the reference
-// InteractivePortal (top tab strip + 2x2 grid) but every cell is real product
-// truth: feature bullets that link to real routes, pipeline stage names from
-// tokens.PIPELINE_STAGES. No fake deadlines, percentages, or AI chat.
+// ProductPortal: "tour the product" panel, glass restyle. Same pattern —
+// top tab strip + 2x2 grid — and every cell is real product truth:
+// feature links to real routes, pipeline stage names from tokens.
+// No fake deadlines, percentages, or AI chat.
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
@@ -152,16 +152,27 @@ export default function ProductPortal() {
   const cells = PANELS[tab];
 
   return (
-    <div className="bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-xl select-none">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b-2 border-[var(--cf-ink)]">
+    <div className="cf-glass rounded-[32px] border border-black/10 dark:border-white/10 overflow-hidden select-none">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-black/10 dark:border-white/10">
         <div className="flex items-center gap-2.5">
-          <span className="w-7 h-7 bg-frame text-volt grid place-items-center font-display font-bold text-xs border-2 border-[var(--cf-ink)]" aria-hidden>
-            CF
+          <span
+            className="w-7 h-7 rounded-full grid place-items-center font-display font-bold text-xs bg-[#2563FF] text-white"
+            aria-hidden
+          >
+            C
           </span>
-          <span className="font-display text-sm font-bold uppercase tracking-tight">CampusFlow Portal</span>
-          <span className="brutal-tag bg-volt px-2 py-0.5 text-[10px] font-bold uppercase">Tour</span>
+          <span className="font-display text-sm font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+            CampusFlow Portal
+          </span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[#A7D700]/15 text-[#4d6a00] dark:text-[#A7D700] border border-[#A7D700]/30">
+            Tour
+          </span>
         </div>
-        <div className="flex items-center gap-1 bg-[var(--cf-surface-2)] p-1 border-2 border-[var(--cf-ink)]" role="tablist" aria-label="Preview workspace by role">
+        <div
+          className="flex items-center gap-1 p-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]"
+          role="tablist"
+          aria-label="Preview workspace by role"
+        >
           {TABS.map((t) => (
             <button
               key={t}
@@ -170,8 +181,10 @@ export default function ProductPortal() {
               aria-selected={tab === t}
               onClick={() => setTab(t)}
               className={cn(
-                'px-2.5 py-1 font-display text-xs font-bold uppercase tracking-wider transition-all',
-                tab === t ? 'bg-frame text-volt' : 'hover:bg-[var(--cf-surface)]'
+                'px-3 py-1.5 rounded-full font-display text-xs font-semibold transition-all',
+                tab === t
+                  ? 'bg-[#2563FF] text-white'
+                  : 'text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white'
               )}
             >
               {t === 'admin' ? 'Admin' : roleLabel(t).split(' ')[0]}
@@ -180,21 +193,32 @@ export default function ProductPortal() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 sm:p-5" role="tabpanel" aria-label={`${roleLabel(tab)} workspace tour`}>
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 sm:p-5"
+        role="tabpanel"
+        aria-label={`${roleLabel(tab)} workspace tour`}
+      >
         {cells.map((cell) => (
-          <div key={cell.title} className="border-2 border-[var(--cf-ink)] bg-[var(--cf-bg)] p-4 flex flex-col justify-between gap-3 shadow-brutal-sm">
+          <div
+            key={cell.title}
+            className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-4 sm:p-5 flex flex-col justify-between gap-3"
+          >
             <div>
-              <h3 className="font-display text-base font-bold uppercase tracking-tight">{cell.title}</h3>
-              <p className="mt-1 text-xs text-[var(--cf-ink-mute)] leading-relaxed">{cell.body}</p>
+              <h3 className="font-display text-base font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+                {cell.title}
+              </h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">
+                {cell.body}
+              </p>
               {cell.stages && (
-                <ol className="mt-3 flex flex-wrap gap-1.5" aria-label="Placement pipeline stages">
-                  {PIPELINE_STAGES.map((s, i) => (
+                <ol
+                  className="mt-3 flex flex-wrap gap-1.5"
+                  aria-label="Placement pipeline stages"
+                >
+                  {PIPELINE_STAGES.map((s) => (
                     <li
                       key={s}
-                      className={cn(
-                        'px-2 py-0.5 border border-[var(--cf-ink)] text-[10px] font-mono font-bold uppercase',
-                        i === 0 ? 'bg-gold' : 'bg-[var(--cf-surface)]'
-                      )}
+                      className="px-2 py-0.5 rounded-full border border-black/10 dark:border-white/10 text-[10px] font-mono font-medium uppercase tracking-wide text-[#4B5563] dark:text-[#A7B0BF]"
                     >
                       {stageLabel(s)}
                     </li>
@@ -207,10 +231,14 @@ export default function ProductPortal() {
                 <li key={l.to + l.label}>
                   <Link
                     to={l.to}
-                    className="group flex items-center justify-between px-3 py-1.5 bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] text-xs font-bold hover:bg-volt transition-colors"
+                    className="group flex items-center justify-between px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold text-[#0A0D12] dark:text-[#F5F7FA] hover:border-[#2563FF]/50 hover:bg-[#2563FF]/[0.06] dark:hover:bg-[#2563FF]/10 transition-colors"
                   >
                     {l.label}
-                    <ArrowUpRight size={13} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+                    <ArrowUpRight
+                      size={14}
+                      className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      aria-hidden
+                    />
                   </Link>
                 </li>
               ))}
@@ -219,15 +247,17 @@ export default function ProductPortal() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t-2 border-[var(--cf-ink)]">
-        <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--cf-ink-mute)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 sm:px-6 py-3.5 border-t border-black/10 dark:border-white/10">
+        <p className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280] dark:text-[#707A89]">
           Every link opens the real workspace
         </p>
-        <Link to="/login" className="font-display text-xs font-bold uppercase underline underline-offset-4 decoration-gold decoration-2 hover:bg-volt px-1">
+        <Link
+          to="/login"
+          className="font-display text-xs font-semibold text-[#2563FF] dark:text-[#7DA6FF] hover:underline underline-offset-4"
+        >
           Sign in to enter →
         </Link>
       </div>
-      <div className="racing-stripe h-2 border-t-2 border-[var(--cf-ink)]" aria-hidden />
     </div>
   );
 }

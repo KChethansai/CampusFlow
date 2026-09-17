@@ -1,26 +1,35 @@
 // Shared data views: timeline, pipeline, ring, sparkline, heatmap.
-// Pure SVG — no chart dependency. All normalized to CampusFlow tokens.
+// Pure SVG — no chart dependency. Glass/royal/violet surfaces; status greens
+// #25D890, ambers #FFBD4A, reds #FF5964. Export APIs unchanged.
 import { useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { normalizeStage, PIPELINE_STAGES } from '../../system/tokens';
 import { cn } from '../../system/tokens';
 
+const OK = '#25D890';
+const WARN = '#FFBD4A';
+const BAD = '#FF5964';
+const ROYAL = '#2563FF';
+const VIOLET = '#8B5CF6';
+const VOLT = '#A7D700';
+
 export function WorkflowTimeline({ steps }) {
   // steps: [{ label, at, done, active, note }]
   return (
-    <ol className="relative ml-2 border-l-2 border-[var(--cf-line)] space-y-4 pl-5 py-1" aria-label="Progress timeline">
+    <ol className="relative ml-2 border-l border-[var(--cf-line)] space-y-4 pl-5 py-1" aria-label="Progress timeline">
       {steps.map((s, i) => (
         <li key={i} className="relative">
           <span
             aria-hidden
             className={cn(
-              'absolute -left-[27px] top-0.5 w-3 h-3 rounded-full border-2',
+              'absolute -left-[25px] top-1 w-2.5 h-2.5 rounded-full border',
               s.done
-                ? 'bg-green-500 border-green-500'
+                ? 'border-transparent'
                 : s.active
-                  ? 'bg-primary-500 border-primary-500 animate-pulse'
-                  : 'bg-[var(--cf-surface)] border-[var(--cf-line)]'
+                  ? 'border-transparent animate-pulse'
+                  : 'bg-[var(--cf-surface-2)] border-[var(--cf-line)]'
             )}
+            style={s.done ? { background: OK } : s.active ? { background: ROYAL, boxShadow: `0 0 0 3px ${VOLT}55` } : undefined}
           />
           <p className={cn('text-sm font-medium', s.done || s.active ? 'text-[var(--cf-ink)]' : 'text-[var(--cf-ink-mute)]')}>
             {s.label}
@@ -44,9 +53,10 @@ export function PipelineStages({ current, compact }) {
           <div key={stage} role="listitem" aria-current={active ? 'step' : undefined}
             title={stage}
             className={cn(
-              'h-2 flex-1 rounded-full transition-colors',
-              done ? 'bg-green-500' : active ? 'bg-primary-500' : 'bg-black/10 dark:bg-white/10'
+              'h-1.5 flex-1 rounded-full transition-colors',
+              !done && !active && 'bg-black/10 dark:bg-white/10'
             )}
+            style={done ? { background: ROYAL } : active ? { background: VIOLET, boxShadow: `0 0 0 2px ${VOLT}66` } : undefined}
           >
             {!compact && <span className="sr-only">{stage}</span>}
           </div>
@@ -67,13 +77,14 @@ export function PipelineLabels({ current }) {
             key={stage}
             aria-current={active ? 'step' : undefined}
             className={cn(
-              'font-mono text-[11px] font-bold uppercase tracking-widest border-2 border-[var(--cf-ink)] rounded-full px-2.5 py-0.5 shadow-brutal-sm whitespace-nowrap',
+              'font-mono text-[11px] font-bold uppercase tracking-widest rounded-full px-2.5 py-0.5 border whitespace-nowrap',
               active
-                ? 'bg-volt text-coal'
+                ? 'text-white border-transparent'
                 : done
-                  ? 'bg-royal text-white'
-                  : 'bg-[var(--cf-surface)] text-[var(--cf-ink-mute)]'
+                  ? 'text-white border-transparent'
+                  : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-mute)] border-[var(--cf-line)]'
             )}
+            style={active ? { background: VIOLET } : done ? { background: ROYAL } : undefined}
           >
             {stage.replace(/_/g, ' ')}
           </span>
@@ -87,12 +98,12 @@ export function AttendanceRing({ value = 0, size = 120, label = 'Attendance Heal
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   const r = 52;
   const c = 2 * Math.PI * r;
-  // Neo-brutal strokes: royal (healthy) → gold (watch) → flag (risk), ink track.
-  const color = pct >= 85 ? '#0055ff' : pct >= 75 ? '#ffcc00' : pct >= 60 ? '#e63b2e' : '#e63b2e';
+  // Status greens/ambers/reds against the hairline track.
+  const color = pct >= 85 ? OK : pct >= 75 ? ROYAL : pct >= 60 ? WARN : BAD;
   return (
     <div className="flex items-center gap-4" role="img" aria-label={`${label}: ${pct} percent`}>
       <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden>
-        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="11" className="stroke-black/10 dark:stroke-white/10" />
+        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="11" stroke="var(--cf-line)" opacity={0.6} />
         <circle
           cx="60" cy="60" r={r} fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100}
@@ -120,7 +131,7 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
   const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)},${(height - 6 - ((p - min) / span) * (height - 12)).toFixed(1)}`).join(' ');
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible" aria-hidden>
-      <path d={d} fill="none" stroke="#0055ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke={ROYAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {points.map((p, i) => {
         const last = i === points.length - 1;
         return (
@@ -129,8 +140,8 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
             cx={i * step}
             cy={height - 6 - ((p - min) / span) * (height - 12)}
             r={last ? 4 : 3}
-            fill={last ? '#d4ff00' : '#0055ff'}
-            stroke="#0055ff"
+            fill={last ? VOLT : ROYAL}
+            stroke={ROYAL}
             strokeWidth={last ? 2 : 0}
             opacity={last ? 1 : 0.55}
           />
@@ -141,16 +152,16 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
 }
 
 export function Heatmap({ weeks = [], legend = ['Less', 'More'] }) {
-  // weeks: array of 7-length columns of 0..4 intensity
+  // weeks: array of 7-length columns of 0..4 intensity — royal→violet glass scale.
   const shades = [
     'bg-black/[.06] dark:bg-white/[.07]',
-    'bg-green-200 dark:bg-green-500/25',
-    'bg-green-300 dark:bg-green-500/45',
-    'bg-green-500 dark:bg-green-500/70',
-    'bg-green-600 dark:bg-green-400'
+    'bg-[#2563FF]/15 dark:bg-[#2563FF]/25',
+    'bg-[#2563FF]/35 dark:bg-[#2563FF]/45',
+    'bg-[#2563FF]/60 dark:bg-[#2563FF]/70',
+    'bg-[#8B5CF6] dark:bg-[#8B5CF6]'
   ];
   return (
-    <div>
+    <div className="cf-glass rounded-[14px] border border-[var(--cf-line)] p-3 inline-block">
       <div className="flex gap-1" role="img" aria-label="Activity heatmap">
         {weeks.map((col, wi) => (
           <div key={wi} className="flex flex-col gap-1">
@@ -186,11 +197,11 @@ export function Dropzone({ onFiles, accept, multiple = true, progress = null, la
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); onFiles?.(e.dataTransfer.files); }}
       className={cn(
-        'rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer',
-        dragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10 scale-[1.01]' : 'border-[var(--cf-line)] hover:border-primary-300 hover:bg-black/[.02] dark:hover:bg-white/[.04]'
+        'cf-glass rounded-[14px] border border-dashed p-6 text-center transition cursor-pointer',
+        dragging ? 'border-[#2563FF] scale-[1.01]' : 'border-[var(--cf-line)] hover:border-[#2563FF]/60'
       )}
     >
-      <UploadCloud size={22} className="mx-auto text-primary-500" aria-hidden />
+      <UploadCloud size={22} className="mx-auto text-[#2563FF]" aria-hidden />
       <p className="mt-2 text-sm font-medium">{label}</p>
       <p className="text-xs text-[var(--cf-ink-mute)]">or click to browse</p>
       <input
@@ -204,7 +215,7 @@ export function Dropzone({ onFiles, accept, multiple = true, progress = null, la
       />
       {progress != null && (
         <div className="mt-3 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
-          <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+          <div className="h-full rounded-full transition-all" style={{ width: `${Math.round(progress * 100)}%`, background: ROYAL }} />
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-// Users: brutal table + modal create form.
+// Users: glass table + modal create form.
 // Endpoints preserved: GET /users, POST /users. Role options + gates unchanged.
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -68,7 +68,7 @@ function Users() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search name, email, role…"
               aria-label="Search users"
-              className={`${inputClass} !w-56`}
+              className={`${inputClass} !w-56 !rounded-[14px]`}
             />
             <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
               + Add User
@@ -80,17 +80,17 @@ function Users() {
       {loading ? (
         <LoadingState label="Loading users…" />
       ) : visible.length === 0 ? (
-        <div className="card-brutal p-5"><EmptyState title={users.length ? 'No matches' : 'No users found'} hint={users.length ? 'Try another search.' : undefined} /></div>
+        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 p-5"><EmptyState title={users.length ? 'No matches' : 'No users found'} hint={users.length ? 'Try another search.' : undefined} /></div>
       ) : (
-        <div className="card-brutal overflow-hidden">
+        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gold text-coal border-b-2 border-[var(--cf-ink)]">
+              <thead className="border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Name</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Email</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Role</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Status</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Name</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Email</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Role</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--cf-line)]">
@@ -116,11 +116,11 @@ function Users() {
         <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
           <div>
             <label className={labelClass} htmlFor="user-name">Name</label>
-            <input id="user-name" placeholder="Aarav Sharma" className={inputClass} {...register('name', { required: 'Name is required' })} />
+            <input id="user-name" placeholder="Aarav Sharma" className={`${inputClass} rounded-[14px]`} {...register('name', { required: 'Name is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="user-email">Email</label>
-            <input id="user-email" placeholder="aarav@campus.edu" type="email" className={inputClass} {...register('email', { required: 'Email is required' })} />
+            <input id="user-email" placeholder="aarav@campus.edu" type="email" className={`${inputClass} rounded-[14px]`} {...register('email', { required: 'Email is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="user-password">Password</label>
@@ -128,7 +128,7 @@ function Users() {
               id="user-password"
               placeholder="Minimum 8 characters"
               type="password"
-              className={inputClass}
+              className={`${inputClass} rounded-[14px]`}
               {...register('password', {
                 required: 'Password is required',
                 minLength: { value: 8, message: 'Minimum 8 characters' }
@@ -137,7 +137,7 @@ function Users() {
           </div>
           <div>
             <label className={labelClass} htmlFor="user-role">Role</label>
-            <select id="user-role" className={selectClass} {...register('role')}>
+            <select id="user-role" className={`${selectClass} rounded-[14px]`} {...register('role')}>
               <option value="student">Student</option>
               <option value="faculty">Faculty</option>
               <option value="college_admin">College Admin</option>
@@ -145,11 +145,11 @@ function Users() {
             </select>
           </div>
           {(errors.name || errors.email || errors.password) && (
-            <p className="text-xs text-red-600" role="alert">
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">
               {errors.name?.message || errors.email?.message || errors.password?.message}
             </p>
           )}
-          <button type="submit" className={`${btnClass('success', 'medium')} w-full`}>Create user</button>
+          <button type="submit" className={`${btnClass('primary', 'medium')} w-full`}>Create user</button>
         </form>
       </Modal>
     </div>

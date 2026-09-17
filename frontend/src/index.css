@@ -37,21 +37,25 @@
   --color-obsidian-900: #0a1226;
   --color-obsidian-950: #020617;
 
-  /* Neo-brutalist brand accents */
-  --color-volt: #d4ff00;
-  --color-gold: #ffcc00;
-  --color-royal: #0055ff;
-  --color-flag: #e63b2e;
-  --color-paper: #f5f0e8;
-  --color-cream: #faf7f2;
-  --color-coal: #111111;
+  /* CampusFlow Platform Design System accents */
+  --color-volt: #A7D700;
+  --color-royal: #2563FF;
+  --color-flag: #FF5964;
+  --color-paper: #F6F7F9;
+  --color-cream: #FFFFFF;
+  --color-coal: #0A0D12;
+  --color-violet: #7C5CFF;
+  --color-success: #25D890;
+  --color-warning: #FFBD4A;
+  --color-danger: #FF5964;
 
-  --shadow-brutal-sm: 2px 2px 0px var(--cf-frame-shadow, #111111);
-  --shadow-brutal: 4px 4px 0px var(--cf-frame-shadow, #111111);
-  --shadow-brutal-lg: 6px 6px 0px var(--cf-frame-shadow, #111111);
-  --shadow-brutal-xl: 8px 8px 0px var(--cf-frame-shadow, #111111);
+  /* Soft layered shadows (names kept for compatibility) */
+  --shadow-brutal-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-brutal: 0 8px 24px -8px rgba(0,0,0,.6);
+  --shadow-brutal-lg: 0 24px 60px -12px rgba(0,0,0,.8), 0 0 32px rgba(37,99,255,.15);
+  --shadow-brutal-xl: 0 32px 80px -16px rgba(0,0,0,.85), 0 0 48px rgba(37,99,255,.18);
 
-  --color-frame: var(--cf-frame, #111111);
+  --color-frame: var(--cf-frame, #0A0D12);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -95,38 +99,38 @@
 }
 
 :root {
-  --cf-bg: #f5f0e8;
-  --cf-surface: #faf7f2;
-  --cf-surface-2: #f2ede5;
-  --cf-ink: #111111;
-  --cf-ink-soft: #3a3a3c;
-  --cf-ink-mute: #6e6e73;
-  --cf-line: rgba(17, 17, 17, 0.14);
-  --cf-accent: #0055ff;
-  --cf-cyan: #22d3ee;
-  --cf-violet: #8b5cf6;
-  --cf-volt: #d4ff00;
-  --cf-gold: #ffcc00;
-  --cf-flag: #e63b2e;
-  --cf-frame: #111111;
-  --cf-frame-shadow: #111111;
+  --cf-bg: #F6F7F9;
+  --cf-surface: #FFFFFF;
+  --cf-surface-2: #EEF1F5;
+  --cf-ink: #0A0D12;
+  --cf-ink-soft: #5E6673;
+  --cf-ink-mute: #8C95A3;
+  --cf-line: rgba(10,13,18,.08);
+  --cf-accent: #2563FF;
+  --cf-volt: #A7D700;
+  --cf-violet: #7C5CFF;
+  --cf-success: #25D890;
+  --cf-warning: #FFBD4A;
+  --cf-danger: #FF5964;
+  --cf-frame: #0A0D12;
   color-scheme: light;
 }
 
 .dark {
-  --cf-bg: #0f1013;
-  --cf-surface: #181920;
-  --cf-surface-2: #1e2029;
-  --cf-ink: #f4f4f5;
-  --cf-ink-soft: #c3cbdb;
-  --cf-ink-mute: #8b94a9;
-  --cf-line: rgba(148, 178, 255, 0.16);
-  --cf-accent: #66abff;
-  --cf-volt: #d4ff00;
-  --cf-gold: #ffcc00;
-  --cf-flag: #ff6b5e;
-  --cf-frame: #2e333f;
-  --cf-frame-shadow: #000000;
+  --cf-bg: #07090D;
+  --cf-surface: #0D1118;
+  --cf-surface-2: #151C28;
+  --cf-ink: #F5F7FA;
+  --cf-ink-soft: #A7B0BF;
+  --cf-ink-mute: #707A89;
+  --cf-line: rgba(255,255,255,.08);
+  --cf-accent: #2563FF;
+  --cf-volt: #A7D700;
+  --cf-violet: #7C5CFF;
+  --cf-success: #25D890;
+  --cf-warning: #FFBD4A;
+  --cf-danger: #FF5964;
+  --cf-frame: rgba(255,255,255,.08);
   color-scheme: dark;
 }
 
@@ -181,40 +185,76 @@ body {
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 
+/* Cinematic glass utilities */
+.glass-surface {
+  background: color-mix(in srgb, var(--cf-surface) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--cf-line);
+}
+.glass-card {
+  background: color-mix(in srgb, var(--cf-surface) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--cf-line);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,.6);
+}
+.glass-pill {
+  background: color-mix(in srgb, var(--cf-surface) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--cf-line);
+  border-radius: 999px;
+}
+
+/* Shared status pill base */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--cf-line);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
 .cf-atmosphere {
   background:
-    radial-gradient(900px 480px at 12% -8%, rgba(0, 113, 227, 0.14), transparent 60%),
-    radial-gradient(760px 420px at 88% 4%, rgba(139, 92, 246, 0.12), transparent 60%),
-    radial-gradient(700px 500px at 50% 110%, rgba(34, 211, 238, 0.10), transparent 60%);
+    radial-gradient(900px 480px at 12% -8%, rgba(37, 99, 255, 0.14), transparent 60%),
+    radial-gradient(760px 420px at 88% 4%, rgba(124, 92, 255, 0.12), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(37, 216, 144, 0.08), transparent 60%);
 }
 .dark .cf-atmosphere {
   background:
-    radial-gradient(900px 480px at 12% -8%, rgba(51, 149, 255, 0.22), transparent 60%),
-    radial-gradient(760px 420px at 88% 4%, rgba(139, 92, 246, 0.18), transparent 60%),
-    radial-gradient(700px 500px at 50% 110%, rgba(34, 211, 238, 0.12), transparent 60%);
+    radial-gradient(900px 480px at 12% -8%, rgba(37, 99, 255, 0.22), transparent 60%),
+    radial-gradient(760px 420px at 88% 4%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(37, 216, 144, 0.10), transparent 60%);
 }
 
-/* Editorial layer — NOTA-grade display type + paper grain. Serif is display-only. */
+/* Display type — Space Grotesk only (no serif). */
 .cf-display {
-  font-family: 'Instrument Serif', Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-}
-.cf-display em, .cf-display i {
-  font-style: italic;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .cf-statement {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-weight: 700;
   font-size: clamp(2.4rem, 7vw, 5.5rem);
   line-height: 1.02;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 .cf-statement-sm {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-weight: 700;
   font-size: clamp(1.7rem, 4.2vw, 3rem);
   line-height: 1.06;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 .cf-kicker {
@@ -254,7 +294,7 @@ body {
   position: relative;
   background:
     linear-gradient(var(--cf-surface), var(--cf-surface)) padding-box,
-    linear-gradient(110deg, var(--cf-accent), var(--cf-cyan), var(--cf-violet), var(--cf-accent)) border-box;
+    linear-gradient(110deg, var(--cf-accent), var(--cf-violet), var(--cf-success), var(--cf-accent)) border-box;
   background-size: 100% 100%, 200% 100%;
   border: 1.5px solid transparent;
   animation: cf-beam 5s linear infinite;
@@ -277,10 +317,10 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(560px 320px at var(--mx, 50%) var(--my, 0%), rgba(0,113,227,.14), transparent 65%);
+  background: radial-gradient(560px 320px at var(--mx, 50%) var(--my, 0%), rgba(37,99,255,.14), transparent 65%);
 }
 .dark .cf-spotlight::before {
-  background: radial-gradient(560px 320px at var(--mx, 50%) var(--my, 0%), rgba(51,149,255,.22), transparent 65%);
+  background: radial-gradient(560px 320px at var(--mx, 50%) var(--my, 0%), rgba(37,99,255,.22), transparent 65%);
 }
 .cf-noise { position: relative; isolation: isolate; }
 .cf-noise::before {
@@ -291,7 +331,7 @@ body {
   pointer-events: none;
   opacity: .35;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
 }
 .cf-shimmer {
   background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
@@ -310,16 +350,16 @@ body {
   opacity: 0;
   transition: opacity .3s ease;
   pointer-events: none;
-  background: radial-gradient(420px 220px at var(--mx, 50%) var(--my, 50%), rgba(0,113,227,.12), transparent 65%);
+  background: radial-gradient(420px 220px at var(--mx, 50%) var(--my, 50%), rgba(37,99,255,.12), transparent 65%);
 }
 .cf-card-spot:hover::after { opacity: 1; }
 .dark .cf-card-spot::after {
-  background: radial-gradient(420px 220px at var(--mx, 50%) var(--my, 50%), rgba(51,149,255,.18), transparent 65%);
+  background: radial-gradient(420px 220px at var(--mx, 50%) var(--my, 50%), rgba(37,99,255,.18), transparent 65%);
 }
 .cf-glow-focus:focus-visible {
   outline: 2px solid var(--cf-accent);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(0,113,227,.18), 0 0 24px rgba(0,113,227,.35);
+  box-shadow: 0 0 0 4px rgba(37,99,255,.18), 0 0 24px rgba(37,99,255,.35);
 }
 .cf-unread-pulse { animation: pulse-dot 2s ease-in-out infinite; }
 
@@ -332,93 +372,14 @@ body {
   }
 }
 
-/* ============ Neo-brutalist design system (AI Studio reference) ============ */
-
-body {
-  background-image: radial-gradient(rgba(17, 17, 17, 0.16) 0.75px, transparent 0.75px);
-  background-size: 24px 24px;
-}
-.dark body {
-  background-image: radial-gradient(rgba(148, 178, 255, 0.14) 1px, transparent 1px);
-}
-
 h1, h2, h3, h4, .font-display {
   font-family: "Space Grotesk", "Inter", sans-serif;
   letter-spacing: -0.03em;
 }
 
-.border-3 { border-width: 3px; }
-
-.btn-brutal {
-  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
-  border: 2px solid var(--cf-frame);
-  box-shadow: 4px 4px 0px var(--cf-frame-shadow);
-}
-.btn-brutal:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px var(--cf-frame-shadow);
-}
-.btn-brutal:active {
-  transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px var(--cf-frame-shadow);
-}
-
-.card-brutal {
-  background: var(--cf-surface);
-  border: 2px solid var(--cf-frame);
-  box-shadow: 5px 5px 0px var(--cf-frame-shadow);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.card-brutal:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0px var(--cf-frame-shadow);
-}
-
-.brutal-tag {
-  border: 2px solid var(--cf-frame);
-  box-shadow: 2px 2px 0px var(--cf-frame-shadow);
-  font-family: "Space Grotesk", sans-serif;
-}
-/* Accent-surfaced tags stay coal-ink in both modes (volt/gold never change). */
-.brutal-tag.bg-volt, .brutal-tag.bg-gold {
-  color: #111111;
-}
-
-.racing-stripe {
-  background: repeating-linear-gradient(
-    -45deg,
-    #111111,
-    #111111 12px,
-    #ffcc00 12px,
-    #ffcc00 24px
-  );
-}
-
-.role-card-animated {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, box-shadow;
-}
-.role-card-animated:hover {
-  transform: translate(-4px, -4px) !important;
-  box-shadow: 8px 8px 0px var(--cf-frame-shadow) !important;
-}
-.role-card-animated .role-card-icon {
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.role-card-animated:hover .role-card-icon {
-  transform: rotate(7deg) scale(1.12);
-}
-.role-card-animated .role-card-arrow {
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.role-card-animated:hover .role-card-arrow {
-  transform: translateX(6px);
-}
-
 /* High-visibility keyboard focus */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid #0055ff !important;
+  outline: 3px solid #2563FF !important;
   outline-offset: 3px !important;
   box-shadow: 0 0 0 2px var(--cf-surface) !important;
 }
@@ -427,9 +388,9 @@ h1, h2, h3, h4, .font-display {
 .tour-target-highlight {
   position: relative !important;
   z-index: 45 !important;
-  outline: 4px solid #0055ff !important;
+  outline: 4px solid #2563FF !important;
   outline-offset: 4px !important;
-  box-shadow: 0 0 0 4px #d4ff00, 0 10px 30px rgba(0, 85, 255, 0.25) !important;
+  box-shadow: 0 0 0 4px #A7D700, 0 10px 30px rgba(37, 99, 255, 0.25) !important;
 }
 
 /* Print: document export layout */
@@ -444,7 +405,7 @@ h1, h2, h3, h4, .font-display {
     display: none !important;
   }
   .print-only { display: block !important; }
-  .card-brutal {
+  .glass-card, .glass-surface {
     box-shadow: none !important;
     transform: none !important;
     break-inside: avoid !important;

@@ -1,10 +1,10 @@
-// Courses: brutal table + modal create form.
+// Courses: glass table + modal create form.
 // Endpoints preserved: GET /courses, GET /departments, POST /courses.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { btnClass, inputClass, labelClass, selectClass } from '../../system/tokens';
 
@@ -73,18 +73,18 @@ function Courses() {
       {loading ? (
         <LoadingState label="Loading courses…" />
       ) : courses.length === 0 ? (
-        <div className="card-brutal p-5"><EmptyState title="No courses found" hint="Add the first course to build the catalog." /></div>
+        <Card><EmptyState title="No courses found" hint="Add the first course to build the catalog." /></Card>
       ) : (
-        <div className="card-brutal overflow-hidden">
+        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gold border-b-2 border-[var(--cf-ink)]">
+              <thead className="border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Course</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Code</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Department</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Duration</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Semesters</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Course</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Code</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Department</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Duration</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Semesters</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--cf-line)]">
@@ -92,7 +92,7 @@ function Courses() {
                   <tr key={course._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
                     <td className="px-4 py-3 font-medium">{course.name}</td>
                     <td className="px-4 py-3">
-                      <span className="brutal-tag bg-[var(--cf-surface-2)] px-2 py-0.5 text-[11px] font-bold">
+                      <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">
                         {course.code}
                       </span>
                     </td>
@@ -113,15 +113,15 @@ function Courses() {
         <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
           <div>
             <label className={labelClass} htmlFor="course-name">Course name</label>
-            <input id="course-name" placeholder="B.Tech Computer Science" className={inputClass} {...register('name', { required: 'Name is required' })} />
+            <input id="course-name" placeholder="B.Tech Computer Science" className={`${inputClass} rounded-[14px]`} {...register('name', { required: 'Name is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="course-code">Code</label>
-            <input id="course-code" placeholder="BTCS" className={inputClass} {...register('code', { required: 'Code is required' })} />
+            <input id="course-code" placeholder="BTCS" className={`${inputClass} rounded-[14px]`} {...register('code', { required: 'Code is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="course-dept">Department</label>
-            <select id="course-dept" className={selectClass} {...register('department', { required: 'Select a department' })}>
+            <select id="course-dept" className={`${selectClass} rounded-[14px]`} {...register('department', { required: 'Select a department' })}>
               <option value="">Select Department</option>
               {departments.map((d) => (
                 <option key={d._id} value={d._id}>{d.name}</option>
@@ -130,14 +130,14 @@ function Courses() {
           </div>
           <div>
             <label className={labelClass} htmlFor="course-years">Duration (years)</label>
-            <input id="course-years" type="number" min={1} max={5} className={inputClass} {...register('durationYears', { valueAsNumber: true })} />
+            <input id="course-years" type="number" min={1} max={5} className={`${inputClass} rounded-[14px]`} {...register('durationYears', { valueAsNumber: true })} />
           </div>
           {(errors.name || errors.code || errors.department) && (
-            <p className="text-xs text-red-600" role="alert">
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">
               {errors.name?.message || errors.code?.message || errors.department?.message}
             </p>
           )}
-          <button type="submit" className={`${btnClass('success', 'medium')} w-full`}>Create course</button>
+          <button type="submit" className={`${btnClass('primary', 'medium')} w-full`}>Create course</button>
         </form>
       </Modal>
     </div>

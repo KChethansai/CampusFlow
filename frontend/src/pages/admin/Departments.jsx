@@ -1,10 +1,10 @@
-// Departments: brutal card grid + modal create form.
+// Departments: glass card grid + modal create form.
 // Endpoints preserved: GET /departments, POST /departments.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { btnClass, inputClass, labelClass } from '../../system/tokens';
 
@@ -60,20 +60,20 @@ function Departments() {
       {loading ? (
         <LoadingState label="Loading departments…" />
       ) : departments.length === 0 ? (
-        <div className="card-brutal p-5"><EmptyState title="No departments found" hint="Add the first one to activate this view." /></div>
+        <Card><EmptyState title="No departments found" hint="Add the first one to activate this view." /></Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {departments.map((dept) => (
-            <article key={dept._id} className="card-brutal role-card-animated p-5">
+            <article key={dept._id} className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-5">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <h3 className="font-display font-semibold text-[var(--cf-ink)]">{dept.name}</h3>
-                <span className="brutal-tag bg-volt px-2 py-0.5 text-[11px] font-bold">{dept.code}</span>
+                <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">{dept.code}</span>
               </div>
               <p className="text-sm text-[var(--cf-ink-mute)]">
                 {dept.description || 'No description'}
               </p>
               {dept.hod && (
-                <p className="mt-2 border-t-2 border-[var(--cf-ink)] pt-2 text-xs text-[var(--cf-ink-mute)]">
+                <p className="mt-2 border-t border-[var(--cf-line)] pt-2 text-xs text-[var(--cf-ink-mute)]">
                   HOD: {dept.hod?.name || dept.hod}
                 </p>
               )}
@@ -86,22 +86,22 @@ function Departments() {
         <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
           <div>
             <label className={labelClass} htmlFor="dept-name">Department name</label>
-            <input id="dept-name" placeholder="Computer Science" className={inputClass} {...register('name', { required: 'Name is required' })} />
+            <input id="dept-name" placeholder="Computer Science" className={`${inputClass} rounded-[14px]`} {...register('name', { required: 'Name is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="dept-code">Code</label>
-            <input id="dept-code" placeholder="CSE" className={inputClass} {...register('code', { required: 'Code is required' })} />
+            <input id="dept-code" placeholder="CSE" className={`${inputClass} rounded-[14px]`} {...register('code', { required: 'Code is required' })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="dept-desc">Description</label>
-            <input id="dept-desc" placeholder="What this department owns…" className={inputClass} {...register('description')} />
+            <input id="dept-desc" placeholder="What this department owns…" className={`${inputClass} rounded-[14px]`} {...register('description')} />
           </div>
           {(errors.name || errors.code) && (
-            <p className="text-xs text-red-600" role="alert">
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">
               {errors.name?.message || errors.code?.message}
             </p>
           )}
-          <button type="submit" className={`${btnClass('success', 'medium')} w-full`}>Create department</button>
+          <button type="submit" className={`${btnClass('primary', 'medium')} w-full`}>Create department</button>
         </form>
       </Modal>
     </div>

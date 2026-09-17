@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { btnClass, cn, labelClass } from '../../system/tokens';
+import { btnClass, cn, inputClass, labelClass } from '../../system/tokens';
 import AuthLayout from './AuthLayout';
 
 const ROLE_TABS = [
@@ -14,25 +14,19 @@ const ROLE_TABS = [
   { value: 'placement_officer', label: 'Placement', hint: 'placement@institution.edu' }
 ];
 
-const brutalInput = (hasError) => cn(
-  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] rounded-[10px] border-2 shadow-brutal-sm transition-all',
-  'focus:outline-none focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]',
-  hasError ? 'border-flag' : 'border-[var(--cf-ink)]'
-);
-
-function BrutalField({ id, label, error, errorId, ...props }) {
+function GlassField({ id, label, error, errorId, ...props }) {
   const describedBy = error ? errorId : undefined;
   return (
     <div>
       <label htmlFor={id} className={labelClass}>{label}</label>
       <input
         id={id}
-        className={brutalInput(Boolean(error))}
+        className={cn(inputClass, 'rounded-[14px]', error && 'border-red-500 focus:ring-red-500/30 focus:border-red-500')}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy}
         {...props}
       />
-      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-flag">{error}</p>}
+      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }
@@ -68,9 +62,9 @@ function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to your digital campus."
-      footer={<>New here? <Link to="/signup" className="font-semibold text-[var(--cf-ink)] underline decoration-volt decoration-2 underline-offset-2 hover:decoration-royal">Create account</Link></>}
+      footer={<>New here? <Link to="/signup" className="font-semibold text-[#2563FF] underline underline-offset-2 hover:brightness-110">Create account</Link></>}
     >
-      <div role="tablist" aria-label="I am signing in as" className="grid grid-cols-4 gap-1.5 p-1.5 mb-5 rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)]">
+      <div role="tablist" aria-label="I am signing in as" className="grid grid-cols-4 gap-1 p-1.5 mb-5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
         {ROLE_TABS.map((r) => {
           const active = roleTab === r.value;
           return (
@@ -79,17 +73,17 @@ function Login() {
               role="tab"
               aria-selected={active}
               onClick={() => { setRoleTab(r.value); try { localStorage.setItem('cf_login_role', r.value); } catch {} }}
-              className={cn('relative px-2 py-1.5 rounded-[8px] text-xs font-display font-semibold transition-all border-2',
-                active ? 'bg-gold text-coal border-frame shadow-brutal-sm' : 'border-transparent text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
+              className={cn('relative px-2 py-1.5 rounded-xl text-xs font-display font-semibold transition',
+                active ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
             >
-              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-[6px] bg-gold -z-0" aria-hidden />}
+              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#2563FF]" aria-hidden />}
               <span className="relative">{r.label}</span>
             </button>
           );
         })}
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <BrutalField
+        <GlassField
           label="Email address"
           id="email"
           type="email"
@@ -99,7 +93,7 @@ function Login() {
           errorId="email-error"
           {...register('email', { required: true })}
         />
-        <BrutalField
+        <GlassField
           label="Password"
           id="password"
           type="password"
@@ -110,7 +104,7 @@ function Login() {
           {...register('password', { required: true })}
         />
         {error && (
-          <div role="alert" className="border-2 border-[var(--cf-ink)] border-l-8 border-l-flag bg-[var(--cf-surface-2)] px-4 py-3 rounded-[10px] text-sm font-medium">
+          <div role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
@@ -118,7 +112,7 @@ function Login() {
           {loading ? 'Signing in…' : 'Sign in →'}
         </button>
         <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-widest text-[var(--cf-ink-mute)]" aria-hidden>
-          <span className="h-0.5 flex-1 bg-[var(--cf-ink)]" /><span>Institution SSO</span><span className="h-0.5 flex-1 bg-[var(--cf-ink)]" />
+          <span className="h-px flex-1 bg-[var(--cf-line)]" /><span>Institution SSO</span><span className="h-px flex-1 bg-[var(--cf-line)]" />
         </div>
         <div className="grid grid-cols-2 gap-2">
           {['Google', 'Microsoft'].map((p) => (
@@ -126,7 +120,7 @@ function Login() {
               key={p}
               type="button"
               onClick={() => toast('SSO is provisioned by your administrator.')}
-              className="px-3 py-2 rounded-[10px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] shadow-brutal-sm text-sm font-display font-semibold hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+              className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-2 text-sm font-display font-semibold text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-ink-mute)] transition"
             >
               {p}
             </button>

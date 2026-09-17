@@ -57,6 +57,16 @@ export function useCommandPalette() {
   return [open, setOpen];
 }
 
+const linkFor = (label) =>
+  label === 'Users' ? '/users' :
+  label === 'Departments' ? '/departments' :
+  label === 'Courses' ? '/courses' :
+  label === 'Subjects' ? '/subjects' :
+  label === 'Assignments' ? '/assignments' :
+  label === 'Drives' ? '/placement' :
+  label === 'Companies' ? '/placement' :
+  label === 'Applications' ? '/placement' : '/requests';
+
 export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTour }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -108,37 +118,33 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
       return [
         ...(quick.length ? [{ group: 'Quick actions', items: quick }] : []),
         { group: 'Actions', items: actions.filter((a) => a.run) },
-        { group: 'Go to', items: actions.filter((a) => a.link) }
+        { group: 'Screens', items: actions.filter((a) => a.link) }
       ];
     }
     const matchedActions = actions
+      .filter((a) => a.run)
       .map((a) => ({ ...a, rank: score(q, a.title) }))
       .filter((a) => a.rank > 0)
       .sort((x, y) => y.rank - x.rank);
     if (matchedActions.length) out.push({ group: 'Actions', items: matchedActions });
+    const matchedScreens = actions
+      .filter((a) => a.link)
+      .map((a) => ({ ...a, rank: score(q, a.title) }))
+      .filter((a) => a.rank > 0)
+      .sort((x, y) => y.rank - x.rank);
+    if (matchedScreens.length) out.push({ group: 'Screens', items: matchedScreens });
+    const data = [];
     GROUPS.forEach((g) => {
-      const items = [];
       g.endpoints.forEach(([label, ep]) => {
         (cache[`${g.key}:${label}`] || []).forEach((row) => {
           const title = row.title || row.name || row.role || row.email || 'Item';
           const s = Math.max(score(query, title), score(query, `${label} ${title}`));
-          if (s > 0) {
-            const link =
-              label === 'Users' ? '/users' :
-              label === 'Departments' ? '/departments' :
-              label === 'Courses' ? '/courses' :
-              label === 'Subjects' ? '/subjects' :
-              label === 'Assignments' ? '/assignments' :
-              label === 'Drives' ? '/placement' :
-              label === 'Companies' ? '/placement' :
-              label === 'Applications' ? '/placement' : '/requests';
-            items.push({ title, sub: label, link, rank: s });
-          }
+          if (s > 0) data.push({ title, sub: label, link: linkFor(label), rank: s });
         });
       });
-      items.sort((a, b) => b.rank - a.rank);
-      if (items.length) out.push({ group: g.label, items: items.slice(0, 6) });
     });
+    data.sort((a, b) => b.rank - a.rank);
+    if (data.length) out.push({ group: 'Data', items: data.slice(0, 8) });
     return out;
   }, [query, cache, user?.role, actions]);
 
@@ -163,14 +169,13 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
           aria-modal="true"
           aria-label="Command center"
         >
-          <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm cursor-default" />
+          <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default" />
           <motion.div
-            {...motionVariants.popover}
-            className="relative w-full max-w-xl bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-lg overflow-hidden"
+            {...motionVariants.modal}
+            className="cf-glass relative w-full max-w-xl rounded-3xl border border-[var(--cf-line)] shadow-[0_24px_80px_-16px_rgba(16,24,40,0.4)] overflow-hidden"
           >
-            <div className="racing-stripe h-1.5 w-full border-b-2 border-[var(--cf-ink)]" aria-hidden />
-            <div className="flex items-center gap-2 px-4 border-b-2 border-[var(--cf-ink)] bg-volt">
-              <Search size={16} className="text-[#111111]" aria-hidden />
+            <div className="flex items-center gap-2 px-4 border-b border-[var(--cf-line)]">
+              <Search size={16} className="text-[var(--cf-ink-mute)] shrink-0" aria-hidden />
               <input
                 ref={inputRef}
                 value={query}
@@ -182,13 +187,13 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                   if (e.key === 'Escape') onClose();
                 }}
                 placeholder="Search students, courses, drives, requests…"
-                className="w-full py-3.5 bg-transparent font-display font-bold text-sm text-[#111111] placeholder:text-[#111111]/50 focus:outline-none"
+                className="w-full py-3.5 bg-transparent rounded-[14px] text-sm font-medium text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="cf-palette-list"
                 aria-activedescendant={flat[index] ? `cf-opt-${index}` : undefined}
               />
-              <kbd className="brutal-tag font-mono text-[10px] font-bold px-1.5 py-0.5 bg-[var(--cf-surface)] text-[var(--cf-ink)]">ESC</kbd>
+              <kbd className="rounded-md border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70 font-mono text-[10px] font-semibold px-1.5 py-0.5 text-[var(--cf-ink-mute)]">ESC</kbd>
             </div>
             <div id="cf-palette-list" role="listbox" className="max-h-[46vh] overflow-y-auto p-2">
               {flat.length === 0 && (
@@ -196,7 +201,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
               )}
               {results.map((g) => (
                 <div key={g.group} className="mb-1">
-                  <p className="px-2.5 pt-2 pb-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
+                  <p className="px-2.5 pt-2 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
                   {g.items.map((item) => {
                     const gi = flat.indexOf(item);
                     const ItemIcon = item.Icon;
@@ -208,27 +213,27 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                         aria-selected={gi === index}
                         onMouseEnter={() => setIndex(gi)}
                         onClick={() => go(item)}
-                        className={`w-full text-left px-2.5 min-h-11 py-2 border-2 flex items-center gap-2 text-sm transition-all ${
+                        className={`w-full text-left px-2.5 min-h-11 py-2 rounded-xl flex items-center gap-2 text-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                           gi === index
-                            ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)] border-[var(--cf-ink)]'
-                            : 'text-[var(--cf-ink-soft)] border-transparent'
+                            ? 'bg-[#2563FF]/10 text-[var(--cf-ink)]'
+                            : 'text-[var(--cf-ink-soft)]'
                         }`}
                       >
-                        {item.quick ? <Zap size={14} className={gi === index ? 'text-volt shrink-0' : 'text-[var(--cf-ink-mute)] shrink-0'} aria-hidden /> : null}
+                        {item.quick ? <Zap size={14} className="text-[#2563FF] shrink-0" aria-hidden /> : null}
                         {ItemIcon ? <ItemIcon size={14} className="shrink-0" aria-hidden /> : null}
                         <span className="truncate font-medium flex-1">{item.title}</span>
-                        <span className={`brutal-tag font-mono text-[10px] font-bold px-1.5 py-0.5 shrink-0 ${gi === index ? 'bg-volt text-[#111111]' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-mute)]'}`}>{item.sub}</span>
-                        {gi === index && <ArrowRight size={14} aria-hidden />}
+                        <span className="rounded-full bg-[var(--cf-surface-2)]/80 font-mono text-[10px] font-medium px-1.5 py-0.5 shrink-0 text-[var(--cf-ink-mute)]">{item.sub}</span>
+                        {gi === index && <ArrowRight size={14} className="text-[#2563FF]" aria-hidden />}
                       </button>
                     );
                   })}
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-3 px-4 py-2.5 border-t-2 border-[var(--cf-ink)] font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">
-              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">↑↓</kbd> navigate</span>
-              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">↵</kbd> open</span>
-              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">esc</kbd> close</span>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-t border-[var(--cf-line)] font-mono text-[11px] font-medium uppercase tracking-wider text-[var(--cf-ink-mute)]">
+              <span><kbd className="rounded px-1 border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70">↑↓</kbd> navigate</span>
+              <span><kbd className="rounded px-1 border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70">↵</kbd> open</span>
+              <span><kbd className="rounded px-1 border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/70">esc</kbd> close</span>
               <span className="ml-auto">Ctrl/⌘ K to toggle</span>
             </div>
           </motion.div>

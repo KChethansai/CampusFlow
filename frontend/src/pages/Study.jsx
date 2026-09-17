@@ -33,7 +33,8 @@ export default function Study() {
         subtitle="Weak spots, a revision order and matched resources — computed from your records."
         actions={
           <>
-            <span className="brutal-tag bg-volt text-coal text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
               Rule-based · not AI
             </span>
             <Link to="/assignments" className={btnClass('outline', 'small')}>Open assignments <ArrowUpRight size={13} /></Link>
@@ -49,22 +50,22 @@ export default function Study() {
             <Card>
               <div className="flex items-center justify-between gap-2 mb-1">
                 <h2 className="font-display font-bold flex items-center gap-2">
-                  <span className="w-8 h-8 grid place-items-center rounded-[8px] bg-gold text-coal border-2 border-[var(--cf-ink)]" aria-hidden>
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
                     <AlertTriangle size={15} />
                   </span>
                   Weak subjects
                 </h2>
-                <span className="brutal-tag bg-flag text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+                <span className="rounded-full border border-[var(--cf-line)] px-2.5 py-1 font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)] tabular-nums">
                   {plan.weakSubjects.length} to fix
                 </span>
               </div>
               <p className="text-[11px] text-[var(--cf-ink-mute)] mb-3">Scores below 60% or attendance below 75%.</p>
               {plan.weakSubjects.length === 0 ? (
-                <p className="rounded-[10px] border-2 border-[var(--cf-ink)] bg-volt/20 px-4 py-3 text-sm font-display font-semibold">No weak spots detected. Keep the streak. ✓</p>
+                <p className="flex items-center gap-1.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 px-4 py-3 text-sm font-display font-semibold"><span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />No weak spots detected. Keep the streak. ✓</p>
               ) : (
                 <ul className="space-y-2.5">
                   {plan.weakSubjects.map((w) => (
-                    <li key={w.subjectId} className="rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3.5 shadow-brutal-sm">
+                    <li key={w.subjectId} className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-display font-bold">{w.name}</p>
                         <span className="flex gap-1.5">
@@ -86,7 +87,7 @@ export default function Study() {
             <motion.div variants={staggerChild}>
               <Card>
                 <h2 className="font-display font-bold flex items-center gap-2 mb-3">
-                  <span className="w-8 h-8 grid place-items-center rounded-[8px] bg-royal text-white border-2 border-[var(--cf-ink)]" aria-hidden>
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-violet-500/10 text-violet-500" aria-hidden>
                     <CalendarCheck size={15} />
                   </span>
                   Revision plan
@@ -96,9 +97,9 @@ export default function Study() {
                 ) : (
                   <ol className="space-y-2">
                     {plan.revisionPlan.map((p, i) => (
-                      <li key={i} className={cn('flex items-start gap-2.5 text-sm rounded-[10px] border-2 p-2.5',
-                        p.priority === 'high' ? 'border-[var(--cf-ink)] bg-gold/20 shadow-brutal-sm' : 'border-[var(--cf-line)]')}>
-                        <span className="mt-0.5 w-6 h-6 rounded-[6px] bg-frame text-volt dark:bg-volt dark:text-coal grid place-items-center text-[11px] font-display font-bold shrink-0 border-2 border-[var(--cf-ink)]" aria-hidden>{i + 1}</span>
+                      <li key={i} className={cn('flex items-start gap-2.5 text-sm rounded-2xl border p-2.5',
+                        p.priority === 'high' ? 'border-[#2563FF]/30 bg-[#2563FF]/[.05]' : 'border-[var(--cf-line)]')}>
+                        <span className="mt-0.5 w-6 h-6 rounded-full bg-[#2563FF] text-white grid place-items-center text-[11px] font-display font-bold shrink-0" aria-hidden>{i + 1}</span>
                         <span className="min-w-0">
                           <span className="block font-medium">{p.title}</span>
                           <span className="block text-xs text-[var(--cf-ink-mute)]">{p.detail}</span>
@@ -113,7 +114,7 @@ export default function Study() {
             <motion.div variants={staggerChild}>
               <Card>
                 <h2 className="font-display font-bold flex items-center gap-2 mb-1">
-                  <span className="w-8 h-8 grid place-items-center rounded-[8px] bg-green-500 text-white border-2 border-[var(--cf-ink)]" aria-hidden>
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-300" aria-hidden>
                     <BookOpen size={15} />
                   </span>
                   Recommended resources
@@ -124,13 +125,13 @@ export default function Study() {
                 ) : (
                   <ul className="space-y-2">
                     {plan.resources.map((r) => (
-                      <li key={r._id} className="flex items-center gap-2 text-sm rounded-[10px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-2.5 shadow-brutal-sm">
+                      <li key={r._id} className="flex items-center gap-2 text-sm rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-2.5">
                         <span className="min-w-0 flex-1">
                           <span className="block font-medium truncate">{r.title}</span>
                           <span className="block text-xs text-[var(--cf-ink-mute)]">{r.subject?.name || ''} · {r.topic} · {r.difficulty}</span>
                         </span>
                         {r.url ? (
-                          <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${r.title}`} className="p-1.5 rounded-[8px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] hover:bg-gold transition">
+                          <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${r.title}`} className="p-1.5 rounded-xl border border-[var(--cf-line)] hover:border-[#2563FF]/50 hover:text-[#2563FF] transition">
                             <ExternalLink size={15} />
                           </a>
                         ) : (
@@ -144,7 +145,7 @@ export default function Study() {
             </motion.div>
           </div>
 
-          <p className="rounded-[10px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] px-4 py-2.5 text-[11px] text-[var(--cf-ink-mute)] flex items-center gap-1.5 shadow-brutal-sm">
+          <p className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-4 py-2.5 text-[11px] text-[var(--cf-ink-mute)] flex items-center gap-1.5">
             <Brain size={12} aria-hidden className="shrink-0" />
             Built from {plan.generatedFrom.gradedSubmissions} graded submissions and {plan.generatedFrom.attendanceSessions} attendance groups — {plan.generatedFrom.method}.
             {user?.role !== 'student' && ' Add ?studentId= to view another student.'}

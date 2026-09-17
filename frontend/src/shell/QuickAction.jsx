@@ -1,4 +1,4 @@
-// QuickAction: role-adapted brutal floating action. One entry per role family.
+// QuickAction: role-adapted floating action. One entry per role family.
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
@@ -42,16 +42,13 @@ export default function QuickAction({ role }) {
     <div className="fixed bottom-20 lg:bottom-8 right-4 sm:right-6 z-40 flex flex-col items-end gap-2">
       <AnimatePresence>
         {open &&
-          actions.map((a, i) => (
+          actions.map((a) => (
             <motion.button
               key={a.label}
               {...motionVariants.popover}
               onClick={() => { setOpen(false); navigate(a.to); }}
-              className="bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-sm hover:shadow-brutal hover:-translate-y-px transition-all pl-3 pr-4 min-h-11 py-2 font-display text-sm font-bold uppercase tracking-wide text-[var(--cf-ink)] flex items-center gap-2"
+              className="cf-glass pl-4 pr-5 min-h-11 py-2 rounded-full border border-[var(--cf-line)] shadow-[0_12px_32px_-12px_rgba(16,24,40,0.3)] font-display text-sm font-semibold text-[var(--cf-ink)] flex items-center gap-2 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#2563FF]/40 hover:text-[#2563FF] dark:hover:text-[#8db4ff]"
             >
-              <span className="font-mono text-[10px] font-black bg-volt text-[#111111] border border-[var(--cf-ink)] px-1" aria-hidden>
-                {String(i + 1).padStart(2, '0')}
-              </span>
               {a.label}
             </motion.button>
           ))}
@@ -60,9 +57,9 @@ export default function QuickAction({ role }) {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close quick actions' : 'Open quick actions'}
         aria-expanded={open}
-        className="w-12 h-12 grid place-items-center bg-volt text-[#111111] border-2 border-[var(--cf-ink)] shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-brutal-sm active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all"
+        className="w-14 h-14 grid place-items-center rounded-full bg-[#2563FF] text-white shadow-[0_16px_40px_-8px_rgba(37,99,255,0.65)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 active:scale-95"
       >
-        {open ? <X size={22} strokeWidth={2.5} /> : <Plus size={22} strokeWidth={2.5} />}
+        {open ? <X size={24} /> : <Plus size={24} />}
       </button>
     </div>
   );
