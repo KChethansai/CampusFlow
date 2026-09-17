@@ -1,31 +1,18 @@
-import { useEffect, useState } from 'react';
+// Users: brutal table + modal create form.
+// Endpoints preserved: GET /users, POST /users. Role options + gates unchanged.
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import {
-  badge,
-  btnClass,
-  cardClass,
-  emptyState,
-  inputClass,
-  loadingState,
-  pageHeader,
-  pageHeading,
-  pageSubheading,
-  roleColors,
-  selectClass,
-  statusColors,
-  tableCell,
-  tableCellHead,
-  tableClass,
-  tableHeadClass,
-  tableRowHover
-} from '../../styles/common';
+import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Modal } from '../../components/ui/Modal';
+import { btnClass, inputClass, labelClass, selectClass } from '../../system/tokens';
 
 function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [query, setQuery] = useState('');
   const {
     register,
     handleSubmit,
@@ -61,106 +48,110 @@ function Users() {
     }
   };
 
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) =>
+      [u.name, u.email, u.role].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [users, query]);
+
   return (
     <div>
-      <div className={pageHeader}>
-        <div>
-          <h1 className={pageHeading}>Users</h1>
-          <p className={pageSubheading}>{users.length} total users</p>
-        </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className={btnClass(showForm ? 'secondary' : 'primary')}
-        >
-          {showForm ? 'Cancel' : '+ Add User'}
-        </button>
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle={`${users.length} total users`}
+        actions={
+          <>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, email, role…"
+              aria-label="Search users"
+              className={`${inputClass} !w-56`}
+            />
+            <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
+              + Add User
+            </button>
+          </>
+        }
+      />
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit(onCreate)}
-          className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
-        >
-          <input
-            placeholder="Name"
-            className={inputClass}
-            {...register('name', { required: 'Name is required' })}
-          />
-          <input
-            placeholder="Email"
-            type="email"
-            className={inputClass}
-            {...register('email', { required: 'Email is required' })}
-          />
-          <input
-            placeholder="Password"
-            type="password"
-            className={inputClass}
-            {...register('password', {
-              required: 'Password is required',
-              minLength: { value: 8, message: 'Minimum 8 characters' }
-            })}
-          />
-          <div className="flex gap-2 items-start">
-            <select className={selectClass} {...register('role')}>
+      {loading ? (
+        <LoadingState label="Loading users…" />
+      ) : visible.length === 0 ? (
+        <div className="card-brutal p-5"><EmptyState title={users.length ? 'No matches' : 'No users found'} hint={users.length ? 'Try another search.' : undefined} /></div>
+      ) : (
+        <div className="card-brutal overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gold text-coal border-b-2 border-[var(--cf-ink)]">
+                <tr>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Name</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Email</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Role</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--cf-line)]">
+                {visible.map((u) => (
+                  <tr key={u._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
+                    <td className="px-4 py-3 font-medium">{u.name}</td>
+                    <td className="px-4 py-3 text-[var(--cf-ink-soft)]">{u.email}</td>
+                    <td className="px-4 py-3">
+                      <Badge role={u.role}>{u.role?.replace(/_/g, ' ')}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge status={u.isActive ? 'active' : 'inactive'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Add user">
+        <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
+          <div>
+            <label className={labelClass} htmlFor="user-name">Name</label>
+            <input id="user-name" placeholder="Aarav Sharma" className={inputClass} {...register('name', { required: 'Name is required' })} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="user-email">Email</label>
+            <input id="user-email" placeholder="aarav@campus.edu" type="email" className={inputClass} {...register('email', { required: 'Email is required' })} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="user-password">Password</label>
+            <input
+              id="user-password"
+              placeholder="Minimum 8 characters"
+              type="password"
+              className={inputClass}
+              {...register('password', {
+                required: 'Password is required',
+                minLength: { value: 8, message: 'Minimum 8 characters' }
+              })}
+            />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="user-role">Role</label>
+            <select id="user-role" className={selectClass} {...register('role')}>
               <option value="student">Student</option>
               <option value="faculty">Faculty</option>
               <option value="college_admin">College Admin</option>
               <option value="placement_officer">Placement Officer</option>
             </select>
-            <button type="submit" className={`${btnClass('success')} shrink-0`}>
-              Create
-            </button>
           </div>
           {(errors.name || errors.email || errors.password) && (
-            <p className="text-xs text-red-600 md:col-span-4">
+            <p className="text-xs text-red-600" role="alert">
               {errors.name?.message || errors.email?.message || errors.password?.message}
             </p>
           )}
+          <button type="submit" className={`${btnClass('success', 'medium')} w-full`}>Create user</button>
         </form>
-      )}
-
-      {loading ? (
-        <p className={loadingState}>Loading...</p>
-      ) : (
-        <div className={`${cardClass} overflow-hidden`}>
-          <table className={tableClass}>
-            <thead className={tableHeadClass}>
-              <tr>
-                <th className={tableCellHead}>Name</th>
-                <th className={tableCellHead}>Email</th>
-                <th className={tableCellHead}>Role</th>
-                <th className={tableCellHead}>Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--cf-line)]">
-              {users.map((user) => (
-                <tr key={user._id} className={tableRowHover}>
-                  <td className={`${tableCell} font-medium`}>{user.name}</td>
-                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>{user.email}</td>
-                  <td className={tableCell}>
-                    <span
-                      className={badge(roleColors[user.role] || 'bg-gray-100 text-gray-700')}
-                    >
-                      {user.role?.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className={tableCell}>
-                    <span
-                      className={badge(
-                        user.isActive ? statusColors.active : statusColors.inactive
-                      )}
-                    >
-                      {user.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {users.length === 0 && <p className={emptyState}>No users found.</p>}
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

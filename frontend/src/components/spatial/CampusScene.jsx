@@ -1,6 +1,6 @@
 // CampusScene: purposeful 3D digital campus. Six towers = six domains.
 // Lazy-loaded; never blocks first paint. Hover reveals context via callback.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, ContactShadows } from '@react-three/drei';
 import { DOMAINS } from './domains';
@@ -93,11 +93,19 @@ export function CampusSceneInner({ onHover, autoRotate }) {
 }
 
 export default function CampusScene({ onHover, autoRotate = true, className, style, onContextLost, onContextRestored, fallback = null }) {
+  // Visibility-pause: hidden tabs render no frames (fiber v9 `frameloop` API).
+  const [running, setRunning] = useState(true);
+  useEffect(() => {
+    const onVis = () => setRunning(!document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   return (
     <ErrorBoundary onError={onContextLost} fallback={fallback}>
       <div className={className} style={style}>
       <Canvas
         dpr={[1, 1.5]}
+        frameloop={running ? 'always' : 'never'}
         camera={{ position: [5.2, 4.2, 6.4], fov: 42 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {

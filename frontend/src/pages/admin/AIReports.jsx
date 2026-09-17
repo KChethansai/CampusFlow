@@ -1,5 +1,6 @@
-// Campus Intelligence Center: every insight answers what changed, why it
-// matters, and what should happen next — with evidence beside it.
+// Campus Intelligence Center: BeamCard-style panel, real provider flag only.
+// Endpoints preserved: GET /ai-reports, GET /users,
+// POST /ai-reports/generate. Real data only — no mock insights.
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ import { motion } from 'motion/react';
 import { AlertTriangle, Sparkles, TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { BeamCard } from '../../components/ui/editorial';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, labelClass, selectClass } from '../../system/tokens';
 
@@ -75,15 +77,16 @@ export default function AIReports() {
       <PageHeader title="Campus Intelligence" subtitle="What changed, why it matters, and what happens next — with evidence." />
 
       {unconfigured && (
-        <p className="mb-4 flex items-start gap-2 text-xs px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200">
-          <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+        <p className="card-brutal mb-4 flex items-start gap-2 bg-gold px-4 py-3 text-xs font-semibold text-coal">
+          <AlertTriangle size={15} className="shrink-0 mt-0.5" aria-hidden />
           The AI provider isn’t configured on the server, so reports are stored snapshots rather than live insights. Set OPENAI_API_KEY to activate full analysis.
         </p>
       )}
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="space-y-4">
-          <Card>
+          {/* BeamCard-style generator — real provider flag drives copy only */}
+          <BeamCard>
             <form onSubmit={handleSubmit(onGenerate)} className="space-y-3">
               <div>
                 <label htmlFor="studentId" className={labelClass}>Analyze student</label>
@@ -95,13 +98,13 @@ export default function AIReports() {
                 </select>
               </div>
               <button type="submit" disabled={generating} className={btnClass('glow', 'medium') + ' w-full'}>
-                <Sparkles size={15} /> {generating ? 'Analyzing…' : 'Generate insight'}
+                <Sparkles size={15} aria-hidden /> {generating ? 'Analyzing…' : 'Generate insight'}
               </button>
             </form>
-          </Card>
+          </BeamCard>
 
           <Card className="p-2">
-            <p className="px-2 pt-1 pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)]">Reports · {reports.length}</p>
+            <p className="px-2 pt-1 pb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Reports · {reports.length}</p>
             {loading ? <LoadingState /> : reports.length === 0 ? (
               <EmptyState title="No reports yet" hint="Generate the first insight above." />
             ) : (
@@ -111,7 +114,7 @@ export default function AIReports() {
                     <button
                       onClick={() => setSelected(r)}
                       aria-current={selected?._id === r._id}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl transition ${selected?._id === r._id ? 'bg-primary-50 dark:bg-primary-500/15' : 'hover:bg-black/[.03] dark:hover:bg-white/[.05]'}`}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition ${selected?._id === r._id ? 'border-[var(--cf-ink)] bg-volt/40' : 'border-transparent hover:bg-black/[.03] dark:hover:bg-white/[.05]'}`}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium truncate">{r.student?.name || 'Student'}</span>
@@ -132,25 +135,28 @@ export default function AIReports() {
           ) : (
             <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" key={selected._id} className="space-y-3">
               <motion.div variants={staggerChild}>
-                <Card>
+                <div className="card-brutal bg-frame text-white p-5">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h2 className="font-semibold flex items-center gap-1.5"><TrendingUp size={16} className="text-primary-500" /> {selected.student?.name}</h2>
-                    <span className="text-[11px] text-[var(--cf-ink-mute)]">{fmt(selected.createdAt)}</span>
+                    <h2 className="font-display font-semibold flex items-center gap-1.5"><TrendingUp size={16} className="text-volt" aria-hidden /> {selected.student?.name}</h2>
+                    <span className="text-[11px] opacity-70">{fmt(selected.createdAt)}</span>
                   </div>
                   {selected.dataSnapshotHash && (
-                    <p className="text-[11px] text-[var(--cf-ink-mute)]">Grounded snapshot <code className="px-1 rounded bg-black/[.05] dark:bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
+                    <p className="text-[11px] opacity-70">Grounded snapshot <code className="px-1 rounded bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
                   )}
-                </Card>
+                  <span className="brutal-tag mt-3 inline-block bg-volt text-coal px-2 py-0.5 text-[11px] font-bold uppercase tracking-widest">
+                    Provider: {selected.provider || 'none'}
+                  </span>
+                </div>
               </motion.div>
               {signals.length === 0 && (
                 <Card><EmptyState title="Empty analysis" hint="The report carries no readable output." /></Card>
               )}
               {signals.map((s, i) => (
-                <motion.article key={i} variants={staggerChild} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-300">What changed</p>
+                <motion.article key={i} variants={staggerChild} className="card-brutal role-card-animated p-5">
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary-600 dark:text-primary-300">What changed</p>
                   <p className="font-semibold mt-0.5">{s.what}</p>
-                  {s.why && (<><p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)]">Why it matters</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.why}</p></>)}
-                  {s.next && (<><p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)]">What should happen next</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.next}</p></>)}
+                  {s.why && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Why it matters</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.why}</p></>)}
+                  {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">What should happen next</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.next}</p></>)}
                   {s.evidence && (
                     <p className="mt-3 text-xs rounded-xl bg-black/[.03] dark:bg-white/[.05] border border-[var(--cf-line)] p-3">
                       <span className="font-semibold">Evidence: </span>{s.evidence}

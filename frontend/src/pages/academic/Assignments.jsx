@@ -1,5 +1,8 @@
 // Assignments as a task-management product: All / Upcoming / Submitted / Graded / Overdue.
 // Faculty: create, publish (status), review, grade. Students: submit.
+// Endpoints preserved: GET /assignments, GET /submissions, GET /subjects,
+// POST /assignments, PATCH /assignments/:id/status,
+// POST /submissions/assignments/:id, PATCH /submissions/:id.
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -151,8 +154,8 @@ export default function Assignments() {
       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4" role="tablist" aria-label="Assignment views">
         {VIEWS.map((v) => (
           <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
-            className={cn('px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition',
-              view === v ? 'bg-primary-600 text-white shadow-1' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)] hover:bg-black/[.07]')}>
+            className={cn('brutal-tag px-3.5 py-2 text-xs font-bold whitespace-nowrap transition',
+              view === v ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
             {v} · {counts[v]}
           </button>
         ))}
@@ -161,24 +164,24 @@ export default function Assignments() {
       {loading ? <LoadingState /> : visible.length === 0 ? (
         <Card><EmptyState editorial title={`No ${view.toLowerCase()} assignments`} hint="Try another view." /></Card>
       ) : (
-        <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-3">
+        <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-4">
           {visible.map((a) => {
             const mine = submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(a._id));
             const state = classify(a, submissions);
             return (
-              <motion.article key={a._id} variants={staggerChild} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5 hover:shadow-2 transition-shadow">
+              <motion.article key={a._id} variants={staggerChild} className="card-brutal role-card-animated p-5">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h3 className="font-semibold leading-snug">{a.title}</h3>
+                  <h3 className="font-display font-semibold leading-snug">{a.title}</h3>
                   <Badge status={a.status || 'draft'}>{(a.status || 'draft').replace(/_/g, ' ')}</Badge>
                 </div>
                 <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{a.description || 'No description'}</p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
                   <span>{a.subject?.name || 'Subject'}</span>
-                  <span>{a.maxScore} pts</span>
+                  <span className="tabular-nums">{a.maxScore} pts</span>
                   <span className={cn('font-medium', state === 'Overdue' && 'text-red-600 dark:text-red-400')}>Due {fmt(a.dueDate)}</span>
-                  {mine[0]?.score != null && <span className="font-semibold text-green-600 dark:text-green-400">Score {mine[0].score}</span>}
+                  {mine[0]?.score != null && <span className="brutal-tag bg-volt px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 border-t-2 border-[var(--cf-ink)] pt-3">
                   {isFaculty && ['draft', 'published'].includes(a.status) && (
                     <button onClick={() => publish(a)} className={btnClass('secondary', 'small')}>
                       {a.status === 'draft' ? 'Publish' : 'Open'}
@@ -248,7 +251,7 @@ export default function Assignments() {
         ) : (
           <ul className="space-y-3">
             {submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(gradeFor?._id)).map((s) => (
-              <li key={s._id} className="rounded-xl border border-[var(--cf-line)] p-3.5">
+              <li key={s._id} className="rounded-xl border-2 border-[var(--cf-ink)] p-3.5 bg-[var(--cf-surface-2)]">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <p className="text-sm font-medium">{s.student?.name || 'Student'}</p>
                   <Badge status={s.status || 'submitted'}>{(s.status || 'submitted').replace(/_/g, ' ')}</Badge>

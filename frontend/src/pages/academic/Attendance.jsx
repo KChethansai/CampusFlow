@@ -1,11 +1,13 @@
 // Attendance: health-first experience — ring, trend, heatmap, course comparison.
 // Faculty: mark attendance (POST /attendance).
+// Endpoints preserved: GET /attendance, POST /attendance, GET /subjects,
+// GET /users. Role gates unchanged.
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { AttendanceRing, Heatmap, Sparkline } from '../../components/data/views';
 import { btnClass, inputClass, labelClass, selectClass, statusBadge } from '../../system/tokens';
@@ -138,46 +140,49 @@ export default function Attendance() {
       />
 
       {loading ? <LoadingState /> : health == null ? (
-        <Card><EmptyState title="No attendance yet" hint={isFaculty ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></Card>
+        <div className="card-brutal p-5"><EmptyState title="No attendance yet" hint={isFaculty ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></div>
       ) : (
         <>
           <div className="grid lg:grid-cols-3 gap-4 mb-4">
-            <Card className="lg:col-span-1"><AttendanceRing value={health} /></Card>
-            <Card className="lg:col-span-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)] mb-2">Trend · last {trend.length} sessions</p>
+            <Card className="role-card-animated lg:col-span-1">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">Health</p>
+              <AttendanceRing value={health} />
+            </Card>
+            <Card className="role-card-animated lg:col-span-2">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">Trend · last {trend.length} sessions</p>
               {trend.length > 1 ? <Sparkline points={trend} width={460} height={96} /> : <p className="text-sm text-[var(--cf-ink-mute)]">Not enough sessions for a trend yet.</p>}
-              <div className="mt-4"><Heatmap weeks={weeks} /></div>
+              <div className="mt-4 border-t-2 border-[var(--cf-ink)] pt-3"><Heatmap weeks={weeks} /></div>
             </Card>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4">
-            <Card>
-              <h2 className="font-semibold mb-3">Course comparison</h2>
+            <Card className="role-card-animated">
+              <h2 className="font-display font-semibold mb-3">Course comparison</h2>
               <ul className="space-y-3">
                 {byCourse.map((c) => (
                   <li key={c.name}>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="font-medium truncate">{c.name}</span>
-                      <span className="text-xs text-[var(--cf-ink-mute)]">{c.pct}% · {c.n} records</span>
+                      <span className="text-xs text-[var(--cf-ink-mute)] tabular-nums">{c.pct}% · {c.n} records</span>
                     </div>
-                    <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#16a34a' : c.pct >= 60 ? '#d97706' : '#dc2626' }} />
+                    <div className="h-2.5 rounded-full border border-[var(--cf-ink)] bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
+                      <div className="h-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#16a34a' : c.pct >= 60 ? '#d97706' : '#dc2626' }} />
                     </div>
                   </li>
                 ))}
               </ul>
               {health < 75 && (
-                <p className="mt-4 text-xs px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-200">
+                <p className="card-brutal mt-4 bg-gold px-3 py-2.5 text-xs font-semibold text-coal">
                   Projected risk: below the 75% threshold. Attend every upcoming class to recover.
                 </p>
               )}
             </Card>
             <Card>
-              <h2 className="font-semibold mb-3">Recent sessions</h2>
+              <h2 className="font-display font-semibold mb-3">Recent sessions</h2>
               <ul className="divide-y divide-[var(--cf-line)]">
                 {mine.slice(-6).reverse().map((s) => (
                   <li key={s._id} className="py-2.5 flex items-center gap-2 text-sm">
-                    <span className="font-medium">{fmt(s.date)}</span>
+                    <span className="font-medium tabular-nums">{fmt(s.date)}</span>
                     <span className="text-[var(--cf-ink-mute)] truncate">{s.subject?.name || ''} · Period {s.period}</span>
                     <span className="ml-auto flex gap-1">
                       {(s.records || []).slice(0, 4).map((r, i) => (
@@ -210,7 +215,7 @@ export default function Attendance() {
             ))}
           </div>
         </div>
-        <ul className="max-h-64 overflow-y-auto divide-y divide-[var(--cf-line)] rounded-xl border border-[var(--cf-line)]">
+        <ul className="max-h-64 overflow-y-auto divide-y divide-[var(--cf-line)] rounded-xl border-2 border-[var(--cf-ink)]">
           {students.map((s) => (
             <li key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <span className="flex-1 truncate font-medium">{s.name}</span>
@@ -222,7 +227,7 @@ export default function Attendance() {
                     role="radio"
                     aria-checked={(marks[s._id] || 'present') === st}
                     onClick={() => setMarks((m) => ({ ...m, [s._id]: st }))}
-                    className={`px-2 py-1 rounded-full text-[11px] font-medium capitalize transition ${(marks[s._id] || 'present') === st ? 'bg-primary-600 text-white' : 'bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]'}`}
+                    className={`brutal-tag px-2 py-1 text-[11px] font-bold capitalize transition ${(marks[s._id] || 'present') === st ? 'bg-frame text-white' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]'}`}
                   >
                     {st}
                   </button>

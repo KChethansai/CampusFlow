@@ -2,7 +2,7 @@
 // Pure SVG — no chart dependency. All normalized to CampusFlow tokens.
 import { useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
-import { normalizeStage, PIPELINE_STAGES, statusBadge } from '../../system/tokens';
+import { normalizeStage, PIPELINE_STAGES } from '../../system/tokens';
 import { cn } from '../../system/tokens';
 
 export function WorkflowTimeline({ steps }) {
@@ -63,8 +63,19 @@ export function PipelineLabels({ current }) {
         const active = stage === normalizeStage(current);
         const done = PIPELINE_STAGES.indexOf(normalizeStage(current)) > PIPELINE_STAGES.indexOf(stage);
         return (
-          <span key={stage} className={statusBadge(active ? stage : done ? 'selected' : 'draft')}>
-            {stage}
+          <span
+            key={stage}
+            aria-current={active ? 'step' : undefined}
+            className={cn(
+              'font-mono text-[11px] font-bold uppercase tracking-widest border-2 border-[var(--cf-ink)] rounded-full px-2.5 py-0.5 shadow-brutal-sm whitespace-nowrap',
+              active
+                ? 'bg-volt text-coal'
+                : done
+                  ? 'bg-royal text-white'
+                  : 'bg-[var(--cf-surface)] text-[var(--cf-ink-mute)]'
+            )}
+          >
+            {stage.replace(/_/g, ' ')}
           </span>
         );
       })}
@@ -76,7 +87,8 @@ export function AttendanceRing({ value = 0, size = 120, label = 'Attendance Heal
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   const r = 52;
   const c = 2 * Math.PI * r;
-  const color = pct >= 85 ? '#16a34a' : pct >= 75 ? '#0071e3' : pct >= 60 ? '#d97706' : '#dc2626';
+  // Neo-brutal strokes: royal (healthy) → gold (watch) → flag (risk), ink track.
+  const color = pct >= 85 ? '#0055ff' : pct >= 75 ? '#ffcc00' : pct >= 60 ? '#e63b2e' : '#e63b2e';
   return (
     <div className="flex items-center gap-4" role="img" aria-label={`${label}: ${pct} percent`}>
       <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden>
@@ -108,10 +120,22 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
   const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)},${(height - 6 - ((p - min) / span) * (height - 12)).toFixed(1)}`).join(' ');
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible" aria-hidden>
-      <path d={d} fill="none" stroke="#0071e3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {points.map((p, i) => (
-        <circle key={i} cx={i * step} cy={height - 6 - ((p - min) / span) * (height - 12)} r="3" fill="#0071e3" opacity={i === points.length - 1 ? 1 : 0.35} />
-      ))}
+      <path d={d} fill="none" stroke="#0055ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {points.map((p, i) => {
+        const last = i === points.length - 1;
+        return (
+          <circle
+            key={i}
+            cx={i * step}
+            cy={height - 6 - ((p - min) / span) * (height - 12)}
+            r={last ? 4 : 3}
+            fill={last ? '#d4ff00' : '#0055ff'}
+            stroke="#0055ff"
+            strokeWidth={last ? 2 : 0}
+            opacity={last ? 1 : 0.55}
+          />
+        );
+      })}
     </svg>
   );
 }

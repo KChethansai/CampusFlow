@@ -244,8 +244,8 @@ export default function Placement() {
       <div className="flex gap-1.5 mb-4" role="tablist" aria-label="Placement views">
         {TABS.map((t) => (
           <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
-            className={cn('px-4 py-2 rounded-full text-xs font-medium transition',
-              tab === t.key ? 'bg-primary-600 text-white shadow-1' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)]')}>
+            className={cn('brutal-tag px-4 py-2 text-xs font-bold transition',
+              tab === t.key ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
             {t.label}
           </button>
         ))}
@@ -255,22 +255,26 @@ export default function Placement() {
         <>
           {tab === 'board' && (
             <div className="space-y-4">
-              <Card>
-                <h2 className="font-semibold mb-1">Applied → Shortlisted → Assessment → Interview → Offer → Placed</h2>
+              <div className="card-brutal p-5">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <h2 className="font-display font-semibold">Applied → Shortlisted → Assessment → Interview → Offer → Placed</h2>
+                  <span className="brutal-tag bg-volt px-2 py-0.5 text-[11px] font-bold tabular-nums">{applications.length} live</span>
+                </div>
                 <p className="text-xs text-[var(--cf-ink-mute)] mb-4">{applications.length} applications in motion.</p>
                 <div className="grid sm:grid-cols-6 gap-2">
                   {PIPELINE_STAGES.map((s) => (
-                    <div key={s} className="rounded-2xl border border-[var(--cf-line)] p-3 text-center">
-                      <p className="text-2xl font-bold">{funnel[s]}</p>
-                      <p className="text-[11px] capitalize text-[var(--cf-ink-mute)]">{s}</p>
-                      <div className={cn('mt-2 h-1.5 rounded-full', funnel[s] ? 'bg-primary-500' : 'bg-black/10 dark:bg-white/10')} />
+                    <div key={s} className={`border-2 border-[var(--cf-ink)] p-3 text-center ${funnel[s] ? 'bg-gold' : 'bg-[var(--cf-surface-2)]'}`}>
+                      <p className={`text-2xl font-bold tabular-nums ${funnel[s] ? 'text-coal' : 'text-[var(--cf-ink)]'}`}>{funnel[s]}</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide capitalize text-[var(--cf-ink-mute)]">{s}</p>
+                      <div className={cn('mt-2 h-1.5 border border-[var(--cf-ink)]', funnel[s] ? 'bg-frame' : 'bg-black/10 dark:bg-white/10')} />
                     </div>
                   ))}
                 </div>
-              </Card>
-              <div className="grid md:grid-cols-2 gap-3">
+                <div className="racing-stripe h-1.5 mt-4 border border-[var(--cf-ink)]" aria-hidden />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
                 {applications.slice(0, 6).map((a) => (
-                  <button key={a._id} onClick={() => setAppDetail(a)} className="text-left rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-4 hover:shadow-2 transition-shadow">
+                  <button key={a._id} onClick={() => setAppDetail(a)} className="card-brutal role-card-animated p-4 text-left">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="text-sm font-semibold truncate">{a.drive?.role || 'Drive'} · {a.drive?.company?.name || ''}</p>
                       <Badge status={a.stage || 'applied'}>{(a.stage || 'applied').replace(/_/g, ' ')}</Badge>
@@ -286,14 +290,14 @@ export default function Placement() {
           )}
 
           {tab === 'market' && (
-            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
               {drives.map((d) => {
                 const applied = appliedDriveIds.has(String(d._id));
                 return (
-                  <motion.article key={d._id} variants={staggerChild} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5 hover:shadow-3 hover:-translate-y-0.5 transition-all">
+                  <motion.article key={d._id} variants={staggerChild} className="card-brutal role-card-animated p-5">
                     <div className="flex items-start gap-3 mb-3">
-                      <span className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/15 text-primary-600 dark:text-primary-300 grid place-items-center shrink-0" aria-hidden>
-                        <Building2 size={19} />
+                      <span className="brutal-tag grid place-items-center w-10 h-10 shrink-0 bg-volt" aria-hidden>
+                        <Building2 size={19} className="text-coal" />
                       </span>
                       <div className="min-w-0">
                         <h3 className="font-semibold leading-tight truncate">{d.role}</h3>
@@ -328,7 +332,7 @@ export default function Placement() {
           )}
 
           {tab === 'apps' && (
-            <Card className="overflow-hidden p-0">
+            <Card className="overflow-hidden p-0 border-2 border-[var(--cf-ink)]" style={{ boxShadow: '5px 5px 0px var(--cf-ink)' }}>
               <ul className="divide-y divide-[var(--cf-line)]">
                 {applications.map((a) => (
                   <li key={a._id}>
@@ -348,7 +352,7 @@ export default function Placement() {
           )}
 
           {tab === 'companies' && isStaff && (
-            <Card className="overflow-hidden p-0">
+            <Card className="overflow-hidden p-0 border-2 border-[var(--cf-ink)]" style={{ boxShadow: '5px 5px 0px var(--cf-ink)' }}>
               <ul className="divide-y divide-[var(--cf-line)]">
                 {companies.map((c) => (
                   <li key={c._id} className="px-4 py-3.5 flex items-center gap-3">
@@ -378,8 +382,8 @@ export default function Placement() {
               <Badge status={detail.status || 'active'}>{detail.status || 'active'}</Badge>
             </div>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border border-[var(--cf-line)] p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Eligibility</p>
+              <div className="rounded-xl border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3.5">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Eligibility</p>
                 <ul className="space-y-1 text-[var(--cf-ink-soft)]">
                   <li>Min CGPA: {detail.eligibility?.minCGPA ?? '—'}</li>
                   <li>Max backlogs: {detail.eligibility?.maxBacklogs ?? '—'}</li>
@@ -393,8 +397,8 @@ export default function Placement() {
                   </p>
                 )}
               </div>
-              <div className="rounded-xl border border-[var(--cf-line)] p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Timeline</p>
+              <div className="rounded-xl border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3.5">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Timeline</p>
                 <p className="text-[var(--cf-ink-soft)]">Apply by {fmtDate(detail.applicationDeadline)}</p>
                 <p className="text-xs text-[var(--cf-ink-mute)] mt-1">Process: applied → shortlisted → assessment → interview → offer → placed.</p>
               </div>

@@ -9,11 +9,23 @@ import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
 import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../components/ui/primitives';
 import { staggerChild, staggerParent } from '../system/motion';
-import { btnClass, cn, inputClass, labelClass, selectClass } from '../system/tokens';
+import { btnClass, cn, inputClass, labelClass } from '../system/tokens';
 
 const TYPES = ['academic', 'cultural', 'sports', 'technical', 'placement', 'other'];
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 const fmtD = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+const brutalField = cn(inputClass,
+  'border-2 border-[var(--cf-ink)] rounded-[10px] shadow-brutal-sm focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]');
+
+const TYPE_BG = {
+  academic: 'bg-frame text-volt',
+  cultural: 'bg-volt text-coal',
+  sports: 'bg-frame text-volt',
+  technical: 'bg-frame text-volt',
+  placement: 'bg-gold text-coal',
+  other: 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]'
+};
 
 export default function Events() {
   const { user } = useAuth();
@@ -103,49 +115,51 @@ export default function Events() {
         )}
       />
 
-      <div className="flex gap-1.5 mb-4" role="tablist" aria-label="Campus life">
+      <div className="flex gap-1.5 p-1.5 mb-4 rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] shadow-brutal-sm w-fit" role="tablist" aria-label="Campus life">
         {[['events', 'Events'], ['announcements', 'Announcements']].map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={cn('px-4 py-2 rounded-full text-xs font-medium transition',
-              tab === k ? 'bg-primary-600 text-white' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)]')}>
+            className={cn('px-4 py-2 rounded-[8px] text-xs font-display font-semibold transition-all border-2',
+              tab === k ? 'bg-gold text-coal border-frame shadow-brutal-sm' : 'border-transparent text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
             {label}
           </button>
         ))}
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit(onCreate)} className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-4 grid sm:grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit(onCreate)} className="card-brutal rounded-2xl p-5 mb-4 grid sm:grid-cols-2 gap-3">
+          <p className="sm:col-span-2 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--cf-ink-mute)]">New event</p>
           <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="ev-title">Title</label>
-            <input id="ev-title" className={inputClass} placeholder="Tech fest auditions" {...register('title', { required: true })} />
+            <input id="ev-title" className={brutalField} placeholder="Tech fest auditions" {...register('title', { required: true })} />
           </div>
           <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="ev-desc">Description</label>
-            <textarea id="ev-desc" className={inputClass} rows={2} {...register('description')} />
+            <textarea id="ev-desc" className={brutalField} rows={2} {...register('description')} />
           </div>
           <div>
             <label className={labelClass} htmlFor="ev-type">Type</label>
-            <select id="ev-type" className={selectClass} {...register('type')}>
+            <select id="ev-type" className={brutalField} {...register('type')}>
               {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className={labelClass} htmlFor="ev-start">Starts</label>
-            <input id="ev-start" type="datetime-local" className={inputClass} {...register('startAt')} />
+            <input id="ev-start" type="datetime-local" className={brutalField} {...register('startAt')} />
           </div>
           <button type="submit" className={btnClass('success', 'medium') + ' sm:col-span-2'}>Publish event</button>
         </form>
       )}
 
       {showNote && (
-        <form onSubmit={noteForm.handleSubmit(onNote)} className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-4 space-y-3">
+        <form onSubmit={noteForm.handleSubmit(onNote)} className="card-brutal rounded-2xl p-5 mb-4 space-y-3">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--cf-ink-mute)]">New announcement</p>
           <div>
             <label className={labelClass} htmlFor="an-title">Announcement</label>
-            <input id="an-title" className={inputClass} placeholder="Mid-sem schedule released" {...noteForm.register('title', { required: true })} />
+            <input id="an-title" className={brutalField} placeholder="Mid-sem schedule released" {...noteForm.register('title', { required: true })} />
           </div>
           <div>
             <label className={labelClass} htmlFor="an-body">Details</label>
-            <textarea id="an-body" className={inputClass} rows={3} {...noteForm.register('body')} />
+            <textarea id="an-body" className={brutalField} rows={3} {...noteForm.register('body')} />
           </div>
           <button type="submit" className={btnClass('success', 'medium')}>Post announcement</button>
         </form>
@@ -153,20 +167,31 @@ export default function Events() {
 
       {loading ? <LoadingState /> : tab === 'events' ? (
         upcoming.length === 0 ? <Card><EmptyState editorial title="Nothing scheduled" hint="New events will appear here." /></Card> : (
-          <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-3">
+          <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-4">
             {upcoming.map((e) => (
-              <motion.article key={e._id} variants={staggerChild} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h3 className="font-semibold leading-snug">{e.title}</h3>
-                  <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{e.type || 'event'}</Badge>
+              <motion.article key={e._id} variants={staggerChild} className="card-brutal rounded-2xl p-5">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className={cn('brutal-tag text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full', TYPE_BG[e.type] || TYPE_BG.other)}>
+                    {e.type || 'event'}
+                  </span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)]">
+                    <CalendarDays size={13} aria-hidden /> {fmtDT(e.startAt)}
+                  </span>
                 </div>
-                {e.description && <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{e.description}</p>}
-                <div className="flex items-center justify-between gap-2 text-xs text-[var(--cf-ink-mute)]">
-                  <span className="flex items-center gap-1"><CalendarDays size={13} /> {fmtDT(e.startAt)}</span>
+                <h3 className="font-display font-bold leading-snug text-lg">{e.title}</h3>
+                {e.description && <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mt-1 mb-3">{e.description}</p>}
+                <div className="flex items-center justify-between gap-2 pt-3 border-t-2 border-[var(--cf-ink)]">
                   {isStudent && (registered.has(String(e._id))
-                    ? <span className="font-medium text-green-600 dark:text-green-400">✓ Registered</span>
-                    : <button onClick={() => registerFor(e._id)} disabled={busy === e._id} className={btnClass('primary', 'small')}>{busy === e._id ? '…' : 'Register'}</button>)}
-                  {!isStudent && <span>{(e.registeredStudents || []).length} registered</span>}
+                    ? <span className="brutal-tag bg-volt text-coal text-xs font-bold px-3 py-1 rounded-full">✓ Registered</span>
+                    : <button onClick={() => registerFor(e._id)} disabled={busy === e._id} className={btnClass('primary', 'small')}>{busy === e._id ? '…' : 'Register →'}</button>)}
+                  {!isStudent && (
+                    <span className="text-xs font-display font-semibold">
+                      {(e.registeredStudents || []).length} registered
+                    </span>
+                  )}
+                  {(e.registeredStudents || []).length > 0 && isStudent && (
+                    <span className="text-[11px] text-[var(--cf-ink-mute)]">{(e.registeredStudents || []).length} going</span>
+                  )}
                 </div>
               </motion.article>
             ))}
@@ -174,15 +199,20 @@ export default function Events() {
         )
       ) : (
         notes.length === 0 ? <Card><EmptyState editorial title="No announcements" hint="Important updates will land here." /></Card> : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {notes.map((n) => (
-              <article key={n._id} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5">
+              <article key={n._id} className="card-brutal rounded-2xl p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold">{n.title}</h3>
+                  <h3 className="font-display font-bold flex items-center gap-2">
+                    <span className="w-8 h-8 grid place-items-center rounded-[8px] bg-flag text-white border-2 border-[var(--cf-ink)]" aria-hidden>
+                      <Megaphone size={14} />
+                    </span>
+                    {n.title}
+                  </h3>
                   {n.pinned && <Badge status="open">Pinned</Badge>}
                 </div>
-                {n.body && <p className="mt-1 text-sm text-[var(--cf-ink-soft)]">{n.body}</p>}
-                <p className="mt-2 text-[11px] text-[var(--cf-ink-mute)]">{n.createdBy?.name || ''} · {fmtD(n.createdAt)}</p>
+                {n.body && <p className="mt-2 text-sm text-[var(--cf-ink-soft)]">{n.body}</p>}
+                <p className="mt-2 font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">{n.createdBy?.name || ''} · {fmtD(n.createdAt)}</p>
               </article>
             ))}
           </div>

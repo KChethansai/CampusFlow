@@ -1,23 +1,12 @@
+// Courses: brutal table + modal create form.
+// Endpoints preserved: GET /courses, GET /departments, POST /courses.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import {
-  btnClass,
-  cardClass,
-  emptyState,
-  inputClass,
-  loadingState,
-  pageHeader,
-  pageHeading,
-  pageSubheading,
-  selectClass,
-  tableCell,
-  tableCellHead,
-  tableClass,
-  tableHeadClass,
-  tableRowHover
-} from '../../styles/common';
+import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Modal } from '../../components/ui/Modal';
+import { btnClass, inputClass, labelClass, selectClass } from '../../system/tokens';
 
 function Courses() {
   const [courses, setCourses] = useState([]);
@@ -71,103 +60,86 @@ function Courses() {
 
   return (
     <div>
-      <div className={pageHeader}>
-        <div>
-          <h1 className={pageHeading}>Courses</h1>
-          <p className={pageSubheading}>{courses.length} courses</p>
-        </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className={btnClass(showForm ? 'secondary' : 'primary')}
-        >
-          {showForm ? 'Cancel' : '+ Add Course'}
-        </button>
-      </div>
-
-      {showForm && (
-        <form
-          onSubmit={handleSubmit(onCreate)}
-          className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-5 gap-3"
-        >
-          <input
-            placeholder="Course Name"
-            className={inputClass}
-            {...register('name', { required: 'Name is required' })}
-          />
-          <input
-            placeholder="Code"
-            className={inputClass}
-            {...register('code', { required: 'Code is required' })}
-          />
-          <select
-            className={selectClass}
-            {...register('department', { required: 'Select a department' })}
-          >
-            <option value="">Select Department</option>
-            {departments.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            placeholder="Years"
-            min={1}
-            max={5}
-            className={inputClass}
-            {...register('durationYears', { valueAsNumber: true })}
-          />
-          <button type="submit" className={`${btnClass('success')} self-start`}>
-            Create
+      <PageHeader
+        title="Courses"
+        subtitle={`${courses.length} courses`}
+        actions={
+          <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
+            + Add Course
           </button>
-          {(errors.name || errors.code || errors.department) && (
-            <p className="text-xs text-red-600 md:col-span-5">
-              {errors.name?.message ||
-                errors.code?.message ||
-                errors.department?.message}
-            </p>
-          )}
-        </form>
-      )}
+        }
+      />
 
       {loading ? (
-        <p className={loadingState}>Loading...</p>
+        <LoadingState label="Loading courses…" />
+      ) : courses.length === 0 ? (
+        <div className="card-brutal p-5"><EmptyState title="No courses found" hint="Add the first course to build the catalog." /></div>
       ) : (
-        <div className={`${cardClass} overflow-hidden`}>
-          <table className={tableClass}>
-            <thead className={tableHeadClass}>
-              <tr>
-                <th className={tableCellHead}>Course</th>
-                <th className={tableCellHead}>Code</th>
-                <th className={tableCellHead}>Department</th>
-                <th className={tableCellHead}>Duration</th>
-                <th className={tableCellHead}>Semesters</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--cf-line)]">
-              {courses.map((course) => (
-                <tr key={course._id} className={tableRowHover}>
-                  <td className={`${tableCell} font-medium`}>{course.name}</td>
-                  <td className={tableCell}>
-                    <span className="bg-black/[.05] dark:bg-white/10 px-2 py-0.5 rounded-full text-xs">
-                      {course.code}
-                    </span>
-                  </td>
-                  <td className={`${tableCell} text-[var(--cf-ink-soft)]`}>
-                    {course.department?.name || '—'}
-                  </td>
-                  <td className={tableCell}>{course.durationYears} yrs</td>
-                  <td className={tableCell}>{course.totalSemesters}</td>
+        <div className="card-brutal overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gold border-b-2 border-[var(--cf-ink)]">
+                <tr>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Course</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Code</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Department</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Duration</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Semesters</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {courses.length === 0 && (
-            <p className={emptyState}>No courses found.</p>
-          )}
+              </thead>
+              <tbody className="divide-y divide-[var(--cf-line)]">
+                {courses.map((course) => (
+                  <tr key={course._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
+                    <td className="px-4 py-3 font-medium">{course.name}</td>
+                    <td className="px-4 py-3">
+                      <span className="brutal-tag bg-[var(--cf-surface-2)] px-2 py-0.5 text-[11px] font-bold">
+                        {course.code}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[var(--cf-ink-soft)]">
+                      {course.department?.name || '—'}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">{course.durationYears} yrs</td>
+                    <td className="px-4 py-3 tabular-nums">{course.totalSemesters}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Add course">
+        <form onSubmit={handleSubmit(onCreate)} className="space-y-3">
+          <div>
+            <label className={labelClass} htmlFor="course-name">Course name</label>
+            <input id="course-name" placeholder="B.Tech Computer Science" className={inputClass} {...register('name', { required: 'Name is required' })} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="course-code">Code</label>
+            <input id="course-code" placeholder="BTCS" className={inputClass} {...register('code', { required: 'Code is required' })} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="course-dept">Department</label>
+            <select id="course-dept" className={selectClass} {...register('department', { required: 'Select a department' })}>
+              <option value="">Select Department</option>
+              {departments.map((d) => (
+                <option key={d._id} value={d._id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="course-years">Duration (years)</label>
+            <input id="course-years" type="number" min={1} max={5} className={inputClass} {...register('durationYears', { valueAsNumber: true })} />
+          </div>
+          {(errors.name || errors.code || errors.department) && (
+            <p className="text-xs text-red-600" role="alert">
+              {errors.name?.message || errors.code?.message || errors.department?.message}
+            </p>
+          )}
+          <button type="submit" className={`${btnClass('success', 'medium')} w-full`}>Create course</button>
+        </form>
+      </Modal>
     </div>
   );
 }
