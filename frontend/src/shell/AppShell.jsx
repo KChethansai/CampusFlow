@@ -1,11 +1,13 @@
-// AppShell: glass authenticated shell — collapsible rail, floating topbar, drawer + bottom nav.
+// AppShell: 21st.dev-caliber floating shell — Aceternity FloatingNav topbar
+// (hide-on-scroll-down / reveal-on-scroll-up) + React Bits staggered mobile drawer.
+// Logic preserved: visibleNav, collapse, palette/tour/CSV wiring, logout, tour ids, skip link.
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'motion/react';
 import {
   ChevronsLeft, ChevronsRight, Command, LifeBuoy, LogOut, Menu,
   Moon, Search, Settings, Sun, X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '../store/useAuth';
 import { useTheme } from '../system/theme';
@@ -17,10 +19,25 @@ import { Tour } from '../components/Tour';
 import api from '../api/axios';
 import { downloadCsv, rowsToCsv } from '../utils/exportCsv';
 import { cn, roleLabel } from '../system/tokens';
-import { motionVariants, useReducedMotion } from '../system/motion';
+import {
+  EASE_OUT, motionVariants, staggerChild, staggerParent, useReducedMotion
+} from '../system/motion';
+
+// NOTE: components/ui/{buttons,cards,overlays}/ do not exist in this repo
+// (only components/ui/{editorial,Modal,primitives}.jsx). Composed locally instead.
 
 const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
 const SOFT = 'shadow-[0_16px_48px_-20px_rgba(16,24,40,0.3)]';
+
+// Subtle per-role accent pairs: student blue+violet, faculty blue+cyan,
+// placement violet+blue, admin blue+neutral. Applied as soft gradient washes only.
+const ROLE_ACCENT = {
+  student: ['#2563FF', '#7C5CFF'],
+  faculty: ['#2563FF', '#22d3ee'],
+  placement_officer: ['#7C5CFF', '#2563FF'],
+  college_admin: ['#2563FF', '#64748b'],
+  super_admin: ['#2563FF', '#94a3b8']
+};
 
 const APP_TOUR_STEPS = [
   { target: '#cf-search-trigger', title: 'Command center', body: 'Press Ctrl/⌘+K to jump anywhere — courses, drives, people, requests.' },
@@ -55,22 +72,42 @@ const railLinkClass = ({ isActive }, compact) => cn(
   `group relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all duration-200 ${EASE} hover:translate-x-1`,
   compact && 'justify-center px-0',
   isActive
-    ? 'bg-[#2563FF]/10 text-[#2563FF] dark:text-[#8db4ff]'
+    ? 'text-[#2563FF] dark:text-[#8db4ff]'
     : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.04] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
 );
 
-const railLinkInner = ({ isActive }, { label, Icon }, compact) => (
+// Animated active line: shared layoutId glides between rail items (Motion active indicator).
+const railLinkInner = ({ isActive }, { label, Icon }, compact, accent, reduced) => (
   <>
     {isActive && (
-      <span
-        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#2563FF] shadow-[0_0_12px_rgba(37,99,255,0.8)]"
-        aria-hidden
-      />
+      compact ? (
+        <span
+          className="absolute left-1/2 -translate-x-1/2 -bottom-0.5 h-1 w-6 rounded-full"
+          style={{ background: `linear-gradient(90deg, ${accent[0]}, ${accent[1]})` }}
+          aria-hidden
+        />
+      ) : reduced ? (
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full"
+          style={{ background: accent[0] }}
+          aria-hidden
+        />
+      ) : (
+        <motion.span
+          layoutId="cf-rail-line"
+          transition={{ duration: 0.3, ease: EASE_OUT }}
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full"
+          style={{ background: `linear-gradient(180deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(37,99,255,0.55)' }}
+          aria-hidden
+        />
+      )
     )}
-    <Icon size={18} aria-hidden className="shrink-0" />
+    <span className={cn('grid place-items-center rounded-lg transition-colors', isActive && 'bg-[#2563FF]/10 p-0')}>
+      <Icon size={18} aria-hidden className="shrink-0" />
+    </span>
     {!compact && <span className="truncate">{label}</span>}
     {isActive && !compact && (
-      <span className="ml-auto rounded-full bg-[#A7D700] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#111111]">
+      <span className="ml-auto rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#111111]" style={{ background: '#A7D700' }}>
         ACTIVE
       </span>
     )}
@@ -106,6 +143,25 @@ export default function AppShell() {
   const items = visibleNav(user?.role);
   const centerLinks = items.slice(0, 4);
   const semester = user?.profile?.semester;
+  const accent = ROLE_ACCENT[user?.role] || ROLE_ACCENT.student;
+
+  // Aceternity FloatingNav pattern: hide topbar on scroll down, reveal on scroll up.
+  const { scrollY } = useScroll();
+  const [barHidden, setBarHidden] = useState(false);
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    if (reduced) { setBarHidden(false); return; }
+    const prev = scrollY.getPrevious() ?? 0;
+    if (y < 80) setBarHidden(false);
+    else setBarHidden(y > prev);
+  });
+
+  // Staggered drawer: Escape closes, focus lands on close.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
 
   const logout = async () => {
     await logoutUser();
@@ -137,7 +193,7 @@ export default function AppShell() {
           <nav
             id="cf-primary-nav"
             aria-label="Primary"
-            className={`cf-glass flex h-full flex-col gap-1 rounded-3xl border border-[var(--cf-line)] p-3 ${SOFT}`}
+            className={`cf-depth-2 bg-[var(--cf-surface)]/85 backdrop-blur-2xl flex h-full flex-col gap-1 rounded-3xl border border-[var(--cf-line)] p-3 ${SOFT}`}
           >
             <div className={cn('flex items-center px-1 pb-2', collapsed && 'justify-center px-0')}>
               <Brand compact={collapsed} />
@@ -170,7 +226,7 @@ export default function AppShell() {
                   title={collapsed ? item.label : undefined}
                   className={(state) => railLinkClass(state, collapsed)}
                 >
-                  {(state) => railLinkInner(state, item, collapsed)}
+                  {(state) => railLinkInner(state, item, collapsed, accent, reduced)}
                 </NavLink>
               ))}
             </div>
@@ -214,17 +270,22 @@ export default function AppShell() {
 
         {/* Main column: floating topbar + workspace */}
         <div className="flex-1 min-w-0">
-          <header className={`cf-glass sticky top-3 z-40 mt-3 rounded-2xl border border-[var(--cf-line)] ${SOFT}`}>
+          <motion.header
+            animate={reduced ? {} : { y: barHidden ? '-130%' : '0%', opacity: barHidden ? 0 : 1 }}
+            transition={{ duration: 0.25, ease: EASE_OUT }}
+            className={`cf-glass sticky top-3 z-40 mt-3 rounded-2xl border border-[var(--cf-line)] ${SOFT}`}
+          >
             <div className="flex h-16 items-center gap-1.5 px-3 sm:gap-2 sm:px-4">
               <button
                 className={cn(iconBtn, 'lg:hidden')}
                 onClick={() => setMobileOpen(true)}
                 aria-label="Open navigation"
+                aria-expanded={mobileOpen}
               >
                 <Menu size={20} />
               </button>
               <span className="hidden md:inline-flex items-center gap-1.5 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-3 text-xs font-semibold text-[var(--cf-ink-soft)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#A7D700' }} aria-hidden />
                 {semester ? `Sem ${semester}` : 'Campus'}
               </span>
               <nav aria-label="Sections" className="hidden xl:flex flex-1 items-center justify-center gap-1">
@@ -233,13 +294,28 @@ export default function AppShell() {
                     key={to + label}
                     to={to}
                     className={({ isActive }) => cn(
-                      `rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
+                      `relative rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
                       isActive
-                        ? 'bg-[#2563FF]/10 text-[#2563FF] dark:text-[#8db4ff]'
-                        : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.04] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
+                        ? 'text-[#2563FF] dark:text-[#8db4ff]'
+                        : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
                     )}
                   >
-                    {label}
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (reduced ? (
+                          <span className="absolute inset-0 rounded-full bg-[#2563FF]/10" aria-hidden />
+                        ) : (
+                          <motion.span
+                            layoutId="cf-topbar-pill"
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                            className="absolute inset-0 rounded-full"
+                            style={{ background: `linear-gradient(90deg, ${accent[0]}1a, ${accent[1]}1a)`, boxShadow: `inset 0 0 0 1px ${accent[0]}33` }}
+                            aria-hidden
+                          />
+                        ))}
+                        <span className="relative">{label}</span>
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </nav>
@@ -272,7 +348,7 @@ export default function AppShell() {
                 to="/profile"
                 className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[#2563FF]/40`}
               >
-                <span className="w-8 h-8 rounded-full bg-[#2563FF] grid place-items-center text-white text-xs font-bold shrink-0" aria-hidden>
+                <span className="w-8 h-8 rounded-full grid place-items-center text-white text-xs font-bold shrink-0" style={{ background: `linear-gradient(135deg, ${accent[0]}, ${accent[1]})` }} aria-hidden>
                   {(user?.name?.[0] || 'U').toUpperCase()}
                 </span>
                 <span className="leading-tight">
@@ -284,7 +360,7 @@ export default function AppShell() {
                 <LogOut size={18} />
               </button>
             </div>
-          </header>
+          </motion.header>
 
           <main id="main-content" tabIndex={-1} className="min-w-0 py-6 pb-28 lg:pb-12 focus:outline-none">
             <AnimatePresence mode="wait" initial={false}>
@@ -302,42 +378,83 @@ export default function AppShell() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile staggered-menu drawer (React Bits pattern, Motion-powered) */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div className="fixed inset-0 z-50 lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="fixed inset-0 z-50 lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site navigation"
+          >
             <button aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            {/* Staggered underlay layers */}
+            <motion.span
+              aria-hidden
+              initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
+              transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT }}
+              className="absolute left-0 top-0 bottom-0 w-[17.5rem] rounded-r-3xl bg-[#2563FF]/15"
+            />
+            <motion.span
+              aria-hidden
+              initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
+              transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT, delay: 0.06 }}
+              className="absolute left-0 top-0 bottom-0 w-[17.25rem] rounded-r-3xl bg-[#A7D700]/10"
+            />
             <motion.nav
               aria-label="Mobile"
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+              initial={reduced ? { opacity: 0 } : { x: '-104%' }}
+              animate={reduced ? { opacity: 1 } : { x: 0 }}
+              exit={reduced ? { opacity: 0 } : { x: '-104%' }}
+              transition={reduced ? { duration: 0.01 } : { duration: 0.45, ease: EASE_OUT, delay: 0.1 }}
               className="cf-glass absolute left-0 top-0 bottom-0 w-[17rem] rounded-r-3xl border-r border-[var(--cf-line)] p-4 overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <Brand />
-                <button onClick={() => setMobileOpen(false)} aria-label="Close" className={iconBtn}>
+                <button onClick={() => setMobileOpen(false)} aria-label="Close" autoFocus className={iconBtn}>
                   <X size={18} />
                 </button>
               </div>
-              {items.map((item) => (
-                <NavLink key={item.to + item.label} to={item.to} onClick={() => setMobileOpen(false)}>
-                  {(state) => (
-                    <span className={cn(
-                      `relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all mb-0.5 ${EASE}`,
-                      state.isActive
-                        ? 'bg-[#2563FF]/10 text-[#2563FF] dark:text-[#8db4ff]'
-                        : 'text-[var(--cf-ink-soft)]'
-                    )}>
-                      {state.isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#2563FF] shadow-[0_0_12px_rgba(37,99,255,0.8)]" aria-hidden />
+              <motion.div
+                variants={reduced ? undefined : staggerParent(0.055, 0.15)}
+                initial="initial"
+                animate="animate"
+                exit={reduced ? { opacity: 0 } : { opacity: 0, transition: { duration: 0.1 } }}
+              >
+                {items.map((item, i) => (
+                  <motion.div key={item.to + item.label} variants={reduced ? undefined : staggerChild}>
+                    <NavLink to={item.to} onClick={() => setMobileOpen(false)}>
+                      {(state) => (
+                        <span className={cn(
+                          `relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all mb-0.5 ${EASE} overflow-hidden`,
+                          state.isActive
+                            ? 'text-[#2563FF] dark:text-[#8db4ff]'
+                            : 'text-[var(--cf-ink-soft)] hover:translate-x-1'
+                        )}>
+                          {state.isActive && (
+                            <span
+                              className="absolute inset-0 rounded-xl"
+                              style={{ background: `linear-gradient(90deg, ${accent[0]}1f, ${accent[1]}14)` }}
+                              aria-hidden
+                            />
+                          )}
+                          {state.isActive && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#2563FF] shadow-[0_0_12px_rgba(37,99,255,0.8)]" aria-hidden />
+                          )}
+                          <span className="relative font-mono text-[10px] font-semibold text-[var(--cf-ink-mute)] w-6 shrink-0" aria-hidden>
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <item.Icon size={18} aria-hidden className="relative shrink-0" />
+                          <span className="relative">{item.label}</span>
+                        </span>
                       )}
-                      <item.Icon size={18} aria-hidden className="shrink-0" />{item.label}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
+                    </NavLink>
+                  </motion.div>
+                ))}
+              </motion.div>
               <button
                 onClick={logout}
                 className="mt-4 w-full flex items-center justify-center gap-2 min-h-11 rounded-full bg-[#2563FF] text-white text-sm font-semibold transition-all"
@@ -350,7 +467,7 @@ export default function AppShell() {
       </AnimatePresence>
 
       {/* Mobile bottom nav */}
-      <nav aria-label="Mobile sections" className="lg:hidden fixed bottom-0 inset-x-0 z-40 cf-glass border-t border-[var(--cf-line)]">
+      <nav aria-label="Mobile sections" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--cf-surface)]/90 backdrop-blur-2xl border-t border-[var(--cf-line)] shadow-2xl">
         <div className="grid grid-cols-5 max-w-lg mx-auto">
           {visibleMobileNav(user?.role).map(({ label, to, Icon }) => (
             <NavLink
@@ -364,7 +481,17 @@ export default function AppShell() {
             >
               {({ isActive }) => (
                 <>
-                  {isActive && <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[#2563FF] shadow-[0_0_12px_rgba(37,99,255,0.8)]" aria-hidden />}
+                  {isActive && (reduced ? (
+                    <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[#2563FF]" aria-hidden />
+                  ) : (
+                    <motion.span
+                      layoutId="cf-bottom-tab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute top-0 inset-x-6 h-1 rounded-full"
+                      style={{ background: `linear-gradient(90deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(37,99,255,0.8)' }}
+                      aria-hidden
+                    />
+                  ))}
                   <Icon size={19} aria-hidden />
                   {label}
                 </>

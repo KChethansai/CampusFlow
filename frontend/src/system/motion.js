@@ -23,6 +23,10 @@ const noMotion = { duration: 0.01 };
 export const spring = { type: 'spring', stiffness: 350, damping: 25, mass: 0.9 };
 export const softSpring = { type: 'spring', stiffness: 260, damping: 28 };
 export const luxeSpring = { type: 'spring', stiffness: 350, damping: 25 };
+export const scrollSpring = { type: 'spring', stiffness: 90, damping: 26, mass: 0.6 };
+export const pageTransition = { duration: 0.35, ease: EASE_OUT };
+export const hoverTransition = { duration: 0.16, ease: EASE_OUT };
+export const modalTransition = spring;
 
 export const motionVariants = {
   page: {

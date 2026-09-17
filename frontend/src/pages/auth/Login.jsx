@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { btnClass, cn, inputClass, labelClass } from '../../system/tokens';
+import { btnClass, cn } from '../../system/tokens';
+import { Input } from '../../components/ui/primitives';
 import AuthLayout from './AuthLayout';
 
 const ROLE_TABS = [
@@ -13,23 +14,6 @@ const ROLE_TABS = [
   { value: 'college_admin', label: 'Admin', hint: 'admin@institution.edu' },
   { value: 'placement_officer', label: 'Placement', hint: 'placement@institution.edu' }
 ];
-
-function GlassField({ id, label, error, errorId, ...props }) {
-  const describedBy = error ? errorId : undefined;
-  return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
-      <input
-        id={id}
-        className={cn(inputClass, 'rounded-[14px]', error && 'border-red-500 focus:ring-red-500/30 focus:border-red-500')}
-        aria-invalid={Boolean(error)}
-        aria-describedby={describedBy}
-        {...props}
-      />
-      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
-    </div>
-  );
-}
 
 function Login() {
   const navigate = useNavigate();
@@ -83,31 +67,40 @@ function Login() {
         })}
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <GlassField
+        <Input
           label="Email address"
           id="email"
           type="email"
           autoComplete="email"
           placeholder={ROLE_TABS.find((r) => r.value === roleTab)?.hint || 'you@institution.edu'}
           error={errors.email && 'Enter your email'}
-          errorId="email-error"
           {...register('email', { required: true })}
         />
-        <GlassField
+        <Input
           label="Password"
           id="password"
           type="password"
           autoComplete="current-password"
           placeholder="Enter your password"
           error={errors.password && 'Enter your password'}
-          errorId="password-error"
           {...register('password', { required: true })}
         />
-        {error && (
-          <div role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
-            {error}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {error && (
+            <motion.div
+              role="alert"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <p className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
+                {error}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <button type="submit" disabled={loading} className={btnClass('primary', 'large') + ' w-full'}>
           {loading ? 'Signing in…' : 'Sign in →'}
         </button>
@@ -120,6 +113,7 @@ function Login() {
               key={p}
               type="button"
               onClick={() => toast('SSO is provisioned by your administrator.')}
+              title="SSO is provisioned by your administrator"
               className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-2 text-sm font-display font-semibold text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-ink-mute)] transition"
             >
               {p}

@@ -1,32 +1,19 @@
-// AdminHome: hierarchical regions — R1 Campus pulse hero (macro population +
-// clearance gauge + role mix), R2 community growth Area chart, R3 request queue
-// stream, R4 department health table w/ sparklines + intelligence task card.
-// super_admin vs college_admin are distinguished ONLY by existing data/Nav —
-// no merged or new role logic here.
+// AdminHome: system — pulse + growth + request queue + dept health table.
+// Restrained, dense, no particles behind tables. super_admin vs
+// college_admin distinguished ONLY by existing data/nav — no new role logic.
 // Endpoints preserved: GET /users, /departments, /courses, /requests,
 // /ai-reports. Real data only.
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
-import { AnimatedCounter } from '../../components/ui/editorial';
 import { AttendanceRing, Sparkline } from '../../components/data/views';
+import { AnimatedCounter } from '../../components/ui/editorial';
+import { AnalyticsPanel, LazyChart, RoleHero, ActivityStream } from '../../components/campus/regions';
 import { staggerChild, staggerParent } from '../../system/motion';
-
-// TrendChart is optional — Suspense guards its absence; Sparkline fallback
-// always renders from the same real user data.
-const TrendChart = lazy(() =>
-  import('../../components/data/TrendChart')
-    .then((m) => ({ default: m.TrendChart || m.default }))
-    .catch(() => ({ default: () => null }))
-);
-
-const HERO = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden';
-const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
-const TASK = 'rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 const deptId = (v) => String(v?._id || v || '');
 
@@ -111,48 +98,44 @@ export default function AdminHome() {
 
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
-      {/* REGION 1 — Campus pulse hero */}
-      <motion.section variants={staggerChild} className={HERO} aria-label="Campus pulse">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0 flex-1 basis-64">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
-              Institution Pulse
-            </p>
-            <h1 className="mt-2 text-2xl sm:text-4xl font-bold tracking-tight">
-              Institution <em className="cf-display font-normal">pulse.</em>
-            </h1>
-            <p className="mt-2 text-4xl sm:text-5xl font-bold tabular-nums tracking-tight">
-              <AnimatedCounter value={users.length} />
-            </p>
-            <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
-              people · {departments.length} departments · {courses.length} courses
-              {pending.length ? ` · ${pending.length} requests need review` : ' · queues are clear'}.
-            </p>
+      {/* REGION 1 — Campus pulse hero (dense, restrained) */}
+      <motion.div variants={staggerChild}>
+        <RoleHero
+          accent="admin"
+          dense
+          kicker="Institution Pulse"
+          title={<>Institution <em className="cf-display font-normal">pulse.</em></>}
+          metric={users.length}
+          sub={`people · ${departments.length} departments · ${courses.length} courses${pending.length ? ` · ${pending.length} requests need review` : ' · queues are clear'}.`}
+          alert={
             <div className="flex flex-wrap gap-1.5 mt-3">
               {Object.entries(roleMix).map(([role, n]) => (
                 <Badge key={role} role={role}>{role.replace(/_/g, ' ')} · {n}</Badge>
               ))}
             </div>
-          </div>
-          {clearance != null && (
-            <AttendanceRing value={clearance} label="Request clearance" />
-          )}
-        </div>
-      </motion.section>
+          }
+          gauge={clearance != null && <AttendanceRing value={clearance} label="Request clearance" />}
+        />
+      </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
-        {/* REGION 2 — growth trend, primary surface (~65%) */}
-        <motion.section variants={staggerChild} className={`${PANEL} lg:col-span-2`} aria-label="Community growth">
-          <h2 className="font-display text-base font-semibold mb-1">Community growth</h2>
-          <p className="text-xs text-[var(--cf-ink-mute)] mb-3">Cumulative accounts over time · {users.length} total.</p>
-          <Suspense fallback={<Sparkline points={growth} width={420} height={90} />}>
-            <TrendChart data={growthRows} xKey="bucket" lines={[{ key: 'users', color: '#2563FF' }]} height={200} />
-          </Suspense>
-        </motion.section>
+        {/* REGION 2 — growth: is the community compounding? */}
+        <motion.div variants={staggerChild} className="lg:col-span-2">
+          <AnalyticsPanel
+            title="Community growth"
+            question="Is the community compounding?"
+            period={`Cumulative accounts over time · ${users.length} total`}
+            tooltip="Buckets real account creation dates oldest→newest. A flattening tail means onboarding stalled."
+            summary={users.length ? `${users.length} accounts on record across ${departments.length} departments.` : undefined}
+            empty={growthRows.every((r) => r.users === 0) ? 'No growth signal yet' : null}
+            emptyHint="Accounts will chart here once people join."
+          >
+            <LazyChart data={growthRows} xKey="bucket" series={[{ key: 'users', color: '#2563FF' }]} height={200} />
+          </AnalyticsPanel>
+        </motion.div>
 
-        {/* REGION 3 — request queue stream (~35%) */}
-        <motion.section variants={staggerChild} className={PANEL} aria-label="Request queue">
+        {/* REGION 3 — request queue stream */}
+        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-semibold text-sm">Request queue</h2>
             <Link to="/requests" className="text-xs font-medium text-[#2563FF] hover:underline">Review</Link>
@@ -160,16 +143,21 @@ export default function AdminHome() {
           {pending.length === 0 ? (
             <p className="text-xs text-[var(--cf-ink-mute)]">All clear.</p>
           ) : (
-            <ul className="space-y-2">
-              {pending.slice(0, 5).map((r) => (
-                <li key={r._id} className="text-xs flex items-center gap-2">
+            <ActivityStream
+              label="Requests awaiting review"
+              items={pending.slice(0, 5)}
+              renderItem={(r) => (
+                <span className="text-xs flex items-center gap-2 py-1.5">
                   <Badge status={r.status}>{r.status.replace(/_/g, ' ')}</Badge>
                   <span className="font-medium truncate">{r.title}</span>
-                </li>
-              ))}
-            </ul>
+                </span>
+              )}
+            />
           )}
-          <Link to="/ai-reports" className={`${TASK} mt-4 flex items-center justify-between gap-2`}>
+          <Link
+            to="/ai-reports"
+            className="cf-card-spot rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 mt-4 flex items-center justify-between gap-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+          >
             <span>
               <span className="font-display text-sm font-bold flex items-center gap-1.5"><Sparkles size={14} className="text-[#8B5CF6]" aria-hidden /> Intelligence</span>
               <span className="block text-[11px] text-[var(--cf-ink-mute)] mt-0.5">
@@ -181,8 +169,8 @@ export default function AdminHome() {
         </motion.section>
       </div>
 
-      {/* REGION 4 — department health table w/ sparklines */}
-      <motion.section variants={staggerChild} className={`${PANEL} mt-4`} aria-label="Department health">
+      {/* REGION 4 — department health table (plain surface, no particles) */}
+      <motion.section variants={staggerChild} className="rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-5 mt-4" aria-label="Department health">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-base font-semibold">Department health</h2>
           <Link to="/departments" className="text-xs font-medium text-[#2563FF] hover:underline">All departments</Link>

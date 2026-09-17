@@ -62,7 +62,7 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
     >
       {!started || lite ? (
         <div
-          className="cf-atmosphere w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 relative overflow-hidden"
+          className="cf-atmosphere w-full h-full rounded-[32px] border border-black/10 dark:border-white/10 relative overflow-hidden"
         >
           <div className="absolute top-3 right-3 flex gap-1.5">
             <button
@@ -103,7 +103,7 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
               <div className="cf-atmosphere w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 animate-pulse" aria-hidden />
             }
           >
-            <div className="relative w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 overflow-hidden">
+            <div className="relative w-full h-full rounded-[32px] border border-black/10 dark:border-white/10 overflow-hidden">
               <Scene
                 key={sceneKey}
                 onHover={setHovered}

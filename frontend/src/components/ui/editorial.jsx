@@ -353,3 +353,105 @@ export function SectionHeader({ number, kicker, title, body, actions, className,
     </div>
   );
 }
+
+/** BlurText (React Bits pattern): word-stagger blur reveal, reduced-motion safe. */
+export function BlurText({ text = '', className, delay = 0 }) {
+  const reduced = useReducedMotion();
+  if (reduced) return <span className={className}>{text}</span>;
+  const words = String(text).split(' ');
+  return (
+    <span className={cn('inline-block', className)} aria-label={text}>
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          aria-hidden
+          className="inline-block will-change-transform"
+          style={{ marginRight: i < words.length - 1 ? '0.28em' : 0 }}
+          initial={{ opacity: 0, filter: 'blur(10px)', y: 12 }}
+          whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+          viewport={{ once: true, margin: '-10% 0px' }}
+          transition={{ duration: 0.55, delay: delay + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {w}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
+
+/** DecryptText (React Bits kinetic micro-fx): character scramble decrypt reveal. */
+export function DecryptText({ text = '', className, speed = 40, maxIterations = 12 }) {
+  const reduced = useReducedMotion();
+  const [displayText, setDisplayText] = useState(text);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+
+  useEffect(() => {
+    if (reduced) { setDisplayText(text); return; }
+    let iter = 0;
+    const interval = setInterval(() => {
+      setDisplayText(
+        text
+          .split('')
+          .map((char, index) => {
+            if (char === ' ') return ' ';
+            if (index < iter) return text[index];
+            return chars[Math.floor(Math.random() * chars.length)];
+          })
+          .join('')
+      );
+      if (iter >= text.length) clearInterval(interval);
+      iter += 1 / (maxIterations / Math.max(1, text.length));
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed, maxIterations, reduced]);
+
+  return <span className={cn('font-mono', className)}>{displayText}</span>;
+}
+
+/** NumberTickerLg (Magic UI / React Bits): oversized macro-metric ticker. */
+export function NumberTickerLg({ value = 0, prefix = '', suffix = '', decimals = 0, className, duration = 1200 }) {
+  return (
+    <span className={cn('font-display font-bold tracking-tight tabular-nums', className)}>
+      <AnimatedCounter value={value} prefix={prefix} suffix={suffix} decimals={decimals} duration={duration} />
+    </span>
+  );
+}
+
+/** ParticleButton (Kokonut UI): high-value CTA with subtle micro-particles on click. */
+export function ParticleButton({ children, className, onClick, ...props }) {
+  const [bursts, setBursts] = useState([]);
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    setBursts((prev) => [...prev.slice(-3), { id, x, y }]);
+    setTimeout(() => {
+      setBursts((prev) => prev.filter((b) => b.id !== id));
+    }, 600);
+    onClick?.(e);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={cn(
+        'relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-[16px] px-5 py-2.5 font-display font-semibold text-sm transition-all duration-200 active:scale-[0.98]',
+        'bg-[#2563FF] text-white shadow-lg hover:shadow-[0_0_24px_rgba(37,99,255,0.5)] hover:brightness-110',
+        className
+      )}
+      {...props}
+    >
+      <span className="relative z-10 flex items-center gap-2">{children}</span>
+      {bursts.map((b) => (
+        <span
+          key={b.id}
+          className="pointer-events-none absolute w-2 h-2 rounded-full bg-[#A7D700] animate-ping"
+          style={{ left: b.x, top: b.y, transform: 'translate(-50%, -50%)' }}
+          aria-hidden
+        />
+      ))}
+    </button>
+  );
+}

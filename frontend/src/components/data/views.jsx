@@ -1,10 +1,16 @@
 // Shared data views: timeline, pipeline, ring, sparkline, heatmap.
-// Pure SVG — no chart dependency. Glass/royal/violet surfaces; status greens
-// #25D890, ambers #FFBD4A, reds #FF5964. Export APIs unchanged.
-import { useRef, useState } from 'react';
+// Sparkline + AttendanceRing stay sync pure-SVG on purpose: Sparkline is a
+// Suspense fallback for lazy TrendChart call sites, so it must never suspend;
+// AttendanceRing carries threshold domain copy. Heatmap upgrades to the Bklit
+// heatmap-chart port via React.lazy with the sync grid as fallback.
+// Glass/royal/violet surfaces; status greens #25D890, ambers #FFBD4A, reds
+// #FF5964. Export APIs unchanged.
+import { Suspense, lazy, useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { normalizeStage, PIPELINE_STAGES } from '../../system/tokens';
 import { cn } from '../../system/tokens';
+
+const HeatmapChart = lazy(() => import('./charts/HeatmapChart'));
 
 const OK = '#25D890';
 const WARN = '#FFBD4A';
@@ -152,6 +158,14 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
 }
 
 export function Heatmap({ weeks = [], legend = ['Less', 'More'] }) {
+  return (
+    <Suspense fallback={<HeatmapGrid weeks={weeks} legend={legend} />}>
+      <HeatmapChart weeks={weeks} legend={legend} />
+    </Suspense>
+  );
+}
+
+function HeatmapGrid({ weeks = [], legend = ['Less', 'More'] }) {
   // weeks: array of 7-length columns of 0..4 intensity — royal→violet glass scale.
   const shades = [
     'bg-black/[.06] dark:bg-white/[.07]',

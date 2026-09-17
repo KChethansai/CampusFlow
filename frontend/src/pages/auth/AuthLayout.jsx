@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Moon, Sun } from 'lucide-react';
 import { motionVariants } from '../../system/motion';
 import { useTheme } from '../../system/theme';
+import { SplitReveal } from '../../components/ui/editorial';
 
 function BrandMark({ size = 'md' }) {
   const box = size === 'md' ? 'w-9 h-9 text-base' : 'w-8 h-8 text-sm';
@@ -44,9 +45,11 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-[var(--cf-ink-mute)]">
             Academics · Placements · Campus life
           </p>
-          <p className="mt-4 font-display text-5xl font-bold leading-[1.02] tracking-tight">
-            The operating system for your campus.
-          </p>
+          <SplitReveal
+            as="p"
+            lines={['The operating system', 'for your campus.']}
+            className="mt-4 font-display text-5xl font-bold leading-[1.02] tracking-tight"
+          />
           <p className="mt-4 text-sm text-[var(--cf-ink-mute)] max-w-md">
             One identity across academics, placements and campus life.
           </p>
@@ -75,6 +78,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           type="button"
           onClick={toggle}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 rounded-full bg-[var(--cf-surface)]/80 backdrop-blur border border-[var(--cf-line)] text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] transition"
         >
           {theme === 'dark' ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
@@ -88,7 +92,11 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
               <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
               CampusFlow
             </p>
-            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight">{title}</h1>
+            <SplitReveal
+              as="h1"
+              lines={[title]}
+              className="mt-1 font-display text-2xl font-bold tracking-tight"
+            />
             {subtitle && <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">{subtitle}</p>}
             <div className="mt-6">{children}</div>
             {footer && <div className="mt-6 pt-5 border-t border-[var(--cf-line)] text-sm text-center text-[var(--cf-ink-mute)]">{footer}</div>}

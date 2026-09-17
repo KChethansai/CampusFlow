@@ -2,22 +2,19 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Award, Briefcase, GraduationCap, Inbox, ShieldCheck } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
-import { Badge, Card, LoadingState } from '../components/ui/primitives';
-import { roleBadge } from '../system/tokens';
+import { Badge, Card, Input, LoadingState } from '../components/ui/primitives';
 import { staggerChild, staggerParent } from '../system/motion';
-import { btnClass, cn, inputClass, labelClass } from '../system/tokens';
+import { btnClass, cn, inputClass, labelClass, roleBadge } from '../system/tokens';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity' },
   { id: 'security', label: 'Password & sessions' }
 ];
-
-const glassInput = cn(inputClass, 'rounded-[14px]');
 
 export default function Profile() {
   const { user, changePassword, logoutUser } = useAuth();
@@ -109,20 +106,32 @@ export default function Profile() {
 
       {/* Tabs */}
       <div className="flex gap-1 p-1.5 mb-4 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur" role="tablist" aria-label="Profile sections">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={cn('flex-1 px-3 py-2 rounded-xl text-xs font-display font-semibold transition',
-              tab === t.id ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.id)}
+              className={cn('relative flex-1 px-3 py-2 rounded-xl text-xs font-display font-semibold transition',
+                active ? 'text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
+            >
+              {active && <motion.span layoutId="cf-profile-tab" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#2563FF]" aria-hidden />}
+              <span className="relative">{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        >
       {tab === 'overview' && (
         <div className="grid sm:grid-cols-2 gap-4">
           <motion.div variants={staggerChild}>
@@ -182,21 +191,21 @@ export default function Profile() {
               <form onSubmit={handleSubmit(onPassword)} className="space-y-3">
                 <div>
                   <label className={labelClass} htmlFor="pw-current">Current password</label>
-                  <input id="pw-current" type="password" autoComplete="current-password" className={glassInput}
+                  <input id="pw-current" type="password" autoComplete="current-password" className={inputClass}
                     aria-describedby={errors.currentPassword ? 'pw-current-error' : undefined}
                     {...register('currentPassword', { required: true })} />
                   {errors.currentPassword && <p id="pw-current-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">Enter your current password</p>}
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="pw-new">New password</label>
-                  <input id="pw-new" type="password" autoComplete="new-password" className={glassInput}
+                  <input id="pw-new" type="password" autoComplete="new-password" className={inputClass}
                     aria-describedby={errors.newPassword ? 'pw-new-error' : undefined}
                     {...register('newPassword', { required: true, minLength: { value: 8, message: 'Minimum 8 characters' } })} />
                   {errors.newPassword && <p id="pw-new-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.newPassword.message}</p>}
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="pw-confirm">Confirm new password</label>
-                  <input id="pw-confirm" type="password" autoComplete="new-password" className={glassInput}
+                  <input id="pw-confirm" type="password" autoComplete="new-password" className={inputClass}
                     aria-describedby={errors.confirm ? 'pw-confirm-error' : undefined}
                     {...register('confirm', { required: true, validate: (v, f) => v === f.newPassword || 'Passwords do not match' })} />
                   {errors.confirm && <p id="pw-confirm-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.confirm.message}</p>}
@@ -215,6 +224,8 @@ export default function Profile() {
           </Card>
         </motion.div>
       )}
+        </motion.div>
+      </AnimatePresence>
     </motion.div>
   );
 }
