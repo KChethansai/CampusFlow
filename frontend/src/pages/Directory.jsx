@@ -56,13 +56,14 @@ export default function Directory() {
         title="Directory"
         subtitle="Everyone and everything on campus, in one search."
         actions={rows.length > 0 && (
-          <span className="brutal-tag bg-volt text-coal text-xs font-bold px-3 py-1.5 rounded-full">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-1.5 text-xs font-semibold tabular-nums text-[var(--cf-ink-soft)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
             {rows.length} result{rows.length === 1 ? '' : 's'}
           </span>
         )}
       />
-      <div className="card-brutal rounded-[12px] p-2 mb-4 flex flex-col sm:flex-row gap-2">
-        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-[8px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] text-sm focus-within:ring-[3px] focus-within:ring-[#0055ff] focus-within:border-[#0055ff] transition-all">
+      <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl p-2 mb-4 flex flex-col sm:flex-row gap-2">
+        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 text-sm focus-within:border-[#2563FF]/50 transition">
           <Search size={15} className="text-[var(--cf-ink-mute)] shrink-0" aria-hidden />
           <input
             value={query}
@@ -72,11 +73,11 @@ export default function Directory() {
             aria-label="Search directory"
           />
         </label>
-        <div className="flex gap-1.5 overflow-x-auto items-center" role="tablist" aria-label="Directory sections">
+        <div className="flex gap-1 overflow-x-auto items-center" role="tablist" aria-label="Directory sections">
           {tabs.map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-              className={cn('px-3 py-2 rounded-[8px] text-xs font-display font-semibold whitespace-nowrap transition-all border-2',
-                tab === t ? 'bg-frame text-volt border-frame dark:bg-volt dark:text-coal' : 'border-transparent text-[var(--cf-ink-soft)] hover:border-[var(--cf-ink)]')}>
+              className={cn('px-3 py-2 rounded-xl text-xs font-display font-semibold whitespace-nowrap transition',
+                tab === t ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
               {t}
             </button>
           ))}
@@ -93,7 +94,7 @@ export default function Directory() {
                   <p className="font-display font-semibold truncate">{titleOf(row)}</p>
                   {row.email && <p className="text-xs text-[var(--cf-ink-mute)] truncate">{row.email}</p>}
                   {row.code && (
-                    <span className="inline-block mt-1 font-mono text-[11px] font-semibold bg-gold text-coal border-2 border-frame rounded-[6px] px-1.5 py-0.5">{row.code}</span>
+                    <span className="inline-block mt-1 font-mono text-[11px] font-semibold border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 rounded-full px-2 py-0.5">{row.code}</span>
                   )}
                 </div>
                 <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{source.label.slice(0, -1)}</Badge>

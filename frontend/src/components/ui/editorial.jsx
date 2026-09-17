@@ -16,7 +16,7 @@ export function SplitReveal({ lines = [], className, as: Tag = 'div', delay = 0 
             initial={reduced ? { opacity: 0 } : { y: '110%' }}
             whileInView={reduced ? { opacity: 1 } : { y: '0%' }}
             viewport={{ once: true, margin: '-12% 0px' }}
-            transition={{ duration: 0.7, delay: delay + i * 0.09, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.7, delay: delay + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
             dangerouslySetInnerHTML={{ __html: line }}
           />
         </span>
@@ -85,7 +85,7 @@ export function Preloader({ label = 'CampusFlow' }) {
           role="status"
           aria-label="Loading"
         >
-          <p className="cf-display italic text-2xl">{label}</p>
+          <p className="font-display font-semibold tracking-tight text-2xl">{label}</p>
           <p className="mt-3 text-6xl font-light tabular-nums" aria-hidden>{count}<span className="text-2xl align-top"> %</span></p>
           <div className="mt-6 h-px w-40 bg-black/10 dark:bg-white/10 overflow-hidden" aria-hidden>
             <div className="h-full bg-primary-500 transition-all" style={{ width: `${count}%` }} />
@@ -130,7 +130,7 @@ export function CounterCarousel({ slides = [], label, className, id }) {
             initial={reduced ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? 80 : -80 }}
             animate={{ opacity: 1, x: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? -80 : 80 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             drag={reduced ? false : 'x'}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.6}
@@ -292,7 +292,7 @@ export function BentoGrid({ className, children }) {
 }
 export function BentoCell({ span = 'md:col-span-2', className, children, spot = true }) {
   return (
-    <SpotCard className={cn('bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal-sm', span, className)}>
+    <SpotCard className={cn('glass-card bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal', span, className)}>
       {children}
     </SpotCard>
   );
@@ -327,7 +327,7 @@ export function BeamCard({ className, children, ...props }) {
   );
 }
 
-/** SectionHeader: numbered brutal section heading — `01 / Kicker` + display title. */
+/** SectionHeader: numbered glass section heading — `01 / Kicker` + display title. */
 export function SectionHeader({ number, kicker, title, body, actions, className, id }) {
   return (
     <div id={id} className={cn('flex flex-wrap items-end justify-between gap-3 mb-5', className)}>
@@ -335,7 +335,7 @@ export function SectionHeader({ number, kicker, title, body, actions, className,
         {(number || kicker) && (
           <p className="cf-kicker mb-1.5 flex items-center gap-2">
             {number && (
-              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-frame text-volt border-2 border-[var(--cf-ink)] rounded-md shadow-brutal-sm font-mono text-[11px] font-bold">
+              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#A7D700] text-[#0A0D12] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
                 {number}
               </span>
             )}

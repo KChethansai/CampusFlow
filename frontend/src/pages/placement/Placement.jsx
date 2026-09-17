@@ -1,21 +1,31 @@
-// Placement: spatial pipeline + job marketplace + application timelines.
+// Placement Mission Control: horizontal pipeline tracker + drive cards +
+// conversion analytics. Stage PATCH logic + normalizeStage untouched.
 // Same endpoints as before; eligibility rendered verbatim (dept limits are advisory).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { ArrowRight, Building2, MapPin, Plus, Wallet } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { PipelineLabels, PipelineStages, WorkflowTimeline } from '../../components/data/views';
 import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
 
+const TrendChart = lazy(() =>
+  import('../../components/data/TrendChart')
+    .then((m) => ({ default: m.TrendChart || m.default }))
+    .catch(() => ({ default: () => null }))
+);
+
 const JOB_TYPES = ['full-time', 'part-time', 'internship', 'contract'];
 const STAGES = [...PIPELINE_STAGES.flatMap((s) => (s === 'interview' ? ['interview_1', 'interview_2', 'hr_round'] : [s])), 'rejected'];
+
+const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const LIFT = 'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
@@ -107,6 +117,31 @@ export default function Placement() {
     });
     return counts;
   }, [applications]);
+
+  // Conversion analytics: cumulative applications + wins over time (real createdAt).
+  const conversionRows = useMemo(() => {
+    const sorted = [...applications].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    if (!sorted.length) return [];
+    const N = 8;
+    const buckets = Array.from({ length: N }, (_, i) => ({ bucket: `P${i + 1}`, applications: 0, wins: 0 }));
+    let acc = 0;
+    let wins = 0;
+    sorted.forEach((a, i) => {
+      const b = Math.min(N - 1, Math.floor((i / sorted.length) * N));
+      acc++;
+      if (['offer', 'placed'].includes(a.stage)) wins++;
+      buckets[b] = { ...buckets[b], applications: acc, wins };
+    });
+    let lastA = 0;
+    let lastW = 0;
+    return buckets.map((r) => {
+      lastA = Math.max(lastA, r.applications);
+      lastW = Math.max(lastW, r.wins);
+      return { bucket: r.bucket, applications: lastA, wins: lastW };
+    });
+  }, [applications]);
+
+  const maxStage = useMemo(() => Math.max(1, ...PIPELINE_STAGES.map((s) => funnel[s])), [funnel]);
 
   const buildDrivePayload = (form) => ({
     company: form.company,
@@ -232,7 +267,7 @@ export default function Placement() {
     <div>
       <PageHeader
         title="Placements"
-        subtitle="Your path from classroom to career."
+        subtitle="Mission control — from first application to signed offer."
         actions={isStaff && (
           <>
             <button onClick={() => setShowCompany(true)} className={btnClass('outline', 'medium')}><Plus size={15} /> Company</button>
@@ -244,8 +279,10 @@ export default function Placement() {
       <div className="flex gap-1.5 mb-4" role="tablist" aria-label="Placement views">
         {TABS.map((t) => (
           <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
-            className={cn('brutal-tag px-4 py-2 text-xs font-bold transition',
-              tab === t.key ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
+            className={cn('rounded-full px-4 py-2 text-xs font-bold border transition',
+              tab === t.key
+                ? 'bg-[#2563FF] text-white border-transparent'
+                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)] border-[var(--cf-line)] hover:border-[#2563FF]/50')}>
             {t.label}
           </button>
         ))}
@@ -255,26 +292,55 @@ export default function Placement() {
         <>
           {tab === 'board' && (
             <div className="space-y-4">
-              <div className="card-brutal p-5">
+              {/* Horizontal pipeline tracker — real counts */}
+              <section className={GLASS} aria-label="Pipeline tracker">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <h2 className="font-display font-semibold">Applied → Shortlisted → Assessment → Interview → Offer → Placed</h2>
-                  <span className="brutal-tag bg-volt px-2 py-0.5 text-[11px] font-bold tabular-nums">{applications.length} live</span>
+                  <span className="rounded-full bg-[#2563FF]/10 text-[#2563FF] px-2.5 py-0.5 text-[11px] font-bold tabular-nums">{applications.length} live</span>
                 </div>
-                <p className="text-xs text-[var(--cf-ink-mute)] mb-4">{applications.length} applications in motion.</p>
-                <div className="grid sm:grid-cols-6 gap-2">
-                  {PIPELINE_STAGES.map((s) => (
-                    <div key={s} className={`border-2 border-[var(--cf-ink)] p-3 text-center ${funnel[s] ? 'bg-gold' : 'bg-[var(--cf-surface-2)]'}`}>
-                      <p className={`text-2xl font-bold tabular-nums ${funnel[s] ? 'text-coal' : 'text-[var(--cf-ink)]'}`}>{funnel[s]}</p>
-                      <p className="text-[11px] font-bold uppercase tracking-wide capitalize text-[var(--cf-ink-mute)]">{s}</p>
-                      <div className={cn('mt-2 h-1.5 border border-[var(--cf-ink)]', funnel[s] ? 'bg-frame' : 'bg-black/10 dark:bg-white/10')} />
+                <p className="text-xs text-[var(--cf-ink-mute)] mb-5">{applications.length} applications in motion.</p>
+                <div className="flex items-start" role="img" aria-label={`Pipeline counts: ${PIPELINE_STAGES.map((s) => `${s} ${funnel[s]}`).join(', ')}`}>
+                  {PIPELINE_STAGES.map((s, i) => (
+                    <div key={s} className="flex-1 min-w-0 flex items-start">
+                      <div className="flex-1 min-w-0 text-center">
+                        <span
+                          className="mx-auto grid place-items-center w-11 h-11 rounded-full border text-sm font-bold tabular-nums"
+                          style={funnel[s]
+                            ? { background: '#2563FF', color: '#fff', borderColor: 'transparent' }
+                            : { background: 'var(--cf-surface-2)', color: 'var(--cf-ink-mute)', borderColor: 'var(--cf-line)' }}
+                        >
+                          {funnel[s]}
+                        </span>
+                        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wide truncate text-[var(--cf-ink-mute)]">{s}</p>
+                      </div>
+                      {i < PIPELINE_STAGES.length - 1 && (
+                        <span className="mt-[22px] h-px flex-1 min-w-2 bg-[var(--cf-line)]" aria-hidden />
+                      )}
                     </div>
                   ))}
                 </div>
-                <div className="racing-stripe h-1.5 mt-4 border border-[var(--cf-ink)]" aria-hidden />
-              </div>
+                <PipelineLabels current={applications[0]?.stage || 'applied'} />
+              </section>
+
+              {/* Conversion analytics */}
+              {conversionRows.length > 0 && (
+                <section className={GLASS} aria-label="Conversion analytics">
+                  <h2 className="font-display font-semibold mb-1">Conversion analytics</h2>
+                  <p className="text-xs text-[var(--cf-ink-mute)] mb-3">Cumulative applications vs wins.</p>
+                  <Suspense fallback={<p className="text-sm text-[var(--cf-ink-mute)]">Loading chart…</p>}>
+                    <TrendChart
+                      data={conversionRows}
+                      xKey="bucket"
+                      lines={[{ key: 'applications', color: '#2563FF' }, { key: 'wins', color: '#8B5CF6' }]}
+                      height={180}
+                    />
+                  </Suspense>
+                </section>
+              )}
+
               <div className="grid md:grid-cols-2 gap-4">
                 {applications.slice(0, 6).map((a) => (
-                  <button key={a._id} onClick={() => setAppDetail(a)} className="card-brutal role-card-animated p-4 text-left">
+                  <button key={a._id} onClick={() => setAppDetail(a)} className={`${GLASS} ${LIFT} text-left`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="text-sm font-semibold truncate">{a.drive?.role || 'Drive'} · {a.drive?.company?.name || ''}</p>
                       <Badge status={a.stage || 'applied'}>{(a.stage || 'applied').replace(/_/g, ' ')}</Badge>
@@ -283,7 +349,7 @@ export default function Placement() {
                   </button>
                 ))}
                 {applications.length === 0 && (
-                  <Card className="md:col-span-2"><EmptyState editorial title="No applications yet" hint="The marketplace is waiting." action={<button onClick={() => setTab('market')} className={btnClass('primary', 'small')}>Browse drives</button>} /></Card>
+                  <div className={`${GLASS} md:col-span-2`}><EmptyState editorial title="No applications yet" hint="The marketplace is waiting." action={<button onClick={() => setTab('market')} className={btnClass('primary', 'small')}>Browse drives</button>} /></div>
                 )}
               </div>
             </div>
@@ -294,10 +360,10 @@ export default function Placement() {
               {drives.map((d) => {
                 const applied = appliedDriveIds.has(String(d._id));
                 return (
-                  <motion.article key={d._id} variants={staggerChild} className="card-brutal role-card-animated p-5">
+                  <motion.article key={d._id} variants={staggerChild} className={`${GLASS} ${LIFT}`}>
                     <div className="flex items-start gap-3 mb-3">
-                      <span className="brutal-tag grid place-items-center w-10 h-10 shrink-0 bg-volt" aria-hidden>
-                        <Building2 size={19} className="text-coal" />
+                      <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                        <Building2 size={19} />
                       </span>
                       <div className="min-w-0">
                         <h3 className="font-semibold leading-tight truncate">{d.role}</h3>
@@ -326,17 +392,17 @@ export default function Placement() {
                 );
               })}
               {drives.length === 0 && (
-                <Card className="md:col-span-2 xl:col-span-3"><EmptyState title="No drives posted" hint={isStaff ? 'Post the first drive to activate the board.' : 'Check back soon.'} /></Card>
+                <div className={`${GLASS} md:col-span-2 xl:col-span-3`}><EmptyState title="No drives posted" hint={isStaff ? 'Post the first drive to activate the board.' : 'Check back soon.'} /></div>
               )}
             </motion.div>
           )}
 
           {tab === 'apps' && (
-            <Card className="overflow-hidden p-0 border-2 border-[var(--cf-ink)]" style={{ boxShadow: '5px 5px 0px var(--cf-ink)' }}>
+            <section className={`${GLASS} !p-2 overflow-hidden`} aria-label="Applications">
               <ul className="divide-y divide-[var(--cf-line)]">
                 {applications.map((a) => (
                   <li key={a._id}>
-                    <button onClick={() => setAppDetail(a)} className="w-full text-left px-4 py-3.5 flex items-center gap-3 hover:bg-black/[.02] dark:hover:bg-white/[.03] transition">
+                    <button onClick={() => setAppDetail(a)} className="w-full text-left px-4 py-3.5 flex items-center gap-3 rounded-[14px] hover:bg-black/[.02] dark:hover:bg-white/[.03] transition">
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium truncate">{a.student?.name || 'Applicant'} → {a.drive?.role || 'Drive'}</span>
                         <span className="block text-xs text-[var(--cf-ink-mute)]">{a.drive?.company?.name || ''}</span>
@@ -348,11 +414,11 @@ export default function Placement() {
                 ))}
                 {applications.length === 0 && <li><EmptyState title="No applications" hint="Applications will stream in here." /></li>}
               </ul>
-            </Card>
+            </section>
           )}
 
           {tab === 'companies' && isStaff && (
-            <Card className="overflow-hidden p-0 border-2 border-[var(--cf-ink)]" style={{ boxShadow: '5px 5px 0px var(--cf-ink)' }}>
+            <section className={`${GLASS} !p-2 overflow-hidden`} aria-label="Companies">
               <ul className="divide-y divide-[var(--cf-line)]">
                 {companies.map((c) => (
                   <li key={c._id} className="px-4 py-3.5 flex items-center gap-3">
@@ -366,7 +432,7 @@ export default function Placement() {
                 ))}
                 {companies.length === 0 && <li><EmptyState title="No companies yet" hint="Add the first hiring partner." /></li>}
               </ul>
-            </Card>
+            </section>
           )}
         </>
       )}
@@ -382,7 +448,7 @@ export default function Placement() {
               <Badge status={detail.status || 'active'}>{detail.status || 'active'}</Badge>
             </div>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3.5">
+              <div className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3.5">
                 <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Eligibility</p>
                 <ul className="space-y-1 text-[var(--cf-ink-soft)]">
                   <li>Min CGPA: {detail.eligibility?.minCGPA ?? '—'}</li>
@@ -397,7 +463,7 @@ export default function Placement() {
                   </p>
                 )}
               </div>
-              <div className="rounded-xl border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3.5">
+              <div className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3.5">
                 <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Timeline</p>
                 <p className="text-[var(--cf-ink-soft)]">Apply by {fmtDate(detail.applicationDeadline)}</p>
                 <p className="text-xs text-[var(--cf-ink-mute)] mt-1">Process: applied → shortlisted → assessment → interview → offer → placed.</p>

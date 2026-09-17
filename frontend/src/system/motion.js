@@ -2,6 +2,8 @@
 // All variants respect prefers-reduced-motion via useReducedMotion guard.
 import { useEffect, useState } from 'react';
 
+export const EASE_OUT = [0.16, 1, 0.3, 1];
+
 export const useReducedMotion = () => {
   const [reduced, setReduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -27,12 +29,12 @@ export const motionVariants = {
     initial: { opacity: 0, y: 14, scale: 0.995 },
     animate: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: 0, y: -8 },
-    transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.28, ease: EASE_OUT }
   },
   enter: {
     initial: { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.25, ease: 'easeOut' }
+    transition: { duration: 0.25, ease: EASE_OUT }
   },
   modal: {
     initial: { opacity: 0, scale: 0.96, y: 12 },
@@ -44,13 +46,13 @@ export const motionVariants = {
     initial: { opacity: 0, scale: 0.97, y: -4 },
     animate: { opacity: 1, scale: 1, y: 0 },
     exit: { opacity: 0, scale: 0.98, y: -2 },
-    transition: { duration: 0.16, ease: 'easeOut' }
+    transition: { duration: 0.16, ease: EASE_OUT }
   },
   expand: {
     initial: { opacity: 0, height: 0 },
     animate: { opacity: 1, height: 'auto' },
     exit: { opacity: 0, height: 0 },
-    transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.24, ease: EASE_OUT }
   }
 };
 
@@ -61,12 +63,12 @@ export const staggerParent = (stagger = 0.05, delay = 0) => ({
 
 export const staggerChild = {
   initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.26, ease: 'easeOut' } }
+  animate: { opacity: 1, y: 0, transition: { duration: 0.26, ease: EASE_OUT } }
 };
 
 // Hover/press are applied via Tailwind classes (hover:, active:scale) to
 // avoid JS animation overhead on every interactive element.
-export const hoverLift = 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-3';
+export const hoverLift = 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-brutal';
 export const pressable = 'transition-transform duration-100 active:scale-[.98]';
 
 export const resolveTransition = (reduced, transition) =>

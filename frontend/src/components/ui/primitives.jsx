@@ -22,10 +22,10 @@ export function Button({ variant = 'primary', size = 'medium', className, ...pro
   return <button className={cn(btnClass(variant, size), className)} {...props} />;
 }
 
-// Neo-brutalist fields: 2px ink borders + 3px royal focus ring.
-const brutalField =
-  'border-2 border-[var(--cf-ink)] shadow-brutal-sm focus:border-royal focus:ring-[3px] focus:ring-royal/40 focus:outline-none';
-const brutalError = 'border-flag focus:border-flag focus:ring-flag/40';
+// Glass fields: hairline borders + 14px radius + royal focus ring.
+const glassField =
+  'border border-[var(--cf-line)] rounded-[14px] focus:border-[#2563FF] focus:ring-[3px] focus:ring-[#2563FF]/30 focus:outline-none';
+const glassError = 'border-[#FF5964] focus:border-[#FF5964] focus:ring-[#FF5964]/30';
 
 const FieldShell = ({ label, error, id, children }) => (
   <div>
@@ -36,7 +36,7 @@ const FieldShell = ({ label, error, id, children }) => (
     )}
     {children}
     {error && (
-      <p className="mt-1 text-xs font-medium text-flag" role="alert">
+      <p className="mt-1 text-xs font-medium text-[#FF5964]" role="alert">
         {error}
       </p>
     )}
@@ -49,7 +49,7 @@ export const Input = forwardRef(function Input({ label, error, id, className, ..
       <input
         id={id}
         ref={ref}
-        className={cn(inputClass, brutalField, error && brutalError, className)}
+        className={cn(inputClass, glassField, error && glassError, className)}
         aria-invalid={Boolean(error)}
         {...props}
       />
@@ -60,7 +60,7 @@ export const Input = forwardRef(function Input({ label, error, id, className, ..
 export const Select = forwardRef(function Select({ label, error, id, className, children, ...props }, ref) {
   return (
     <FieldShell label={label} error={error} id={id}>
-      <select id={id} ref={ref} className={cn(inputClass, brutalField, error && brutalError, className)} {...props}>
+      <select id={id} ref={ref} className={cn(inputClass, glassField, error && glassError, className)} {...props}>
         {children}
       </select>
     </FieldShell>
@@ -74,7 +74,7 @@ export const Textarea = forwardRef(function Textarea({ label, error, id, classNa
         id={id}
         ref={ref}
         rows={4}
-        className={cn(inputClass, brutalField, error && brutalError, className)}
+        className={cn(inputClass, glassField, error && glassError, className)}
         aria-invalid={Boolean(error)}
         {...props}
       />
@@ -82,21 +82,21 @@ export const Textarea = forwardRef(function Textarea({ label, error, id, classNa
   );
 });
 
-// Mono uppercase brutal pills — single status language.
-const pillBrutal =
-  'font-mono text-[11px] font-bold uppercase tracking-widest border-2 border-[var(--cf-ink)] rounded-full px-2.5 py-0.5 shadow-brutal-sm whitespace-nowrap';
+// Glass pills — single status language.
+const pillGlass =
+  'status-pill font-medium rounded-full px-2.5 py-0.5 border border-[var(--cf-line)] text-xs whitespace-nowrap';
 
 export function Badge({ tone, status, role, className, children }) {
   if (status)
-    return <span className={cn(statusBadgeFn(status), pillBrutal, className)}>{children ?? status.replace(/_/g, ' ')}</span>;
+    return <span className={cn(statusBadgeFn(status), pillGlass, className)}>{children ?? status.replace(/_/g, ' ')}</span>;
   if (role)
-    return <span className={cn(roleBadgeFn(role), pillBrutal, className)}>{children ?? role.replace(/_/g, ' ')}</span>;
-  return <span className={cn(badgeFn(tone), pillBrutal, className)}>{children}</span>;
+    return <span className={cn(roleBadgeFn(role), pillGlass, className)}>{children ?? role.replace(/_/g, ' ')}</span>;
+  return <span className={cn(badgeFn(tone), pillGlass, className)}>{children}</span>;
 }
 
 export function StatusPill({ status, className, children }) {
   return (
-    <span className={cn(statusBadgeFn(status), pillBrutal, className)}>
+    <span className={cn(statusBadgeFn(status), pillGlass, className)}>
       {children ?? String(status || '').replace(/_/g, ' ')}
     </span>
   );
@@ -104,7 +104,7 @@ export function StatusPill({ status, className, children }) {
 
 export function RoleBadge({ role, className, children }) {
   return (
-    <span className={cn(roleBadgeFn(role), pillBrutal, className)}>
+    <span className={cn(roleBadgeFn(role), pillGlass, className)}>
       {children ?? String(role || '').replace(/_/g, ' ')}
     </span>
   );
@@ -112,7 +112,7 @@ export function RoleBadge({ role, className, children }) {
 
 export function Card({ className, children, ...props }) {
   return (
-    <section className={cn(cardClass, 'card-brutal cf-card-spot p-5', className)} {...props}>
+    <section className={cn(cardClass, 'glass-card cf-card-spot p-5', className)} {...props}>
       {children}
     </section>
   );
@@ -125,7 +125,7 @@ export function PageHeader({ title, subtitle, actions, kicker, number, breadcrum
         {(kicker || number) && (
           <p className="cf-kicker mb-1.5 flex items-center gap-2">
             {number && (
-              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-volt text-coal border-2 border-[var(--cf-ink)] rounded-md shadow-brutal-sm font-mono text-[11px] font-bold">
+              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#A7D700] text-[#0A0D12] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
                 {number}
               </span>
             )}
@@ -149,7 +149,7 @@ export function EmptyState({ title = 'Nothing here yet', hint, action, editorial
   return (
     <div className={emptyState}>
       {editorial ? (
-        <p className="cf-display italic text-3xl text-[var(--cf-ink-soft)]">{title}</p>
+        <p className="font-display font-semibold tracking-tight text-3xl text-[var(--cf-ink-soft)]">{title}</p>
       ) : (
         <p className="font-medium text-[var(--cf-ink-soft)]">{title}</p>
       )}
@@ -173,7 +173,7 @@ export function LoadingState({ label = 'Loading…' }) {
 export function ErrorState({ message = 'Something went wrong.', onRetry }) {
   return (
     <div className="text-center py-10">
-      <p className="text-sm font-medium text-flag">{message}</p>
+      <p className="text-sm font-medium text-[#FF5964]">{message}</p>
       {onRetry && (
         <button onClick={onRetry} className={btnClass('outline', 'small') + ' mt-3'}>
           Try again

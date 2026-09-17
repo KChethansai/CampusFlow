@@ -1,17 +1,24 @@
-// StudentHome: personal command center — greeting+next-due, overdue banner,
-// due list, placement pulse, attendance ring/health, stats, study CTA.
+// StudentHome: hierarchical regions — R1 Academic Pulse hero (macro metric +
+// radial gauge + trajectory), R2 workload analytics (Area), R3 assignments
+// timeline stream, R4 actionable task cards.
 // Endpoints preserved: GET /assignments, /attendance/student/:id,
 // /job-applications, /notifications. Real data only.
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
-import { AlertTriangle, ArrowRight, Briefcase, CalendarCheck, ClipboardList, GraduationCap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Briefcase, ClipboardList, GraduationCap } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
+import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
 import { AnimatedCounter } from '../../components/ui/editorial';
 import { AttendanceRing, Sparkline } from '../../components/data/views';
 import { staggerChild, staggerParent } from '../../system/motion';
+
+const TrendChart = lazy(() =>
+  import('../../components/data/TrendChart')
+    .then((m) => ({ default: m.TrendChart || m.default }))
+    .catch(() => ({ default: () => null }))
+);
 
 const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : '—';
 const dueIn = (d) => {
@@ -22,6 +29,10 @@ const dueIn = (d) => {
   const days = Math.floor(h / 24);
   return days === 1 ? 'in 1 day' : `in ${days} days`;
 };
+
+const HERO = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden';
+const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const TASK = 'rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -55,9 +66,7 @@ export default function StudentHome() {
   };
 
   useEffect(() => {
-    let live = true;
     load().catch(() => {});
-    return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
 
@@ -65,8 +74,7 @@ export default function StudentHome() {
     const now = Date.now();
     return assignments
       .filter((x) => x.dueDate && new Date(x.dueDate).getTime() >= now && !['graded', 'archived'].includes(x.status))
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-      .slice(0, 4);
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   }, [assignments]);
 
   const overdue = useMemo(() => {
@@ -95,6 +103,40 @@ export default function StudentHome() {
     return attendance.filter((s) => s.totalSessions > 0).map((s) => Math.round(s.percentage ?? 0));
   }, [attendance]);
 
+  // Workload trajectory: items due per day over the next 7 days (real due dates).
+  const workload = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+    return days.map((d) => {
+      const key = d.toDateString();
+      const due = upcoming.filter((a) => a.dueDate && new Date(a.dueDate).toDateString() === key).length;
+      return {
+        day: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+        due
+      };
+    });
+  }, [upcoming]);
+
+  const peakLoad = useMemo(() => workload.reduce((m, w) => Math.max(m, w.due), 0), [workload]);
+
+  // Timeline urgency buckets for the R3 stream.
+  const buckets = useMemo(() => {
+    const now = Date.now();
+    const day = 86400000;
+    const inBucket = (a) => {
+      const ms = new Date(a.dueDate).getTime() - now;
+      if (ms < day) return 'Today';
+      if (ms < day * 7) return 'This Week';
+      return 'Later';
+    };
+    const groups = { Today: [], 'This Week': [], Later: [] };
+    upcoming.slice(0, 6).forEach((a) => { groups[inBucket(a)].push(a); });
+    return groups;
+  }, [upcoming]);
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -103,139 +145,148 @@ export default function StudentHome() {
 
   return (
     <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
-      {/* 1 — greeting + next-due */}
-      <motion.div variants={staggerChild} className="mb-5">
-        <span className="brutal-tag inline-block bg-volt px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest">★ Student command</span>
-        <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">{greeting}, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></h1>
-        <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
-          {upcoming.length ? `Next up: ${upcoming[0].title} — due ${fmtDay(upcoming[0].dueDate)}.` : 'Nothing due right now. A rare, beautiful thing.'}
-        </p>
-      </motion.div>
-
-      {/* 2 — overdue banner */}
-      {overdue.length > 0 && (
-        <motion.div variants={staggerChild} className="mb-4">
-          <div className="racing-stripe h-2 border-2 border-[var(--cf-ink)] border-b-0" aria-hidden />
-          <Link to="/assignments" className="card-brutal flex items-center gap-2 bg-flag px-4 py-3 text-sm font-semibold text-white">
-            <AlertTriangle size={16} aria-hidden /> {overdue.length} overdue assignment{overdue.length > 1 ? 's need' : ' needs'} your attention <ArrowRight size={15} className="ml-auto" aria-hidden />
-          </Link>
-        </motion.div>
-      )}
-
-      <div className="grid lg:grid-cols-3 gap-4">
-        <motion.div variants={staggerChild} className="lg:col-span-2 space-y-4">
-          {/* 3 — due list */}
-          <Card className="role-card-animated">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-base font-semibold flex items-center gap-2"><ClipboardList size={17} className="text-primary-500" aria-hidden /> Due next</h2>
-              <Link to="/assignments" className="text-xs font-medium text-primary-600 dark:text-primary-300 hover:underline">All assignments</Link>
-            </div>
-            {upcoming.length === 0 ? (
-              <EmptyState title="Clear skies" hint="Check the placement board?" />
-            ) : (
-              <ul className="divide-y divide-[var(--cf-line)]">
-                {upcoming.map((a) => (
-                  <li key={a._id}>
-                    <Link to="/assignments" className="flex items-center gap-3 py-2.5 group">
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium truncate group-hover:text-primary-600 dark:group-hover:text-primary-300 transition">{a.title}</span>
-                        <span className="block text-xs text-[var(--cf-ink-mute)]">{a.subject?.name || ''} · {a.maxScore} pts · <span className="tabular-nums">{dueIn(a.dueDate)}</span></span>
-                      </span>
-                      <Badge status={new Date(a.dueDate).getTime() - Date.now() < 86400000 * 2 ? 'pending' : 'open'}>{fmtDay(a.dueDate)}</Badge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+      {/* REGION 1 — Hero Pulse: dominant macro-metric + radial gauge + trajectory */}
+      <motion.section variants={staggerChild} className={HERO} aria-label="Academic pulse">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 flex-1 basis-64">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              Academic Pulse
+            </p>
+            <h1 className="mt-2 text-2xl sm:text-4xl font-bold tracking-tight">
+              {greeting}, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em>
+            </h1>
+            <p className="mt-2 text-4xl sm:text-5xl font-bold tabular-nums tracking-tight">
+              {health == null ? '—' : `${health}%`}
+            </p>
+            <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">
+              {health == null
+                ? 'No attendance recorded yet.'
+                : upcoming.length
+                  ? `Next up: ${upcoming[0].title} — due ${fmtDay(upcoming[0].dueDate)}.`
+                  : 'Nothing due right now. A rare, beautiful thing.'}
+            </p>
+            {overdue.length > 0 && (
+              <Link to="/assignments" className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: '#FF5964' }}>
+                <AlertTriangle size={13} aria-hidden /> {overdue.length} overdue — act now <ArrowRight size={13} aria-hidden />
+              </Link>
             )}
-          </Card>
-
-          {/* 4 — placement pulse */}
-          <Card className="role-card-animated">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-base font-semibold flex items-center gap-2"><Briefcase size={17} className="text-accent-violet" aria-hidden /> Placement pulse</h2>
-              <Link to="/placement" className="text-xs font-medium text-primary-600 dark:text-primary-300 hover:underline">Open board</Link>
+          </div>
+          {health != null && (
+            <div className="flex flex-wrap items-center gap-6">
+              <AttendanceRing value={health} />
+              {trend.length > 1 && (
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1">Trajectory · by subject</p>
+                  <Sparkline points={trend} width={200} height={64} />
+                </div>
+              )}
             </div>
-            {applications.length === 0 ? (
-              <p className="text-sm text-[var(--cf-ink-mute)] py-2">No applications yet — <Link to="/placement" className="text-primary-600 dark:text-primary-300 hover:underline">browse open drives</Link>.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {applications.slice(0, 6).map((a) => (
-                  <Badge key={a._id} status={a.stage || 'applied'}>{a.drive?.role || 'Drive'} · {(a.stage || 'applied').replace(/_/g, ' ')}</Badge>
-                ))}
-              </div>
-            )}
-          </Card>
-        </motion.div>
+          )}
+        </div>
+      </motion.section>
 
-        <motion.div variants={staggerChild} className="space-y-4">
-          {/* 5 — attendance ring / health */}
-          <Card className="role-card-animated">
-            <h2 className="font-display text-base font-semibold flex items-center gap-2 mb-3"><CalendarCheck size={17} className="text-green-600" aria-hidden /> Academic pulse</h2>
-            {health == null ? (
-              <p className="text-sm text-[var(--cf-ink-mute)]">No attendance recorded yet.</p>
-            ) : (
-              <>
-                <AttendanceRing value={health} />
-                {trend.length > 1 && (
-                  <div className="mt-3">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1">By subject</p>
-                    <Sparkline points={trend} />
-                  </div>
-                )}
-                {weakest.length > 0 && (
-                  <div className="mt-3">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Watch list</p>
+      <div className="grid lg:grid-cols-3 gap-4 mt-4">
+        {/* REGION 2 — primary analytics surface (~65%): workload trajectory */}
+        <motion.section variants={staggerChild} className={`${PANEL} lg:col-span-2`} aria-label="Workload trajectory">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-display text-base font-semibold flex items-center gap-2">
+              <ClipboardList size={17} className="text-[#2563FF]" aria-hidden /> Workload trajectory
+            </h2>
+            <Link to="/assignments" className="text-xs font-medium text-[#2563FF] hover:underline">All assignments</Link>
+          </div>
+          <p className="text-xs text-[var(--cf-ink-mute)] mb-3">
+            Due per day · next 7 days{peakLoad ? ` · peak ${peakLoad}/day` : ' · clear week ahead'}.
+          </p>
+          <Suspense fallback={<Sparkline points={workload.map((w) => w.due)} width={420} height={90} />}>
+            <TrendChart data={workload} xKey="day" lines={[{ key: 'due', color: '#2563FF' }]} height={200} />
+          </Suspense>
+        </motion.section>
+
+        {/* REGION 3 — activity stream (~35%): assignments timeline */}
+        <motion.section variants={staggerChild} className={PANEL} aria-label="Assignments timeline">
+          <h2 className="font-display text-base font-semibold mb-3">Due timeline</h2>
+          {upcoming.length === 0 ? (
+            <EmptyState title="Clear skies" hint="Check the placement board?" />
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(buckets).map(([label, items]) => (
+                items.length > 0 && (
+                  <div key={label}>
+                    <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">{label}</p>
                     <ul className="space-y-1.5">
-                      {weakest.map((w) => (
-                        <li key={w.subjectId} className="flex items-center justify-between text-xs">
-                          <Link to="/study" className="font-medium truncate hover:text-primary-600 dark:hover:text-primary-300 transition">{w.subject}</Link>
-                          <span className="text-[var(--cf-ink-mute)] tabular-nums">{Math.round(w.percentage ?? 0)}%</span>
+                      {items.map((a) => (
+                        <li key={a._id}>
+                          <Link to="/assignments" className="flex items-center gap-2 group">
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium truncate group-hover:text-[#2563FF] transition">{a.title}</span>
+                              <span className="block text-xs text-[var(--cf-ink-mute)] tabular-nums">{dueIn(a.dueDate)}</span>
+                            </span>
+                            <Badge status={new Date(a.dueDate).getTime() - Date.now() < 86400000 * 2 ? 'late' : 'open'}>
+                              {fmtDay(a.dueDate)}
+                            </Badge>
+                          </Link>
                         </li>
                       ))}
                     </ul>
                   </div>
-                )}
-              </>
-            )}
-            {/* 6 — stats */}
-            <div className="grid grid-cols-2 gap-3 mt-4 border-t-2 border-[var(--cf-ink)] pt-3">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-ink-mute)]">Assignments</p>
-                <p className="text-2xl font-bold tabular-nums"><AnimatedCounter value={assignments.length} /></p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-ink-mute)]">Applications</p>
-                <p className="text-2xl font-bold tabular-nums"><AnimatedCounter value={applications.length} /></p>
-              </div>
+                )
+              ))}
             </div>
-          </Card>
-
-          {/* 7 — study CTA */}
-          <div className="card-brutal role-card-animated bg-gold p-4">
-            <p className="font-display text-sm font-bold flex items-center gap-2"><GraduationCap size={16} aria-hidden /> Study room</p>
-            <p className="mt-1 text-xs font-medium">
-              {weakest.length ? `Start with ${weakest[0].subject} — your lowest attendance.` : 'Revise anything, any time.'}
-            </p>
-            <Link to="/study" className="btn-brutal mt-3 inline-flex items-center gap-1.5 rounded-[10px] bg-frame px-4 py-2 font-display text-xs font-bold text-white">
-              Open study <ArrowRight size={13} aria-hidden />
-            </Link>
-          </div>
-
+          )}
           {notes.length > 0 && (
-            <Card>
-              <h2 className="font-semibold text-sm mb-2">Needs a glance</h2>
-              <ul className="space-y-2">
-                {notes.map((n) => (
+            <div className="mt-4 pt-3 border-t border-[var(--cf-line)]">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Needs a glance</p>
+              <ul className="space-y-1.5">
+                {notes.slice(0, 3).map((n) => (
                   <li key={n._id} className="text-xs">
                     <p className="font-medium truncate">{n.title}</p>
-                    <p className="text-[var(--cf-ink-mute)] line-clamp-2">{n.message}</p>
+                    <p className="text-[var(--cf-ink-mute)] line-clamp-1">{n.message}</p>
                   </li>
                 ))}
               </ul>
-            </Card>
+            </div>
           )}
-        </motion.div>
+        </motion.section>
       </div>
+
+      {/* REGION 4 — actionable task cards */}
+      <motion.div variants={staggerChild} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+        <Link to="/study" className={`${TASK} block`}>
+          <p className="font-display text-sm font-bold flex items-center gap-2">
+            <GraduationCap size={16} className="text-[#8B5CF6]" aria-hidden /> Study preview
+          </p>
+          <p className="mt-1 text-xs text-[var(--cf-ink-mute)]">
+            {weakest.length ? `Start with ${weakest[0].subject} — lowest at ${Math.round(weakest[0].percentage ?? 0)}%.` : 'Revise anything, any time.'}
+          </p>
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#2563FF]">Open study <ArrowRight size={13} aria-hidden /></span>
+        </Link>
+        <Link to="/placement" className={`${TASK} block`}>
+          <p className="font-display text-sm font-bold flex items-center gap-2">
+            <Briefcase size={16} className="text-[#8B5CF6]" aria-hidden /> Placement strip
+          </p>
+          {applications.length === 0 ? (
+            <p className="mt-1 text-xs text-[var(--cf-ink-mute)]">No applications yet — browse open drives.</p>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {applications.slice(0, 3).map((a) => (
+                <Badge key={a._id} status={a.stage || 'applied'}>{a.drive?.role || 'Drive'}</Badge>
+              ))}
+              {applications.length > 3 && <span className="text-[11px] text-[var(--cf-ink-mute)]">+{applications.length - 3} more</span>}
+            </div>
+          )}
+        </Link>
+        <div className={TASK}>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-ink-mute)]">Assignments</p>
+          <p className="text-3xl font-bold tabular-nums"><AnimatedCounter value={assignments.length} /></p>
+          <p className="text-[11px] text-[var(--cf-ink-mute)]">{overdue.length ? `${overdue.length} overdue` : 'all on track'}</p>
+        </div>
+        <div className={TASK}>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-ink-mute)]">Applications</p>
+          <p className="text-3xl font-bold tabular-nums"><AnimatedCounter value={applications.length} /></p>
+          <p className="text-[11px] text-[var(--cf-ink-mute)]">in the pipeline</p>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

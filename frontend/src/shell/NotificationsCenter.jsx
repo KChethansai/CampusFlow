@@ -1,4 +1,4 @@
-// NotificationsCenter: brutal popover tray — category tabs, swipe-to-dismiss, volt unread dot.
+// NotificationsCenter: glass popover tray — category tabs, swipe-to-dismiss, volt unread dot.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Bell } from 'lucide-react';
@@ -104,13 +104,14 @@ export default function NotificationsCenter() {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
         aria-expanded={open}
-        className="relative min-w-11 min-h-11 grid place-items-center border-2 border-transparent hover:border-[var(--cf-ink)] hover:shadow-brutal-sm text-[var(--cf-ink-soft)] transition-all"
+        className="relative min-w-11 min-h-11 grid place-items-center rounded-full text-[var(--cf-ink-soft)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-black/[0.05] hover:text-[var(--cf-ink)] dark:hover:bg-white/10"
       >
         <Bell size={19} aria-hidden />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-volt text-[#111111] font-mono text-[10px] font-black border-2 border-[var(--cf-ink)] flex items-center justify-center" aria-hidden>
-            {unread > 9 ? '9+' : unread}
-          </span>
+          <span
+            className="absolute right-2 top-2 w-2.5 h-2.5 rounded-full bg-[#A7D700] ring-2 ring-[var(--cf-surface)] cf-unread-pulse"
+            aria-hidden
+          />
         )}
       </button>
       <AnimatePresence>
@@ -119,14 +120,13 @@ export default function NotificationsCenter() {
             <button aria-label="Close notifications" onClick={() => setOpen(false)} className="fixed inset-0 z-30 cursor-default" />
             <motion.div
               {...motionVariants.popover}
-              className="absolute right-0 top-full mt-2 w-[22rem] max-w-[90vw] max-h-[70vh] overflow-hidden bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-lg z-40 flex flex-col"
+              className="cf-glass absolute right-0 top-full mt-2 w-[22rem] max-w-[90vw] max-h-[70vh] overflow-hidden rounded-2xl border border-[var(--cf-line)] shadow-[0_24px_64px_-16px_rgba(16,24,40,0.35)] z-40 flex flex-col"
               role="dialog"
               aria-label="Notification center"
             >
-              <div className="racing-stripe h-1.5 w-full border-b-2 border-[var(--cf-ink)]" aria-hidden />
-              <div className="px-4 pt-3 pb-2 border-b-2 border-[var(--cf-ink)] bg-volt">
+              <div className="px-4 pt-3 pb-2 border-b border-[var(--cf-line)]">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-display font-black text-sm uppercase tracking-tight text-[#111111]">
+                  <p className="font-display font-semibold text-sm tracking-tight text-[var(--cf-ink)]">
                     Notifications{unread > 0 && ` (${unread})`}
                   </p>
                   <div className="flex gap-1 text-xs overflow-x-auto" role="tablist" aria-label="Filter">
@@ -137,10 +137,10 @@ export default function NotificationsCenter() {
                         aria-selected={filter === f}
                         onClick={() => setFilter(f)}
                         className={cn(
-                          'px-2.5 min-h-11 sm:min-h-0 sm:py-1 font-mono text-[10px] font-bold uppercase tracking-wider border-2 transition-all whitespace-nowrap',
+                          'px-2.5 min-h-11 sm:min-h-0 sm:py-1 rounded-full font-mono text-[10px] font-medium uppercase tracking-wider transition-all whitespace-nowrap',
                           filter === f
-                            ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)] border-[var(--cf-ink)]'
-                            : 'text-[#111111]/70 border-transparent hover:border-[#111111]'
+                            ? 'bg-[#2563FF] text-white'
+                            : 'text-[var(--cf-ink-mute)] hover:bg-black/[0.05] dark:hover:bg-white/10'
                         )}
                       >
                         {f}
@@ -155,7 +155,7 @@ export default function NotificationsCenter() {
                 )}
                 {grouped.map((g) => (
                   <div key={g.group}>
-                    <p className="px-4 pt-3 pb-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
+                    <p className="px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
                     {g.rows.map((n) => (
                       <motion.div
                         key={n._id}
@@ -163,16 +163,16 @@ export default function NotificationsCenter() {
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={0.7}
                         onDragEnd={(_, info) => { if (info.offset.x < -70 || info.offset.x > 70) dismiss(n._id); }}
-                        className="border-b border-[var(--cf-line)]/60"
+                        className="border-b border-[var(--cf-line)]/60 last:border-0"
                       >
                         <button
                           onClick={() => openItem(n)}
-                          className={cn('w-full text-left px-4 py-2.5 min-h-11 hover:bg-black/[.03] dark:hover:bg-white/[.05] transition', n.isRead && 'opacity-65')}
+                          className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
                         >
                           <span className="flex items-start gap-2">
-                            <span className={cn('mt-1.5 w-2.5 h-2.5 shrink-0 border border-[var(--cf-ink)]', n.isRead ? 'bg-transparent opacity-30' : 'bg-volt')} aria-hidden />
+                            <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', n.isRead ? 'bg-[var(--cf-line)]' : 'bg-[#A7D700]')} aria-hidden />
                             <span className="min-w-0">
-                              <span className="block text-sm font-bold text-[var(--cf-ink)] truncate">{n.title}</span>
+                              <span className="block text-sm font-semibold text-[var(--cf-ink)] truncate">{n.title}</span>
                               {n.message && <span className="block text-xs text-[var(--cf-ink-mute)] line-clamp-2 mt-0.5">{n.message}</span>}
                             </span>
                           </span>

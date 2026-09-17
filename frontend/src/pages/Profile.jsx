@@ -1,4 +1,4 @@
-// Profile: brutal identity — header card, tabs for overview/activity/security.
+// Profile: glass identity — header card, tabs for overview/activity/security.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -17,8 +17,7 @@ const TABS = [
   { id: 'security', label: 'Password & sessions' }
 ];
 
-const brutalInput = cn(inputClass,
-  'border-2 border-[var(--cf-ink)] rounded-[10px] shadow-brutal-sm focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]');
+const glassInput = cn(inputClass, 'rounded-[14px]');
 
 export default function Profile() {
   const { user, changePassword, logoutUser } = useAuth();
@@ -70,25 +69,32 @@ export default function Profile() {
   if (!user) return <LoadingState />;
 
   const stats = [
-    { Icon: GraduationCap, label: 'Assignments', v: activity?.assignments, bg: 'bg-royal' },
-    { Icon: Briefcase, label: 'Applications', v: activity?.applications, bg: 'bg-gold' },
-    { Icon: Inbox, label: 'Requests', v: activity?.requests, bg: 'bg-volt' }
+    { Icon: GraduationCap, label: 'Assignments', v: activity?.assignments, tint: 'bg-[#2563FF]/10 text-[#2563FF]' },
+    { Icon: Briefcase, label: 'Applications', v: activity?.applications, tint: 'bg-violet-500/10 text-violet-500' },
+    { Icon: Inbox, label: 'Requests', v: activity?.requests, tint: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-300' }
   ];
 
   return (
     <motion.div {...staggerParent(0.07)} initial="initial" animate="animate" className="max-w-3xl mx-auto">
-      {/* Brutal header */}
+      {/* Glass header */}
       <motion.div variants={staggerChild}>
-        <section className="card-brutal rounded-2xl overflow-hidden mb-4">
-          <div className="bg-royal px-5 pt-5 pb-10 relative" aria-hidden>
-            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.9) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-            <span className="relative brutal-tag bg-volt text-coal text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+        <section className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl overflow-hidden mb-4">
+          <div className="px-5 pt-5 pb-10 relative" aria-hidden>
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(420px 200px at 15% 0%, rgba(37,99,255,.14), transparent 65%), radial-gradient(360px 200px at 90% 10%, rgba(139,92,246,.10), transparent 65%)'
+              }}
+            />
+            <span className="relative inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
               Digital identity
             </span>
           </div>
           <div className="px-5 pb-5">
             <div className="flex flex-wrap items-end gap-4 -mt-8 relative">
-              <span className="w-20 h-20 rounded-2xl bg-gold text-coal border-2 border-[var(--cf-ink)] shadow-brutal grid place-items-center text-3xl font-display font-bold" aria-hidden>
+              <span className="w-20 h-20 rounded-3xl bg-[#2563FF] text-white border border-[#2563FF]/30 grid place-items-center text-3xl font-display font-bold" aria-hidden>
                 {user.name?.[0]?.toUpperCase()}
               </span>
               <div className="flex-1 min-w-[12rem]">
@@ -97,21 +103,20 @@ export default function Profile() {
               </div>
               <span className={roleBadge(user.role)}>{user.role?.replace(/_/g, ' ')}</span>
             </div>
-            <div className="racing-stripe h-2 rounded-full border-2 border-[var(--cf-ink)] mt-4" aria-hidden />
           </div>
         </section>
       </motion.div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 p-1.5 mb-4 rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] shadow-brutal-sm" role="tablist" aria-label="Profile sections">
+      <div className="flex gap-1 p-1.5 mb-4 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur" role="tablist" aria-label="Profile sections">
         {TABS.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={cn('flex-1 px-3 py-2 rounded-[8px] text-xs font-display font-semibold transition-all border-2',
-              tab === t.id ? 'bg-frame text-volt border-frame dark:bg-volt dark:text-coal' : 'border-transparent text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
+            className={cn('flex-1 px-3 py-2 rounded-xl text-xs font-display font-semibold transition',
+              tab === t.id ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
           >
             {t.label}
           </button>
@@ -150,10 +155,10 @@ export default function Profile() {
             <h2 className="font-display font-semibold mb-1">Activity</h2>
             <p className="text-xs text-[var(--cf-ink-mute)] mb-4">Live counts from your assignments, applications and requests.</p>
             <div className="grid grid-cols-3 gap-3">
-              {stats.map(({ Icon, label, v, bg }) => (
-                <div key={label} className="rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] p-3 text-center shadow-brutal-sm">
-                  <span className={cn('mx-auto w-8 h-8 grid place-items-center rounded-[8px] border-2 border-[var(--cf-ink)] text-coal', bg)} aria-hidden>
-                    <Icon size={15} className={bg === 'bg-royal' ? 'text-white' : undefined} />
+              {stats.map(({ Icon, label, v, tint }) => (
+                <div key={label} className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3 text-center">
+                  <span className={cn('mx-auto w-8 h-8 grid place-items-center rounded-xl', tint)} aria-hidden>
+                    <Icon size={15} />
                   </span>
                   <p className="font-display text-xl font-bold mt-2 tabular-nums">{v ?? '—'}</p>
                   <p className="text-[11px] text-[var(--cf-ink-mute)]">{label}</p>
@@ -177,24 +182,24 @@ export default function Profile() {
               <form onSubmit={handleSubmit(onPassword)} className="space-y-3">
                 <div>
                   <label className={labelClass} htmlFor="pw-current">Current password</label>
-                  <input id="pw-current" type="password" autoComplete="current-password" className={brutalInput}
+                  <input id="pw-current" type="password" autoComplete="current-password" className={glassInput}
                     aria-describedby={errors.currentPassword ? 'pw-current-error' : undefined}
                     {...register('currentPassword', { required: true })} />
-                  {errors.currentPassword && <p id="pw-current-error" role="alert" className="mt-1 text-xs font-medium text-flag">Enter your current password</p>}
+                  {errors.currentPassword && <p id="pw-current-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">Enter your current password</p>}
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="pw-new">New password</label>
-                  <input id="pw-new" type="password" autoComplete="new-password" className={brutalInput}
+                  <input id="pw-new" type="password" autoComplete="new-password" className={glassInput}
                     aria-describedby={errors.newPassword ? 'pw-new-error' : undefined}
                     {...register('newPassword', { required: true, minLength: { value: 8, message: 'Minimum 8 characters' } })} />
-                  {errors.newPassword && <p id="pw-new-error" role="alert" className="mt-1 text-xs font-medium text-flag">{errors.newPassword.message}</p>}
+                  {errors.newPassword && <p id="pw-new-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.newPassword.message}</p>}
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="pw-confirm">Confirm new password</label>
-                  <input id="pw-confirm" type="password" autoComplete="new-password" className={brutalInput}
+                  <input id="pw-confirm" type="password" autoComplete="new-password" className={glassInput}
                     aria-describedby={errors.confirm ? 'pw-confirm-error' : undefined}
                     {...register('confirm', { required: true, validate: (v, f) => v === f.newPassword || 'Passwords do not match' })} />
-                  {errors.confirm && <p id="pw-confirm-error" role="alert" className="mt-1 text-xs font-medium text-flag">{errors.confirm.message}</p>}
+                  {errors.confirm && <p id="pw-confirm-error" role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.confirm.message}</p>}
                 </div>
                 <button type="submit" className={btnClass('primary', 'medium') + ' w-full'}>Update password</button>
               </form>

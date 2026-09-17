@@ -3,32 +3,32 @@ import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { btnClass, cn, labelClass } from '../../system/tokens';
+import { btnClass, cn, inputClass, labelClass } from '../../system/tokens';
 import AuthLayout from './AuthLayout';
 
-const brutalInput = (hasError) => cn(
-  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] rounded-[10px] border-2 shadow-brutal-sm transition-all',
-  'focus:outline-none focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]',
-  hasError ? 'border-flag' : 'border-[var(--cf-ink)]'
+const glassInput = (hasError) => cn(
+  inputClass,
+  'rounded-[14px]',
+  hasError && 'border-red-500 focus:ring-red-500/30 focus:border-red-500'
 );
 
-function BrutalField({ id, label, error, errorId, ...props }) {
+function GlassField({ id, label, error, errorId, ...props }) {
   return (
     <div>
       {label && <label htmlFor={id} className={labelClass}>{label}</label>}
       <input
         id={id}
-        className={brutalInput(Boolean(error))}
+        className={glassInput(Boolean(error))}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
         {...props}
       />
-      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-flag">{error}</p>}
+      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }
 
-const backLink = <><Link to="/login" className="font-semibold text-[var(--cf-ink)] underline decoration-volt decoration-2 underline-offset-2 hover:decoration-royal">Back to sign in</Link></>;
+const backLink = <><Link to="/login" className="font-semibold text-[#2563FF] underline underline-offset-2 hover:brightness-110">Back to sign in</Link></>;
 
 export function ForgotPassword() {
   const { forgotPassword } = useAuth();
@@ -53,14 +53,17 @@ export function ForgotPassword() {
     <AuthLayout title="Reset password" subtitle="We’ll send reset instructions to your email — or your CampusFlow inbox if mail isn’t configured."
       footer={backLink}>
       {sent ? (
-        <div className="rounded-[10px] border-2 border-[var(--cf-ink)] bg-volt/20 p-4 text-sm text-[var(--cf-ink-soft)] space-y-2 shadow-brutal-sm">
-          <p className="font-display font-semibold text-[var(--cf-ink)]">Check your inbox ✓</p>
+        <div className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 p-4 text-sm text-[var(--cf-ink-soft)] space-y-2">
+          <p className="flex items-center gap-1.5 font-display font-semibold text-[var(--cf-ink)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+            Check your inbox ✓
+          </p>
           <p>Reset link valid ~10 minutes.</p>
           <p>No email? Sign in and open the bell icon — the token may be waiting in your notifications.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <BrutalField
+          <GlassField
             label="Email address"
             id="email"
             type="email"
@@ -70,7 +73,7 @@ export function ForgotPassword() {
             errorId="email-error"
             {...register('email', { required: true })}
           />
-          {failed && <p role="alert" className="rounded-[10px] border-2 border-[var(--cf-ink)] border-l-8 border-l-flag bg-[var(--cf-surface-2)] px-4 py-3 text-xs font-medium">Couldn’t reach the server. Check your connection and try again.</p>}
+          {failed && <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-xs font-medium text-red-700 dark:text-red-300">Couldn’t reach the server. Check your connection and try again.</p>}
           <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Send reset link →</button>
         </form>
       )}
@@ -114,13 +117,13 @@ export function ResetPassword() {
         <Link to="/login" className={btnClass('primary', 'large') + ' w-full'}>Continue to sign in →</Link>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <BrutalField label="Reset token" id="token-view" value={token} readOnly />
-          <BrutalField label="New password" id="password" type="password" autoComplete="new-password"
+          <GlassField label="Reset token" id="token-view" value={token} readOnly />
+          <GlassField label="New password" id="password" type="password" autoComplete="new-password"
             placeholder="Minimum 8 characters"
             error={errors.password && 'Minimum 8 characters'}
             errorId="password-error"
             {...register('password', { required: true, minLength: 8 })} />
-          <BrutalField label="Confirm password" id="confirm" type="password" autoComplete="new-password"
+          <GlassField label="Confirm password" id="confirm" type="password" autoComplete="new-password"
             placeholder="Repeat the new password"
             error={errors.confirm && 'Passwords must match'}
             errorId="confirm-error"

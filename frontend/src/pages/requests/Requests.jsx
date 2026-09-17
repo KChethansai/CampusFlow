@@ -92,24 +92,24 @@ export default function Requests() {
         )}
       />
 
-      <div className="flex gap-1.5 mb-4 overflow-x-auto" role="tablist" aria-label="Request filters">
+      <div className="flex gap-1 p-1.5 mb-4 overflow-x-auto rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur w-fit max-w-full" role="tablist" aria-label="Request filters">
         {['All', 'Open', 'pending', 'in_review', 'approved', 'rejected'].map((f) => (
           <button key={f} role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
-            className={cn('brutal-tag px-3.5 py-2 text-xs font-bold capitalize whitespace-nowrap transition',
-              filter === f ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
+            className={cn('rounded-xl px-3.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap transition',
+              filter === f ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
             {f === 'Open' ? 'Open' : f.replace(/_/g, ' ')}
           </button>
         ))}
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit(onCreate)} className="card-brutal p-5 mb-4 grid sm:grid-cols-4 gap-3">
-          <select className={selectClass} {...register('type')} aria-label="Request type">
+        <form onSubmit={handleSubmit(onCreate)} className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-5 mb-4 grid sm:grid-cols-4 gap-3">
+          <select className={cn(selectClass, 'rounded-[14px]')} {...register('type')} aria-label="Request type">
             {REQUEST_TYPES.map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
           </select>
-          <input placeholder="Title" className={inputClass} {...register('title', { required: true })} aria-label="Title" />
-          <input placeholder="Description" className={inputClass} {...register('description')} aria-label="Description" />
-          <button type="submit" className={btnClass('success', 'medium')}>Submit</button>
+          <input placeholder="Title" className={cn(inputClass, 'rounded-[14px]')} {...register('title', { required: true })} aria-label="Title" />
+          <input placeholder="Description" className={cn(inputClass, 'rounded-[14px]')} {...register('description')} aria-label="Description" />
+          <button type="submit" className={btnClass('primary', 'medium')}>Submit</button>
         </form>
       )}
 
@@ -120,7 +120,7 @@ export default function Requests() {
           {visible.map((r) => {
             const open = openId === r._id;
             return (
-              <article key={r._id} className="card-brutal role-card-animated p-5">
+              <article key={r._id} className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-5">
                 <button onClick={() => setOpenId(open ? null : r._id)} aria-expanded={open} className="w-full text-left">
                   <span className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
@@ -129,7 +129,7 @@ export default function Requests() {
                         <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{r.type}</Badge>
                       </span>
                       <span className="block text-sm text-[var(--cf-ink-mute)] mt-0.5 line-clamp-1">{r.description || 'No description'}</span>
-                      <span className="block text-xs text-[var(--cf-ink-mute)] mt-1">
+                      <span className="block font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)] mt-1">
                         {r.student?.name || '—'} · {fmt(r.createdAt)}
                         {r.assignedTo?.name ? ` · with ${r.assignedTo.name}` : ''}
                       </span>
@@ -142,12 +142,12 @@ export default function Requests() {
                     <WorkflowTimeline steps={timelineFor(r)} />
                     <div>
                       {r.resolution && (
-                        <p className="text-sm rounded-xl bg-black/[.03] dark:bg-white/[.05] p-3 mb-3">{r.resolution}</p>
+                        <p className="text-sm rounded-2xl border border-[var(--cf-line)] bg-black/[.03] dark:bg-white/[.05] p-3 mb-3">{r.resolution}</p>
                       )}
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-mute)] mb-1.5">Next action</p>
+                      <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-1.5">Next action</p>
                       {canReview && !['approved', 'rejected'].includes(r.status) ? (
                         <div className="flex flex-wrap gap-2">
-                          <button onClick={() => updateStatus(r._id, r.status === 'pending' ? 'in_review' : 'approved')} className={btnClass('success', 'small')}>
+                          <button onClick={() => updateStatus(r._id, r.status === 'pending' ? 'in_review' : 'approved')} className={btnClass('primary', 'small')}>
                             {r.status === 'pending' ? 'Start review' : 'Approve'}
                           </button>
                           <button onClick={() => updateStatus(r._id, 'rejected')} className={btnClass('danger', 'small')}>Reject</button>

@@ -1,699 +1,505 @@
-// Landing: neo-brutalist public experience — paper navbar + racing stripe,
-// hero split with ProductPortal, reorderable pillar bento, role cards with
-// real capabilities, truthful RBAC matrix, journey + readiness checklist,
-// generic trust band, black CTA. CTAs only to /login /signup /dashboard.
-// Counters reflect structural facts only (roles, pipeline stages, pillars).
-import { useEffect, useRef, useState } from 'react';
+// Landing: Stitch-spec public experience — floating capsule navbar,
+// centered hero with glass product-preview mockup, counter bar of real
+// structural facts, role-tabbed portal tour, intelligence bento, role
+// cards, cinematic CTA, single-row footer. No fake stats, no testimonials,
+// no deadlines. CTAs only to /login, /signup, /dashboard (+ /placement
+// where the spec names it).
 import { Link } from 'react-router';
-import { motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight,
   ArrowUpRight,
-  BarChart3,
+  Bell,
   Briefcase,
-  Building2,
-  CalendarCheck,
-  Check,
-  ChevronDown,
-  ChevronUp,
   GraduationCap,
-  GripVertical,
-  Moon,
-  RotateCcw,
   ShieldCheck,
-  Sparkles,
-  Sun,
   Users
 } from 'lucide-react';
 import SpatialCanvas from '../components/spatial/SpatialCanvas';
 import ProductPortal from '../components/landing/ProductPortal';
 import TrustBar from '../components/landing/TrustBar';
-import {
-  AnimatedCounter,
-  BentoGrid,
-  Marquee,
-  Preloader,
-  SplitReveal
-} from '../components/ui/editorial';
-import { useTheme } from '../system/theme';
-import { PIPELINE_STAGES, ROLES, btnClass, cn } from '../system/tokens';
+import { PIPELINE_STAGES, ROLES, roleLabel } from '../system/tokens';
 
 const NAV = [
-  { label: 'System', href: '#system' },
-  { label: 'Roles', href: '#roles' },
-  { label: 'Access', href: '#access' },
-  { label: 'Journey', href: '#journey' }
+  { label: 'Platform', to: '/dashboard' },
+  { label: 'Academics', to: '/attendance' },
+  { label: 'Placements', to: '/placement' },
+  { label: 'Intelligence', to: '/ai-reports' }
 ];
 
-const PILLAR_ORDER_KEY = 'cf_pillar_order';
-const READINESS_KEY = 'cf_readiness';
-
-const DEFAULT_PILLARS = [
-  {
-    id: 'analytics',
-    Icon: BarChart3,
-    title: 'Academic Analytics',
-    body: 'Per-subject attendance health, submission momentum and at-risk signals — evidence beside every insight.',
-    tint: 'bg-gold',
-    to: '/dashboard',
-    action: 'Open dashboard'
-  },
-  {
-    id: 'drives',
-    Icon: Briefcase,
-    title: 'Placement Drives',
-    body: 'Drives, eligibility and interviews move down one visible pipeline.',
-    tint: 'bg-volt',
-    to: '/placement',
-    action: 'Open placement'
-  },
-  {
-    id: 'attendance',
-    Icon: CalendarCheck,
-    title: 'Attendance Matrix',
-    body: 'Mark in seconds. Heatmaps and watch-lists replace registers.',
-    tint: 'bg-royal',
-    to: '/attendance',
-    action: 'Open attendance'
-  },
-  {
-    id: 'ai',
-    Icon: Sparkles,
-    title: 'AI Reports',
-    body: 'What changed, why it matters, what happens next. Grounded, never a black box.',
-    tint: 'bg-flag',
-    to: '/ai-reports',
-    action: 'Open AI reports'
-  }
-];
-
-const PILLAR_SPANS = ['md:col-span-4', 'md:col-span-2', 'md:col-span-2', 'md:col-span-4'];
-
-const ROLES_CARDS = [
+const ROLE_CARDS = [
   {
     Icon: GraduationCap,
     tag: 'Student',
     title: 'One command center',
     body: 'Next class, due work, attendance health and placement pulse.',
-    points: [
-      ['Attendance health', '/attendance'],
-      ['Assignments queue', '/assignments'],
-      ['Placement pipeline', '/placement'],
-      ['Study workspace', '/study']
-    ]
+    points: 'Attendance · Assignments · Placement · Study'
   },
   {
     Icon: Users,
     tag: 'Faculty',
     title: 'Teach, don’t file',
     body: 'Attendance in seconds, grading in a queue, requests without paperwork.',
-    points: [
-      ['Mark attendance', '/attendance'],
-      ['Grade submissions', '/assignments'],
-      ['Subjects', '/subjects'],
-      ['Requests', '/requests']
-    ]
+    points: 'Attendance · Grading · Subjects · Requests'
   },
   {
     Icon: Briefcase,
     tag: 'Placement cell',
     title: 'Drives to offers',
     body: 'Publish drives, track eligibility, move candidates down the pipeline.',
-    points: [
-      ['Placement pipeline', '/placement'],
-      ['Student directory', '/directory'],
-      ['Drive events', '/events'],
-      ['Dashboard', '/dashboard']
-    ]
+    points: 'Pipeline · Directory · Events · Dashboard'
   },
   {
     Icon: ShieldCheck,
     tag: 'Administration',
     title: 'The operating picture',
     body: 'People, departments, academics and insight — one governed workspace.',
-    points: [
-      ['Users & departments', '/users'],
-      ['Courses & subjects', '/courses'],
-      ['AI reports', '/ai-reports'],
-      ['Requests', '/requests']
-    ]
+    points: 'Users · Courses · AI reports · Requests'
   }
 ];
 
-const MATRIX_ROWS = [
-  { cap: 'Dashboard', to: '/dashboard', student: true, faculty: true, placement: true, admin: true },
-  { cap: 'Assignments & grading queue', to: '/assignments', student: true, faculty: true, placement: false, admin: true },
-  { cap: 'Attendance mark & heatmaps', to: '/attendance', student: true, faculty: true, placement: false, admin: true },
-  { cap: 'Placement drives & pipeline', to: '/placement', student: true, faculty: false, placement: true, admin: true },
-  { cap: 'Subjects & courses', to: '/subjects', student: false, faculty: true, placement: false, admin: true },
-  { cap: 'Study workspace', to: '/study', student: true, faculty: true, placement: false, admin: true },
-  { cap: 'Requests', to: '/requests', student: true, faculty: true, placement: false, admin: true },
-  { cap: 'My enrollments', to: '/enrollments', student: true, faculty: false, placement: false, admin: false },
-  { cap: 'Users, departments & courses', to: '/users', student: false, faculty: false, placement: false, admin: true },
-  { cap: 'AI reports & audit trails', to: '/ai-reports', student: false, faculty: false, placement: false, admin: true },
-  { cap: 'Directory & events', to: '/directory', student: true, faculty: true, placement: true, admin: true }
+const ALERTS = [
+  {
+    tag: 'Placement',
+    title: 'Pipeline movement',
+    body: 'Candidates advance applied → shortlisted → assessment → interview → offer → placed.'
+  },
+  {
+    tag: 'Requests',
+    title: 'Request queue',
+    body: 'Every request moves pending → in review → approved, with audit trails on key actions.'
+  },
+  {
+    tag: 'Intelligence',
+    title: 'At-risk signals',
+    body: 'Attendance and submission patterns surface early — evidence attached, never a black box.'
+  }
 ];
 
-const JOURNEY = [
-  { n: '01', title: 'Enroll', body: 'Departments, courses and one record per student from day one.', to: '/departments' },
-  { n: '02', title: 'Learn', body: 'Attendance, assignments and feedback build a living academic profile.', to: '/attendance' },
-  { n: '03', title: 'Get placed', body: 'Drives, eligibility and interviews down a visible pipeline.', to: '/placement' },
-  { n: '04', title: 'See clearly', body: 'Reports, timelines and insight — evidence, not guesses.', to: '/ai-reports' }
+const LOG_LINES = [
+  '$ campusflow workspace --status',
+  `ok  ${ROLES.length} roles · ${PIPELINE_STAGES.length} pipeline stages · one record per student`,
+  '→ pipeline: applied → shortlisted → assessment → interview → offer → placed',
+  '→ routes: /dashboard /attendance /placement /ai-reports',
+  'ok  evidence attached · audit trails on'
 ];
 
-const READINESS_ITEMS = [
-  { id: 'structure', label: 'Add departments, courses & subjects', to: '/departments' },
-  { id: 'people', label: 'Invite users across the 5 roles', to: '/users' },
-  { id: 'attendance', label: 'Take the first attendance', to: '/attendance' },
-  { id: 'drive', label: 'Publish the first placement drive', to: '/placement' }
-];
-
-const CAPABILITIES = [
-  ['Attendance Matrix', '/attendance'],
-  ['Placement Pipeline', '/placement'],
-  ['Assignments Queue', '/assignments'],
-  ['AI Reports', '/ai-reports'],
-  ['Directory', '/directory'],
-  ['Events', '/events'],
-  ['Study Workspace', '/study'],
-  ['Requests', '/requests']
-];
-
-function MatrixCheck({ on }) {
-  return (
-    <span
-      role="img"
-      aria-label={on ? 'Included' : 'Not included'}
-      className={cn(
-        'inline-grid place-items-center w-5 h-5 rounded-full border-2 border-[var(--cf-ink)] text-xs font-bold',
-        on ? 'bg-volt' : 'bg-[var(--cf-surface-2)] text-transparent'
-      )}
-    >
-      {on ? <Check size={12} strokeWidth={3.5} /> : '·'}
-    </span>
-  );
-}
-
-function loadOrder() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PILLAR_ORDER_KEY) || '[]');
-    if (Array.isArray(saved) && saved.length === DEFAULT_PILLARS.length) {
-      const ordered = saved
-        .map((id) => DEFAULT_PILLARS.find((p) => p.id === id))
-        .filter(Boolean);
-      if (ordered.length === DEFAULT_PILLARS.length) return ordered;
-    }
-  } catch { /* fall through to defaults */ }
-  return DEFAULT_PILLARS;
-}
+const kicker = 'font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4B5563] dark:text-[#707A89]';
+const h2 = 'font-display font-bold tracking-tight text-3xl sm:text-4xl text-[#0A0D12] dark:text-[#F5F7FA] mt-3 text-balance';
+const sub = 'mt-3 text-[15px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF] max-w-xl';
+const glassCard =
+  'cf-glass rounded-[24px] border border-black/10 dark:border-white/10';
 
 export default function Landing() {
-  const { theme, toggle } = useTheme();
-  const reduced = useReducedMotion();
-  const heroRef = useRef(null);
-  const [pillars, setPillars] = useState(loadOrder);
-  const [dragged, setDragged] = useState(null);
-  const [dragOver, setDragOver] = useState(null);
-  const [readiness, setReadiness] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(READINESS_KEY) || '{}');
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PILLAR_ORDER_KEY, JSON.stringify(pillars.map((p) => p.id)));
-    } catch { /* storage unavailable */ }
-  }, [pillars]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(READINESS_KEY, JSON.stringify(readiness));
-    } catch { /* storage unavailable */ }
-  }, [readiness]);
-
-  const movePillar = (index, dir) => {
-    const target = dir === 'up' ? index - 1 : index + 1;
-    if (target < 0 || target >= pillars.length) return;
-    const next = [...pillars];
-    const [item] = next.splice(index, 1);
-    next.splice(target, 0, item);
-    setPillars(next);
-  };
-
-  const onDropPillar = (e, dropIndex) => {
-    e.preventDefault();
-    if (dragged === null || dragged === dropIndex) {
-      setDragged(null);
-      setDragOver(null);
-      return;
-    }
-    const next = [...pillars];
-    const [item] = next.splice(dragged, 1);
-    next.splice(dropIndex, 0, item);
-    setPillars(next);
-    setDragged(null);
-    setDragOver(null);
-  };
-
-  const isCustomOrder = pillars.some((p, i) => p.id !== DEFAULT_PILLARS[i].id);
-  const readyCount = READINESS_ITEMS.filter((r) => readiness[r.id]).length;
-
   return (
-    <div className="min-h-screen bg-[var(--cf-bg)] text-[var(--cf-ink)]">
-      <Preloader />
-
-      <header className="sticky top-0 z-50 bg-[var(--cf-surface)] border-b-2 border-[var(--cf-ink)]">
-        <div className="racing-stripe h-1.5" aria-hidden />
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="CampusFlow home">
-            <span className="w-8 h-8 bg-frame text-volt grid place-items-center font-display font-bold text-sm border-2 border-[var(--cf-ink)] shadow-brutal-sm" aria-hidden>C</span>
-            <span className="font-display font-bold tracking-tight text-lg">CampusFlow</span>
+    <div className="min-h-screen bg-[#F6F7F9] dark:bg-[#07090D] text-[#0A0D12] dark:text-[#F5F7FA] antialiased overflow-x-clip">
+      {/* (1) floating capsule navbar */}
+      <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-4">
+        <div className="max-w-5xl mx-auto cf-glass rounded-full border border-black/10 dark:border-white/10 pl-4 pr-2 py-2 flex items-center justify-between gap-2 shadow-lg shadow-black/[0.06] dark:shadow-black/40">
+          <Link to="/" className="flex items-center gap-2 shrink-0" aria-label="CampusFlow home">
+            <span className="w-8 h-8 rounded-full bg-[#2563FF] text-white grid place-items-center font-display font-bold text-sm" aria-hidden>
+              C
+            </span>
+            <span className="font-display font-semibold tracking-tight text-[17px]">CampusFlow</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-1" aria-label="Sections">
+          <nav className="hidden md:flex items-center gap-1" aria-label="Product">
             {NAV.map((n) => (
-              <a key={n.href} href={n.href} className="px-3 py-2 rounded-full font-display text-sm font-semibold text-[var(--cf-ink-soft)] hover:bg-volt hover:text-coal transition">
+              <Link
+                key={n.label}
+                to={n.to}
+                className="px-3.5 py-2 rounded-full text-sm font-medium text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.07] transition-colors"
+              >
                 {n.label}
-              </a>
+              </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <span className="hidden lg:inline-flex brutal-tag bg-[var(--cf-bg)] px-2.5 py-1 text-[11px] font-mono font-bold" title="Command palette inside the app">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-xs font-medium text-[#4B5563] dark:text-[#A7B0BF]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
+              Operational
+            </span>
+            <span
+              className="hidden xl:inline-flex px-2.5 py-1.5 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]"
+              title="Command palette inside the app"
+            >
               ⌘K
             </span>
-            <button onClick={toggle} aria-label="Toggle theme" className="p-2 border-2 border-transparent hover:border-[var(--cf-ink)] hover:bg-volt transition">
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <Link to="/login" className="hidden sm:block font-display text-sm font-bold px-3 py-2 hover:bg-volt transition">
+            <Link
+              to="/login"
+              className="hidden sm:block px-3 py-2 rounded-full text-sm font-semibold text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white transition-colors"
+            >
               Sign in
             </Link>
-            <Link to="/signup" className={cn(btnClass('primary', 'small'))}>
-              Apply <ArrowUpRight size={14} aria-hidden />
+            <Link
+              to="/signup"
+              className="px-5 py-2.5 rounded-full bg-[#A7D700] text-[#0A0D12] text-sm font-semibold hover:brightness-95 transition"
+            >
+              Get started
             </Link>
           </div>
         </div>
       </header>
 
       <main>
-        {/* Hero split: headline left, live product tour right */}
-        <section ref={heroRef} className="relative overflow-hidden" aria-label="Introduction">
-          <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-10 grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="brutal-tag inline-flex items-center gap-2 bg-volt px-3 py-1 text-xs font-bold uppercase tracking-wider">
-                <span className="w-2 h-2 bg-flag border border-frame" aria-hidden />
-                The academic operating system
-              </p>
-              <h1 className="font-display font-black uppercase tracking-tight leading-[1.02] text-4xl sm:text-5xl xl:text-6xl mt-5">
-                <SplitReveal lines={['One campus.', 'Every workflow.']} />
-                <span className="block mt-2">
-                  <mark className="bg-gold text-coal border-2 border-[var(--cf-ink)] px-3 shadow-brutal">Perfectly connected.</mark>
-                </span>
-              </h1>
-              <p className="mt-5 max-w-md text-base sm:text-lg text-[var(--cf-ink-mute)] font-medium">
-                Attendance, assignments, placements and insight — moving together in one workspace, one record per student.
-              </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link to="/signup" className={cn(btnClass('primary', 'large'))}>
-                  Apply now <ArrowRight size={17} aria-hidden />
-                </Link>
-                <Link to="/login" className={cn(btnClass('secondary', 'large'))}>
-                  Sign in <ArrowUpRight size={17} aria-hidden />
-                </Link>
-                <a href="#system" className="font-display text-sm font-bold underline underline-offset-4 decoration-gold decoration-2 hover:bg-volt px-1">
-                  Explore the platform ↓
-                </a>
+        {/* (2) centered hero + product preview */}
+        <section className="relative overflow-hidden" aria-label="Introduction">
+          {/* ambient: blue + volt glows, dot grid, lazy 3D hero visual */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[520px] rounded-full bg-[#2563FF]/[0.16] dark:bg-[#2563FF]/25 blur-[120px]" />
+            <div className="absolute top-40 -left-40 w-[420px] h-[420px] rounded-full bg-[#7C5CFF]/10 dark:bg-[#7C5CFF]/15 blur-[100px]" />
+            <div className="absolute top-24 -right-32 w-[320px] h-[320px] rounded-full bg-[#A7D700]/[0.07] dark:bg-[#A7D700]/10 blur-[100px]" />
+            <div
+              className="absolute inset-0 opacity-70 dark:opacity-100"
+              style={{
+                backgroundImage: 'radial-gradient(rgba(10,13,18,0.10) 1px, transparent 1px)',
+                backgroundSize: '26px 26px'
+              }}
+            />
+          </div>
+          <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-50" aria-hidden>
+            <div className="absolute inset-x-0 top-0 h-[560px] [mask-image:linear-gradient(to_bottom,black,transparent)]">
+              <div inert aria-hidden className="w-full h-full">
+                <SpatialCanvas className="w-full h-full" compact />
               </div>
-              <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
-                <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">Roles, one identity</dt>
-                  <dd className="font-display text-3xl font-black tabular-nums"><AnimatedCounter value={ROLES.length} /></dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">Placement stages</dt>
-                  <dd className="font-display text-3xl font-black tabular-nums"><AnimatedCounter value={PIPELINE_STAGES.length} /></dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">Core pillars</dt>
-                  <dd className="font-display text-3xl font-black tabular-nums"><AnimatedCounter value={DEFAULT_PILLARS.length} /></dd>
-                </div>
-              </dl>
             </div>
-            <motion.div
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          </div>
+
+          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-32 sm:pt-44 pb-10 text-center">
+            <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 cf-glass text-xs font-semibold uppercase tracking-[0.14em] text-[#4B5563] dark:text-[#A7B0BF]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              The academic operating system
+            </p>
+            <h1
+              className="font-display font-bold tracking-tight leading-[1.02] mt-6 text-balance"
+              style={{ fontSize: 'clamp(3.2rem,7vw,7.5rem)' }}
             >
-              <ProductPortal />
-              <p className="mt-3 text-center text-xs text-[var(--cf-ink-mute)]">
-                A tour of the real product — switch tabs, follow any link after signing in.
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Capability marquee */}
-        <section aria-label="Capabilities" className="border-y-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] py-4">
-          <Marquee label="CampusFlow capabilities">
-            {CAPABILITIES.map(([label, to]) => (
+              Your campus.
+              <span className="block bg-gradient-to-r from-[#2563FF] via-[#7C5CFF] to-[#2563FF] bg-clip-text text-transparent">
+                In sync.
+              </span>
+            </h1>
+            <p className="mt-6 text-base sm:text-lg leading-relaxed text-[#4B5563] dark:text-[#A7B0BF] max-w-2xl mx-auto">
+              Attendance, assignments, placements and insight — moving together
+              in one workspace, one record per student.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                key={label}
-                to={to}
-                className="brutal-tag mx-2 inline-flex items-center gap-2 bg-[var(--cf-bg)] px-4 py-2 text-sm font-bold whitespace-nowrap hover:bg-volt transition-colors"
+                to="/signup"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#A7D700] text-[#0A0D12] font-semibold hover:brightness-95 transition"
               >
-                <span className="w-1.5 h-1.5 bg-royal" aria-hidden />{label}
+                Get started <ArrowRight size={17} aria-hidden />
               </Link>
-            ))}
-          </Marquee>
-        </section>
-
-        {/* Pillar bento — reorderable */}
-        <section id="system" className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-24" aria-label="System">
-          <p className="brutal-tag inline-block bg-gold text-coal px-3 py-1 text-xs font-bold uppercase tracking-wider">Architecture &amp; capabilities</p>
-          <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl lg:text-5xl mt-4 max-w-3xl" lines={['Everything your campus needs,', 'in one place.']} />
-          <p className="mt-3 text-[var(--cf-ink-mute)] max-w-xl font-medium">
-            Four pillars, one record. Drag the cards to order your own campus priorities — saved in this browser.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-sm font-mono text-[11px] font-bold uppercase">
-              <GripVertical size={14} aria-hidden /> Drag cards to reorder
-            </span>
-            {isCustomOrder && (
-              <button
-                type="button"
-                onClick={() => setPillars(DEFAULT_PILLARS)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-sm font-display text-[11px] font-bold uppercase hover:bg-volt transition-colors"
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-black/10 dark:border-white/15 cf-glass font-semibold hover:border-[#2563FF]/50 transition-colors"
               >
-                <RotateCcw size={13} aria-hidden /> Reset order
-              </button>
-            )}
+                Sign in <ArrowUpRight size={17} aria-hidden />
+              </Link>
+            </div>
+            <Link
+              to="/dashboard"
+              className="inline-block mt-5 text-sm font-semibold text-[#2563FF] dark:text-[#7DA6FF] hover:underline underline-offset-4"
+            >
+              Explore the live workspace →
+            </Link>
           </div>
-          <BentoGrid className="mt-8 md:grid-cols-6">
-            {pillars.map(({ id, Icon, title, body, tint, to, action }, index) => (
-              <div
-                key={id}
-                draggable
-                onDragStart={(e) => { setDragged(index); e.dataTransfer.effectAllowed = 'move'; }}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(index); }}
-                onDrop={(e) => onDropPillar(e, index)}
-                onDragEnd={() => { setDragged(null); setDragOver(null); }}
-                className={cn(
-                  'card-brutal p-6 sm:p-7 flex flex-col justify-between gap-5 cursor-grab active:cursor-grabbing select-none',
-                  PILLAR_SPANS[index],
-                  dragged === index && 'opacity-40',
-                  dragOver === index && dragged !== index && 'outline-4 outline-volt'
-                )}
-                aria-label={`${title}, priority ${index + 1} of ${pillars.length}`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={cn('w-14 h-14 border-2 border-[var(--cf-ink)] grid place-items-center shadow-brutal-sm', tint)} aria-hidden>
-                      <Icon size={26} strokeWidth={2.5} className={tint === 'bg-royal' || tint === 'bg-flag' ? 'text-white' : 'text-coal'} />
-                    </span>
-                    <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()} onDragStart={(e) => e.preventDefault()}>
-                      <button type="button" disabled={index === 0} onClick={() => movePillar(index, 'up')} aria-label={`Move ${title} up`} className="p-1 border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] hover:bg-volt transition-colors disabled:opacity-30">
-                        <ChevronUp size={13} />
-                      </button>
-                      <button type="button" disabled={index === pillars.length - 1} onClick={() => movePillar(index, 'down')} aria-label={`Move ${title} down`} className="p-1 border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] hover:bg-volt transition-colors disabled:opacity-30">
-                        <ChevronDown size={13} />
-                      </button>
-                      <span className="font-display font-black text-lg bg-frame text-volt px-2.5 py-1 border-2 border-[var(--cf-ink)] ml-1" aria-hidden>
-                        {`0${index + 1}`}
-                      </span>
-                    </span>
-                  </div>
-                  <h3 className="font-display text-2xl font-black uppercase tracking-tight mt-5">{title}</h3>
-                  <p className="mt-2 text-sm text-[var(--cf-ink-mute)] leading-relaxed max-w-[52ch]">{body}</p>
-                </div>
-                <Link to={to} className="font-display text-xs font-black uppercase flex items-center gap-1.5 hover:bg-volt px-1 py-0.5 w-fit transition-colors">
-                  {action} <span aria-hidden>→</span>
-                </Link>
-              </div>
-            ))}
-          </BentoGrid>
-        </section>
 
-        {/* Role cards */}
-        <section id="roles" className="border-y-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)]" aria-label="Who it's for">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-24">
-            <p className="brutal-tag inline-block bg-volt px-3 py-1 text-xs font-bold uppercase tracking-wider">Role-based workspaces</p>
-            <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl lg:text-5xl mt-4 max-w-2xl" lines={['One platform.', 'Four tailored experiences.']} />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
-              {ROLES_CARDS.map(({ Icon, tag, title, body, points }, i) => (
-                <article key={tag} className="card-brutal role-card-animated p-6 flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <span className="brutal-tag bg-gold px-2.5 py-1 text-[11px] font-bold uppercase">{tag}</span>
-                    <span className="font-mono text-xs font-bold text-[var(--cf-ink-mute)]" aria-hidden>{`0${i + 1}/04`}</span>
-                  </div>
-                  <span className="role-card-icon w-12 h-12 border-2 border-[var(--cf-ink)] bg-[var(--cf-bg)] grid place-items-center shadow-brutal-sm" aria-hidden>
-                    <Icon size={22} strokeWidth={2.5} />
+          {/* full-width glass product preview */}
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-4">
+            <div className="cf-glass rounded-[32px] border border-black/10 dark:border-white/10 overflow-hidden shadow-2xl shadow-[#2563FF]/[0.08] dark:shadow-black/50">
+              {/* telemetry header row */}
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-black/10 dark:border-white/10">
+                <div className="flex items-center gap-1.5" aria-hidden>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                </div>
+                <p className="hidden sm:block font-mono text-xs text-[#4B5563] dark:text-[#707A89] px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10">
+                  campusflow.app/dashboard
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#4B5563] dark:text-[#A7B0BF] border border-black/10 dark:border-white/10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
+                    Live workspace
                   </span>
-                  <div>
-                    <h3 className="font-display text-xl font-black uppercase tracking-tight">{title}</h3>
-                    <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">{body}</p>
+                  <span className="hidden sm:inline-flex px-2.5 py-1.5 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
+                    ⌘K
+                  </span>
+                </div>
+              </div>
+              {/* bento: radial + funnel + terminal */}
+              <div className="grid md:grid-cols-3 gap-3.5 sm:gap-4 p-4 sm:p-5">
+                <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-5">
+                  <p className={kicker}>Academic pulse</p>
+                  <div className="mt-4 flex items-center justify-center" aria-hidden>
+                    <svg width="140" height="140" viewBox="0 0 140 140" role="presentation">
+                      <circle cx="70" cy="70" r="58" fill="none" strokeWidth="12" className="stroke-black/10 dark:stroke-white/10" />
+                      <circle cx="70" cy="70" r="58" fill="none" stroke="#2563FF" strokeWidth="12" strokeLinecap="round" strokeDasharray="240 365" transform="rotate(-90 70 70)" />
+                      <circle cx="70" cy="70" r="58" fill="none" stroke="#A7D700" strokeWidth="12" strokeDasharray="52 365" strokeDashoffset="-240" transform="rotate(-90 70 70)" />
+                      <circle cx="70" cy="70" r="58" fill="none" stroke="#7C5CFF" strokeWidth="12" strokeDasharray="30 365" strokeDashoffset="-292" transform="rotate(-90 70 70)" />
+                    </svg>
                   </div>
-                  <ul className="space-y-1.5 text-sm">
-                    {points.map(([label, to]) => (
-                      <li key={label}>
-                        <Link to={to} className="flex items-center justify-between px-3 py-1.5 border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] text-[13px] font-bold hover:bg-volt transition-colors">
-                          {label}<ArrowUpRight size={13} aria-hidden />
-                        </Link>
+                  <ul className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-[#4B5563] dark:text-[#A7B0BF]">
+                    <li className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#2563FF]" aria-hidden />Present</li>
+                    <li className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#A7D700]" aria-hidden />On duty</li>
+                    <li className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#7C5CFF]" aria-hidden />Absent</li>
+                  </ul>
+                  <p className="mt-3 text-center text-[13px] text-[#4B5563] dark:text-[#A7B0BF]">
+                    Per-subject attendance health
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-5">
+                  <p className={kicker}>Placement funnel</p>
+                  <ol className="mt-4 space-y-2">
+                    {PIPELINE_STAGES.map((s, i) => (
+                      <li
+                        key={s}
+                        className="flex items-center gap-3 px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold"
+                      >
+                        <span className="font-mono text-[11px] text-[#4B5563] dark:text-[#707A89]" aria-hidden>
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        {roleLabel(s)}
                       </li>
                     ))}
-                  </ul>
-                  <Link to="/login" className="role-card-arrow mt-auto font-display text-xs font-black uppercase underline underline-offset-4 decoration-gold decoration-2">
-                    Sign in to enter →
-                  </Link>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Storytelling splits */}
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-24 space-y-16 sm:space-y-24" aria-label="Campus in depth">
-          <section className="grid lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">01 — Living twin</p>
-              <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl mt-3" lines={['A living twin', 'of your university.']} />
-              <p className="mt-4 text-[var(--cf-ink-mute)] max-w-md leading-relaxed">
-                Academics, people, placements and insight rendered as one place you can walk through — not tabs you drown in.
-              </p>
-              <Link to="/dashboard" className={cn(btnClass('secondary', 'medium'), 'mt-6')}>
-                Open the dashboard <ArrowUpRight size={15} aria-hidden />
-              </Link>
-            </div>
-            <div className="h-[300px] sm:h-[380px] border-2 border-[var(--cf-ink)] shadow-brutal-lg overflow-hidden" aria-label="3D campus preview">
-              <SpatialCanvas className="w-full h-full" compact={false} />
-            </div>
-          </section>
-          <section className="grid lg:grid-cols-2 gap-8 items-center lg:[&>*:first-child]:order-2">
-            <div>
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">02 — Structured work</p>
-              <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl mt-3" lines={['Looks like a campus.', 'Works like software.']} />
-              <p className="mt-4 text-[var(--cf-ink-mute)] max-w-md leading-relaxed">
-                Enrollment, attendance and grading become structured, searchable data underneath a familiar campus feel — with audit trails on the moments that matter.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link to="/requests" className={cn(btnClass('secondary', 'medium'))}>
-                  Requests <ArrowUpRight size={15} aria-hidden />
-                </Link>
-                <Link to="/directory" className={cn(btnClass('secondary', 'medium'))}>
-                  Directory <ArrowUpRight size={15} aria-hidden />
-                </Link>
-              </div>
-            </div>
-            <div className="relative h-[300px] sm:h-[380px] border-2 border-[var(--cf-ink)] shadow-brutal-lg bg-[var(--cf-surface)] overflow-hidden" aria-hidden>
-              <div className="absolute inset-0 grid place-items-center">
-                <Building2 size={110} strokeWidth={0.7} className="opacity-15" />
-              </div>
-              <ol className="absolute inset-x-5 bottom-5 top-5 flex flex-col justify-end gap-2">
-                {['One record per student', 'Evidence beside every insight', 'Audit trails on key actions'].map((t, i) => (
-                  <li key={t} className="flex items-center gap-3 bg-[var(--cf-bg)] border-2 border-[var(--cf-ink)] px-3.5 py-2.5 text-sm font-bold shadow-brutal-sm">
-                    <span className="font-display font-black bg-frame text-volt w-6 h-6 grid place-items-center text-xs shrink-0">{i + 1}</span>
-                    {t}
-                  </li>
-                ))}
-              </ol>
-              <span className="font-display italic absolute top-4 right-5 text-6xl opacity-20">02</span>
-            </div>
-          </section>
-        </div>
-
-        {/* RBAC access matrix */}
-        <section id="access" className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-24" aria-label="Role access">
-          <p className="brutal-tag inline-block bg-frame text-volt px-3 py-1 text-xs font-bold uppercase tracking-wider">Access</p>
-          <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl mt-4 max-w-2xl" lines={['One identity.', 'Right-sized access.']} />
-          <div className="card-brutal mt-10 overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <caption className="sr-only">Capability access by role</caption>
-              <thead>
-                <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)] border-b-2 border-[var(--cf-ink)]">
-                  <th scope="col" className="px-4 py-3 font-bold">Capability</th>
-                  <th scope="col" className="px-4 py-3 font-bold text-center">Student</th>
-                  <th scope="col" className="px-4 py-3 font-bold text-center">Faculty</th>
-                  <th scope="col" className="px-4 py-3 font-bold text-center">Placement</th>
-                  <th scope="col" className="px-4 py-3 font-bold text-center">Admin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--cf-line)]">
-                {MATRIX_ROWS.map((r) => (
-                  <tr key={r.cap}>
-                    <td className="px-4 py-3 font-bold">
-                      <Link to={r.to} className="hover:bg-volt px-1 transition-colors">{r.cap}</Link>
-                    </td>
-                    <td className="px-4 py-3 text-center"><MatrixCheck on={r.student} /></td>
-                    <td className="px-4 py-3 text-center"><MatrixCheck on={r.faculty} /></td>
-                    <td className="px-4 py-3 text-center"><MatrixCheck on={r.placement} /></td>
-                    <td className="px-4 py-3 text-center"><MatrixCheck on={r.admin} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-xs text-[var(--cf-ink-mute)] max-w-3xl">
-            Admin covers <strong>super_admin</strong> and <strong>college_admin</strong>: both share the same route set in this build.
-            super_admin is reserved for multi-college scope; college_admin governs a single institution. Accounts are provisioned by your institution — sign in to enter the workspace your role unlocks.
-          </p>
-        </section>
-
-        {/* Journey + readiness checklist */}
-        <section id="journey" className="border-y-2 border-[var(--cf-ink)] bg-[var(--cf-surface)]" aria-label="How CampusFlow works">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-24">
-            <SplitReveal className="font-display font-black uppercase tracking-tight text-3xl sm:text-4xl max-w-2xl" lines={['From admission', 'to offer letter.']} />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
-              {JOURNEY.map((j) => (
-                <Link key={j.n} to={j.to} className="card-brutal p-6 block hover:bg-volt/20">
-                  <p className="font-display italic text-4xl opacity-30" aria-hidden>{j.n}</p>
-                  <h3 className="font-display font-black uppercase tracking-tight text-lg mt-2">{j.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">{j.body}</p>
-                </Link>
-              ))}
-            </div>
-            <div className="card-brutal mt-6 p-6 sm:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="font-display text-lg font-black uppercase tracking-tight">
-                  Readiness checklist <span className="font-mono text-sm font-bold text-[var(--cf-ink-mute)]">{readyCount}/{READINESS_ITEMS.length}</span>
-                </h3>
-                <div className="w-full sm:w-56 h-3.5 bg-[var(--cf-bg)] border-2 border-[var(--cf-ink)]" role="progressbar" aria-valuenow={readyCount} aria-valuemin={0} aria-valuemax={READINESS_ITEMS.length} aria-label="Setup readiness">
-                  <div className="h-full bg-volt border-r-2 border-[var(--cf-ink)] transition-all" style={{ width: `${(readyCount / READINESS_ITEMS.length) * 100}%` }} />
+                  </ol>
+                  <p className="mt-3 text-[13px] text-[#4B5563] dark:text-[#A7B0BF]">
+                    {PIPELINE_STAGES.length} stages, one visible pipeline
+                  </p>
+                </div>
+                <div className="rounded-[24px] bg-[#0A0D12] dark:bg-black/60 border border-black dark:border-white/10 p-5 overflow-hidden">
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#707A89]">
+                    Live log
+                  </p>
+                  <div className="mt-3 space-y-2 font-mono text-[12px] leading-relaxed">
+                    {LOG_LINES.map((line, i) => (
+                      <p
+                        key={line}
+                        className={i === 0 ? 'text-[#F5F7FA]' : line.startsWith('ok') ? 'text-[#A7D700]' : 'text-[#A7B0BF]'}
+                      >
+                        {line}
+                      </p>
+                    ))}
+                    <p className="text-[#F5F7FA]">
+                      <span className="inline-block w-2 h-4 bg-[#A7D700] align-middle animate-pulse" aria-hidden />
+                    </p>
+                  </div>
                 </div>
               </div>
-              <ul className="mt-5 grid sm:grid-cols-2 gap-2.5">
-                {READINESS_ITEMS.map((item) => {
-                  const done = Boolean(readiness[item.id]);
-                  return (
-                    <li key={item.id} className={cn('flex items-center gap-3 border-2 border-[var(--cf-ink)] px-3.5 py-2.5 text-sm font-bold', done ? 'bg-volt/40' : 'bg-[var(--cf-bg)]')}>
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={done}
-                        aria-label={item.label}
-                        onClick={() => setReadiness((r) => ({ ...r, [item.id]: !r[item.id] }))}
-                        className={cn('w-5 h-5 grid place-items-center border-2 border-[var(--cf-ink)] shrink-0 transition-colors', done ? 'bg-frame text-volt' : 'bg-[var(--cf-surface)]')}
-                      >
-                        {done && <Check size={13} strokeWidth={3.5} />}
-                      </button>
-                      <Link to={item.to} className="hover:underline underline-offset-4">{item.label}</Link>
-                    </li>
-                  );
-                })}
+            </div>
+            <p className="mt-3 text-center text-[13px] text-[#4B5563] dark:text-[#707A89]">
+              A preview of the real product — sign in to enter.
+            </p>
+          </div>
+        </section>
+
+        {/* (3) counter bar */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14" aria-label="CampusFlow at a glance">
+          <TrustBar />
+        </section>
+
+        {/* (4) role-tabbed portal */}
+        <section id="platform" className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14" aria-label="Product tour">
+          <p className={kicker}>Platform</p>
+          <h2 className={h2}>Tour the real product.</h2>
+          <p className={sub}>
+            Switch tabs to preview each workspace. Every link opens the real
+            route after signing in.
+          </p>
+          <div className="mt-7">
+            <ProductPortal />
+          </div>
+        </section>
+
+        {/* (5) asymmetric intelligence bento */}
+        <section id="intelligence" className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14" aria-label="Intelligence">
+          <p className={kicker}>Intelligence</p>
+          <h2 className={h2}>Signals, not noise.</h2>
+          <p className={sub}>
+            Attendance health, queue movement and pipeline position — each
+            insight ships with its evidence attached.
+          </p>
+          <div className="mt-7 grid lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <div className={`${glassCard} p-5 sm:p-6 lg:col-span-2`}>
+              <p className={kicker}>Attendance gauge</p>
+              <div className="mt-5" aria-hidden>
+                <svg viewBox="0 0 200 110" className="w-full max-w-[260px] mx-auto" role="presentation">
+                  <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" strokeWidth="16" strokeLinecap="round" className="stroke-black/10 dark:stroke-white/10" />
+                  <path d="M 20 100 A 80 80 0 0 1 115 24" fill="none" stroke="#2563FF" strokeWidth="16" strokeLinecap="round" />
+                  <path d="M 122 27 A 80 80 0 0 1 150 46" fill="none" stroke="#A7D700" strokeWidth="16" strokeLinecap="round" />
+                  <path d="M 155 52 A 80 80 0 0 1 180 100" fill="none" stroke="#7C5CFF" strokeWidth="16" strokeLinecap="round" />
+                </svg>
+              </div>
+              <ul className="mt-4 space-y-1.5 text-[13px] font-medium text-[#4B5563] dark:text-[#A7B0BF]">
+                <li className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#2563FF]" aria-hidden />Present — marked in the live matrix</li>
+                <li className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#A7D700]" aria-hidden />On duty — approved leave shapes</li>
+                <li className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#7C5CFF]" aria-hidden />Absent — watch-list inputs</li>
+              </ul>
+              <p className="mt-3 text-[13px] text-[#4B5563] dark:text-[#A7B0BF]">
+                Shapes from the live attendance matrix.
+              </p>
+            </div>
+            <div className={`${glassCard} p-5 sm:p-6 lg:col-span-3`}>
+              <p className={kicker}>Attention queue</p>
+              <ul className="mt-4 space-y-3">
+                {ALERTS.map((a) => (
+                  <li
+                    key={a.title}
+                    className="flex gap-3.5 px-4 py-3.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03]"
+                  >
+                    <span className="mt-0.5 w-9 h-9 shrink-0 rounded-full grid place-items-center bg-[#2563FF]/10 dark:bg-[#2563FF]/15 text-[#2563FF] dark:text-[#7DA6FF]" aria-hidden>
+                      <Bell size={16} />
+                    </span>
+                    <div>
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-[#4B5563] dark:text-[#707A89]">
+                        {a.tag}
+                      </p>
+                      <p className="font-display font-semibold text-[15px]">{a.title}</p>
+                      <p className="mt-0.5 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">
+                        {a.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </div>
-          </div>
-        </section>
-
-        {/* Trust band — generic institution types only */}
-        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center" aria-label="Who CampusFlow is built for">
-          <p className="brutal-tag inline-block bg-[var(--cf-surface)] px-3 py-1 text-xs font-bold uppercase tracking-wider">Built for campuses like yours</p>
-          <div className="mt-6"><TrustBar /></div>
-          <div className="mt-8 grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
-            <figure className="card-brutal p-5">
-              <blockquote className="font-display text-lg font-bold leading-snug">“One record per student, from admission to offer — nothing slips through the cracks.”</blockquote>
-              <figcaption className="mt-2 font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">The product promise — not a customer quote</figcaption>
-            </figure>
-            <figure className="card-brutal p-5">
-              <blockquote className="font-display text-lg font-bold leading-snug">“Every insight ships with its evidence attached. Never a black box.”</blockquote>
-              <figcaption className="mt-2 font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">How reporting works — not a customer quote</figcaption>
-            </figure>
-          </div>
-        </section>
-
-        {/* Black CTA + volt bar */}
-        <section className="bg-frame text-cream border-y-2 border-[var(--cf-ink)]" aria-label="Get started">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-            <p className="brutal-tag inline-block bg-volt text-coal px-3 py-1 text-xs font-bold uppercase tracking-wider">Get started</p>
-            <h2 className="font-display font-black uppercase tracking-tight text-3xl sm:text-5xl mt-4">Your campus, finally in focus.</h2>
-            <p className="mt-3 text-cream/70 max-w-md mx-auto">Sign in to step into the workspace your role unlocks — or create your account to begin.</p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <Link to="/login" className={cn(btnClass('glow', 'large'))}>Sign in <ArrowRight size={17} aria-hidden /></Link>
-              <Link to="/signup" className="btn-brutal inline-flex items-center gap-2 rounded-[10px] font-display font-bold px-6 py-3 bg-cream text-coal hover:bg-volt">
-                Create account <ArrowUpRight size={17} aria-hidden />
-              </Link>
+            <div className={`${glassCard} p-5 sm:p-6 lg:col-span-5 overflow-x-auto`}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className={kicker}>Placement pipeline</p>
+                  <p className="mt-2 font-display font-semibold text-lg">Every stage, one table.</p>
+                </div>
+                <Link
+                  to="/placement"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563FF] dark:text-[#7DA6FF] hover:underline underline-offset-4"
+                >
+                  Open placement <ArrowUpRight size={15} aria-hidden />
+                </Link>
+              </div>
+              <table className="mt-4 w-full text-sm min-w-[480px]">
+                <caption className="sr-only">Placement pipeline stages</caption>
+                <thead>
+                  <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-[#4B5563] dark:text-[#707A89] border-b border-black/10 dark:border-white/10">
+                    <th scope="col" className="py-2.5 pr-4 font-semibold">Order</th>
+                    <th scope="col" className="py-2.5 pr-4 font-semibold">Stage</th>
+                    <th scope="col" className="py-2.5 font-semibold">Movement</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                  {PIPELINE_STAGES.map((s, i) => (
+                    <tr key={s}>
+                      <td className="py-2.5 pr-4 font-mono text-xs text-[#4B5563] dark:text-[#707A89]">
+                        {String(i + 1).padStart(2, '0')}
+                      </td>
+                      <td className="py-2.5 pr-4 font-semibold">{roleLabel(s)}</td>
+                      <td className="py-2.5 text-[13px] text-[#4B5563] dark:text-[#A7B0BF]">
+                        {i < PIPELINE_STAGES.length - 1
+                          ? `Advances to ${roleLabel(PIPELINE_STAGES[i + 1])}`
+                          : 'Hired — the offer letter'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="racing-stripe h-2.5" aria-hidden />
+        </section>
+
+        {/* (6) role cards */}
+        <section id="roles" className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14" aria-label="Who it's for">
+          <p className={kicker}>Roles</p>
+          <h2 className={h2}>One platform. Four tailored experiences.</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 mt-7">
+            {ROLE_CARDS.map(({ Icon, tag, title, body, points }) => (
+              <Link
+                key={tag}
+                to="/login"
+                className={`group ${glassCard} p-6 flex flex-col gap-4 hover:border-[#2563FF]/40 dark:hover:border-[#2563FF]/50 transition-colors`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[#2563FF]/10 dark:bg-[#2563FF]/15 text-[#2563FF] dark:text-[#7DA6FF]">
+                    {tag}
+                  </span>
+                  <span className="w-10 h-10 rounded-2xl grid place-items-center border border-black/10 dark:border-white/10 text-[#4B5563] dark:text-[#A7B0BF]" aria-hidden>
+                    <Icon size={19} />
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-semibold tracking-tight">{title}</h3>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">{body}</p>
+                </div>
+                <p className="text-xs text-[#4B5563] dark:text-[#707A89]">{points}</p>
+                <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563FF] dark:text-[#7DA6FF]">
+                  Enter workspace
+                  <ArrowRight size={15} aria-hidden className="transition-transform duration-200 group-hover:translate-x-1.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* (7) cinematic CTA */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14" aria-label="Get started">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0A0D12] px-6 py-16 sm:py-24 text-center">
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+              <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[640px] h-[380px] rounded-full bg-[#2563FF]/30 blur-[110px]" />
+              <div className="absolute -bottom-40 -left-24 w-[380px] h-[380px] rounded-full bg-[#7C5CFF]/20 blur-[100px]" />
+              <div className="absolute -bottom-40 -right-24 w-[300px] h-[300px] rounded-full bg-[#A7D700]/10 blur-[100px]" />
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: 'radial-gradient(rgba(255,255,255,0.09) 1px, transparent 1px)',
+                  backgroundSize: '26px 26px'
+                }}
+              />
+            </div>
+            <div className="relative">
+              <p className="inline-flex px-4 py-1.5 rounded-full border border-white/15 text-xs font-semibold uppercase tracking-[0.14em] text-[#A7B0BF]">
+                Get started
+              </p>
+              <h2 className="font-display font-bold tracking-tight text-balance text-white mt-5 text-3xl sm:text-5xl">
+                Bring your campus in sync.
+              </h2>
+              <p className="mt-4 text-[#A7B0BF] max-w-md mx-auto">
+                Sign in to step into the workspace your role unlocks — or create
+                your account to begin.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#A7D700] text-[#0A0D12] font-semibold hover:brightness-95 transition"
+                >
+                  Create account <ArrowRight size={17} aria-hidden />
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-white/20 text-white font-semibold hover:bg-white/10 transition-colors"
+                >
+                  Sign in <ArrowUpRight size={17} aria-hidden />
+                </Link>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 
-      <footer className="bg-[var(--cf-surface)]">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 grid gap-8 md:grid-cols-[1.2fr_2fr]">
-          <div>
-            <p className="flex items-center gap-2.5">
-              <span className="w-8 h-8 bg-frame text-volt grid place-items-center font-display font-bold text-sm border-2 border-[var(--cf-ink)]" aria-hidden>C</span>
-              <span className="font-display font-bold tracking-tight text-lg">CampusFlow</span>
-            </p>
-            <p className="mt-2 text-sm text-[var(--cf-ink-mute)]">The digital campus itself.</p>
-          </div>
-          <nav className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-sm" aria-label="Footer">
-            <div>
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">Product</h3>
-              <ul className="mt-2.5 space-y-1.5 font-bold">
-                <li><Link to="/dashboard" className="hover:bg-volt px-0.5">Dashboard</Link></li>
-                <li><Link to="/placement" className="hover:bg-volt px-0.5">Placement</Link></li>
-                <li><Link to="/attendance" className="hover:bg-volt px-0.5">Attendance</Link></li>
-                <li><Link to="/assignments" className="hover:bg-volt px-0.5">Assignments</Link></li>
-                <li><Link to="/ai-reports" className="hover:bg-volt px-0.5">AI reports</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">Campus</h3>
-              <ul className="mt-2.5 space-y-1.5 font-bold">
-                <li><Link to="/directory" className="hover:bg-volt px-0.5">Directory</Link></li>
-                <li><Link to="/events" className="hover:bg-volt px-0.5">Events</Link></li>
-                <li><Link to="/study" className="hover:bg-volt px-0.5">Study</Link></li>
-                <li><Link to="/requests" className="hover:bg-volt px-0.5">Requests</Link></li>
-                <li><Link to="/enrollments" className="hover:bg-volt px-0.5">Enrollments</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">Admin</h3>
-              <ul className="mt-2.5 space-y-1.5 font-bold">
-                <li><Link to="/users" className="hover:bg-volt px-0.5">Users</Link></li>
-                <li><Link to="/departments" className="hover:bg-volt px-0.5">Departments</Link></li>
-                <li><Link to="/courses" className="hover:bg-volt px-0.5">Courses</Link></li>
-                <li><Link to="/subjects" className="hover:bg-volt px-0.5">Subjects</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">Account</h3>
-              <ul className="mt-2.5 space-y-1.5 font-bold">
-                <li><Link to="/login" className="hover:bg-volt px-0.5">Sign in</Link></li>
-                <li><Link to="/signup" className="hover:bg-volt px-0.5">Create account</Link></li>
-                <li><Link to="/profile" className="hover:bg-volt px-0.5">Profile</Link></li>
-                <li><Link to="/onboarding" className="hover:bg-volt px-0.5">Onboarding</Link></li>
-              </ul>
-            </div>
+      {/* single-row footer */}
+      <footer className="border-t border-black/10 dark:border-white/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <p className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-full bg-[#2563FF] text-white grid place-items-center font-display font-bold text-xs" aria-hidden>
+              C
+            </span>
+            <span className="font-display font-semibold tracking-tight">CampusFlow</span>
+            <span className="text-xs text-[#4B5563] dark:text-[#707A89]">
+              © {new Date().getFullYear()}
+            </span>
+          </p>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm font-medium" aria-label="Footer">
+            <Link to="/dashboard" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white transition-colors">Dashboard</Link>
+            <Link to="/placement" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white transition-colors">Placement</Link>
+            <Link to="/login" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white transition-colors">Sign in</Link>
+            <Link to="/signup" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white transition-colors">Create account</Link>
           </nav>
-        </div>
-        <div className="border-t-2 border-[var(--cf-ink)]">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">© {new Date().getFullYear()} CampusFlow</p>
-            <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold" aria-label="Sections">
-              {NAV.map((n) => <a key={n.href} href={n.href} className="hover:bg-volt px-0.5">{n.label}</a>)}
-            </nav>
-          </div>
         </div>
       </footer>
     </div>

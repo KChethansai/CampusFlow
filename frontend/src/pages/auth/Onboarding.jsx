@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { btnClass, cn, labelClass } from '../../system/tokens';
+import { btnClass, cn, inputClass, labelClass } from '../../system/tokens';
 import AuthLayout from './AuthLayout';
 
 const STEP_COPY = {
@@ -17,21 +17,21 @@ const STEP_COPY = {
 };
 
 const AVATARS = [
-  { id: 'scholar', label: 'Scholar', bg: 'bg-royal' },
+  { id: 'scholar', label: 'Scholar', bg: 'bg-[#2563FF]' },
   { id: 'mentor', label: 'Mentor', bg: 'bg-green-500' },
-  { id: 'builder', label: 'Builder', bg: 'bg-flag' },
-  { id: 'explorer', label: 'Explorer', bg: 'bg-gold' }
+  { id: 'builder', label: 'Builder', bg: 'bg-violet-500' },
+  { id: 'explorer', label: 'Explorer', bg: 'bg-cyan-500' }
 ];
 
 const PROGRESS_KEY = 'cf_onboarding_progress';
 
-const brutalInput = 'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] rounded-[10px] border-2 border-[var(--cf-ink)] shadow-brutal-sm transition-all focus:outline-none focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]';
+const glassInput = cn(inputClass, 'rounded-[14px]');
 
 function Field({ id, label, ...props }) {
   return (
     <div>
       <label htmlFor={id} className={labelClass}>{label}</label>
-      <input id={id} className={brutalInput} {...props} />
+      <input id={id} className={glassInput} {...props} />
     </div>
   );
 }
@@ -91,19 +91,20 @@ export default function Onboarding() {
       title={steps[step]}
       subtitle={`Step ${step + 1} of ${steps.length} · ${role.replace(/_/g, ' ')}`}
     >
-      {/* Brutal step tracker — numbered blocks, done = volt, current = gold */}
+      {/* Glass step tracker — numbered pills, current = primary with volt dot */}
       <ol className="flex gap-2 mb-6" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={steps.length} aria-label="Onboarding progress">
         {steps.map((label, i) => {
           const done = i < step;
           const current = i === step;
           return (
             <li key={label} className="flex-1 min-w-0" aria-current={current ? 'step' : undefined}>
-              <div className={cn('flex items-center gap-1.5 rounded-[10px] border-2 border-[var(--cf-ink)] px-2 py-1.5',
-                done ? 'bg-volt text-coal' : current ? 'bg-gold text-coal shadow-brutal-sm' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-mute)]')}>
-                <span className={cn('w-5 h-5 shrink-0 grid place-items-center rounded-[6px] border-2 border-[var(--cf-ink)] text-[10px] font-display font-bold',
-                  done || current ? 'bg-[var(--cf-surface)] text-[var(--cf-ink)]' : 'bg-transparent')}>
+              <div className={cn('flex items-center gap-1.5 rounded-full border px-2 py-1.5',
+                current ? 'border-[#2563FF]/40 bg-[#2563FF] text-white' : done ? 'border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink)]' : 'border-[var(--cf-line)] bg-transparent text-[var(--cf-ink-mute)]')}>
+                <span className={cn('w-5 h-5 shrink-0 grid place-items-center rounded-full text-[10px] font-display font-bold',
+                  current ? 'bg-white/20 text-white' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]')}>
                   {done ? '✓' : i + 1}
                 </span>
+                {current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A7D700]" aria-hidden />}
                 <span className="truncate text-[11px] font-display font-semibold hidden sm:block">{label}</span>
               </div>
             </li>
@@ -125,10 +126,10 @@ export default function Onboarding() {
                     role="radio"
                     aria-checked={active}
                     onClick={() => setForm((f) => ({ ...f, avatar: a.id }))}
-                    className={cn('flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] border-2 transition-all',
-                      active ? 'border-[var(--cf-ink)] bg-gold text-coal shadow-brutal-sm' : 'border-[var(--cf-ink)] bg-[var(--cf-surface)] hover:-translate-y-0.5')}
+                    className={cn('flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition',
+                      active ? 'border-[#2563FF]/50 bg-[#2563FF]/[.06]' : 'border-[var(--cf-line)] hover:border-[var(--cf-ink-mute)]')}
                   >
-                    <span className={cn('w-9 h-9 rounded-[8px] border-2 border-[var(--cf-ink)] grid place-items-center text-white text-sm font-bold', a.bg)} aria-hidden>
+                    <span className={cn('w-9 h-9 rounded-xl grid place-items-center text-white text-sm font-bold', a.bg)} aria-hidden>
                       {(user?.name?.[0] || a.label[0]).toUpperCase()}
                     </span>
                     <span className="text-[11px] font-medium">{a.label}</span>
@@ -158,7 +159,7 @@ export default function Onboarding() {
             <Field id="ob-interests" label="Interests" placeholder="e.g. Systems, ML, Design" value={form.interests || ''} onChange={set('interests')} />
             <div>
               <label htmlFor="ob-goal" className={labelClass}>Placement goal</label>
-              <select id="ob-goal" className={brutalInput} value={form.placementGoal || 'full-time'} onChange={set('placementGoal')}>
+              <select id="ob-goal" className={glassInput} value={form.placementGoal || 'full-time'} onChange={set('placementGoal')}>
                 <option value="full-time">Full-time</option>
                 <option value="internship">Internship</option>
                 <option value="higher-studies">Higher studies</option>
@@ -186,7 +187,7 @@ export default function Onboarding() {
         {step < steps.length - 1 ? (
           <button onClick={next} className={btnClass('primary', 'large') + ' flex-1'}>Continue →</button>
         ) : (
-          <button onClick={finish} className={btnClass('glow', 'large') + ' flex-1'}>Enter CampusFlow →</button>
+          <button onClick={finish} className={btnClass('primary', 'large') + ' flex-1'}>Enter CampusFlow →</button>
         )}
       </div>
       <p className="mt-4 text-[11px] text-center text-[var(--cf-ink-mute)]">

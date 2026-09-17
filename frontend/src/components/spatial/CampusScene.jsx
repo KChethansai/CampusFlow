@@ -82,10 +82,10 @@ export function CampusSceneInner({ onHover, autoRotate }) {
       <group rotation={[0, 0, 0]}>
         <Rig autoRotate={autoRotate} />
       </group>
-      {/* ground */}
+      {/* ground — blends into the landing canvas (#07090D) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color="#0e1830" roughness={0.9} metalness={0} transparent opacity={0.92} />
+        <meshStandardMaterial color="#0b111c" roughness={0.9} metalness={0} transparent opacity={0.92} />
       </mesh>
       <ContactShadows position={[0, 0.01, 0]} opacity={0.5} scale={12} blur={2.4} far={4} />
     </>

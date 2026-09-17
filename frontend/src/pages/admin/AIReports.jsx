@@ -1,18 +1,22 @@
-// Campus Intelligence Center: BeamCard-style panel, real provider flag only.
+// Campus Intelligence Center — Intelligence Mode: dark glass cards,
+// violet→blue gradient accent border, confidence + evidence blocks.
 // Endpoints preserved: GET /ai-reports, GET /users,
-// POST /ai-reports/generate. Real data only — no mock insights.
+// POST /ai-reports/generate. Provider flag drives copy only. Real data only.
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { motion } from 'motion/react';
 import { AlertTriangle, Sparkles, TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
-import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
-import { BeamCard } from '../../components/ui/editorial';
+import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { staggerChild, staggerParent } from '../../system/motion';
-import { btnClass, labelClass, selectClass } from '../../system/tokens';
+import { btnClass, cn, labelClass, selectClass } from '../../system/tokens';
 
 const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+// Dark glass intelligence surfaces; violet→blue gradient hairline on top.
+const INTEL = 'rounded-[24px] border border-white/10 bg-[#0B1020]/80 backdrop-blur-xl p-5 relative overflow-hidden text-slate-100';
+const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#8B5CF6] via-[#6366F1] to-[#2563FF]';
 
 // Heuristic signal extraction: structured output wins; free text falls back to summary.
 const signalsOf = (report) => {
@@ -22,11 +26,19 @@ const signalsOf = (report) => {
       what: i.what || i.title || 'Signal',
       why: i.why || i.reason || '',
       next: i.next || i.action || '',
-      evidence: i.evidence || ''
+      evidence: i.evidence || '',
+      confidence: i.confidence ?? null
     }));
   }
-  if (out.summary) return [{ what: out.summary, why: '', next: '', evidence: '' }];
+  if (out.summary) return [{ what: out.summary, why: '', next: '', evidence: '', confidence: null }];
   return [];
+};
+
+// Confidence is derived from provenance only: live provider + evidence > snapshot.
+const confidenceOf = (report, signal) => {
+  if (signal?.confidence != null) return signal.confidence;
+  if (report.provider === 'none') return 'Snapshot — unranked';
+  return signal?.evidence ? 'High — evidence-backed' : 'Medium — model read';
 };
 
 export default function AIReports() {
@@ -77,20 +89,21 @@ export default function AIReports() {
       <PageHeader title="Campus Intelligence" subtitle="What changed, why it matters, and what happens next — with evidence." />
 
       {unconfigured && (
-        <p className="card-brutal mb-4 flex items-start gap-2 bg-gold px-4 py-3 text-xs font-semibold text-coal">
-          <AlertTriangle size={15} className="shrink-0 mt-0.5" aria-hidden />
+        <p className="cf-glass rounded-[14px] border border-[var(--cf-line)] mb-4 flex items-start gap-2 px-4 py-3 text-xs font-semibold">
+          <AlertTriangle size={15} className="shrink-0 mt-0.5 text-[#FFBD4A]" aria-hidden />
           The AI provider isn’t configured on the server, so reports are stored snapshots rather than live insights. Set OPENAI_API_KEY to activate full analysis.
         </p>
       )}
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="space-y-4">
-          {/* BeamCard-style generator — real provider flag drives copy only */}
-          <BeamCard>
+          {/* Generator — Intelligence Mode dark glass */}
+          <section className={INTEL} aria-label="Generate insight">
+            <span className={GRADIENT_LINE} aria-hidden />
             <form onSubmit={handleSubmit(onGenerate)} className="space-y-3">
               <div>
-                <label htmlFor="studentId" className={labelClass}>Analyze student</label>
-                <select id="studentId" className={selectClass} {...register('studentId')}>
+                <label htmlFor="studentId" className={cn(labelClass, '!text-slate-300')}>Analyze student</label>
+                <select id="studentId" className={cn(selectClass, '!bg-white/5 !border-white/10 !text-slate-100')} {...register('studentId')}>
                   <option value="">Select student</option>
                   {students.map((s) => (
                     <option key={s._id} value={s._id}>{s.name}{s.profile?.rollNumber ? ` (${s.profile.rollNumber})` : ''}</option>
@@ -101,10 +114,10 @@ export default function AIReports() {
                 <Sparkles size={15} aria-hidden /> {generating ? 'Analyzing…' : 'Generate insight'}
               </button>
             </form>
-          </BeamCard>
+          </section>
 
-          <Card className="p-2">
-            <p className="px-2 pt-1 pb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Reports · {reports.length}</p>
+          <section className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-2" aria-label="Reports">
+            <p className="px-3 pt-2 pb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Reports · {reports.length}</p>
             {loading ? <LoadingState /> : reports.length === 0 ? (
               <EmptyState title="No reports yet" hint="Generate the first insight above." />
             ) : (
@@ -114,7 +127,10 @@ export default function AIReports() {
                     <button
                       onClick={() => setSelected(r)}
                       aria-current={selected?._id === r._id}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition ${selected?._id === r._id ? 'border-[var(--cf-ink)] bg-volt/40' : 'border-transparent hover:bg-black/[.03] dark:hover:bg-white/[.05]'}`}
+                      className={cn('w-full text-left px-3 py-2.5 rounded-[14px] border transition',
+                        selected?._id === r._id
+                          ? 'border-[#8B5CF6]/60 bg-[#8B5CF6]/10'
+                          : 'border-transparent hover:bg-black/[.03] dark:hover:bg-white/[.05]')}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium truncate">{r.student?.name || 'Student'}</span>
@@ -126,40 +142,60 @@ export default function AIReports() {
                 ))}
               </ul>
             )}
-          </Card>
+          </section>
         </div>
 
         <div className="lg:col-span-2">
           {!selected ? (
-            <Card><EmptyState title="Select a report" hint="Insights with evidence will appear here." /></Card>
+            <div className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5">
+              <EmptyState title="Select a report" hint="Insights with evidence will appear here." />
+            </div>
           ) : (
             <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" key={selected._id} className="space-y-3">
               <motion.div variants={staggerChild}>
-                <div className="card-brutal bg-frame text-white p-5">
+                <section className={INTEL} aria-label="Report header">
+                  <span className={GRADIENT_LINE} aria-hidden />
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h2 className="font-display font-semibold flex items-center gap-1.5"><TrendingUp size={16} className="text-volt" aria-hidden /> {selected.student?.name}</h2>
-                    <span className="text-[11px] opacity-70">{fmt(selected.createdAt)}</span>
+                    <h2 className="font-display font-semibold flex items-center gap-1.5">
+                      <TrendingUp size={16} className="text-[#A7D700]" aria-hidden /> {selected.student?.name}
+                    </h2>
+                    <span className="text-[11px] text-slate-400">{fmt(selected.createdAt)}</span>
                   </div>
                   {selected.dataSnapshotHash && (
-                    <p className="text-[11px] opacity-70">Grounded snapshot <code className="px-1 rounded bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
+                    <p className="text-[11px] text-slate-400">Grounded snapshot <code className="px-1 rounded bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
                   )}
-                  <span className="brutal-tag mt-3 inline-block bg-volt text-coal px-2 py-0.5 text-[11px] font-bold uppercase tracking-widest">
-                    Provider: {selected.provider || 'none'}
-                  </span>
-                </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#8B5CF6] to-[#2563FF] text-white">
+                      Provider: {selected.provider || 'none'}
+                    </span>
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest border border-white/15 text-slate-300">
+                      {selected.provider === 'none' ? 'Confidence: snapshot' : 'Confidence: ranked per signal'}
+                    </span>
+                  </div>
+                </section>
               </motion.div>
               {signals.length === 0 && (
-                <Card><EmptyState title="Empty analysis" hint="The report carries no readable output." /></Card>
+                <div className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5">
+                  <EmptyState title="Empty analysis" hint="The report carries no readable output." />
+                </div>
               )}
               {signals.map((s, i) => (
-                <motion.article key={i} variants={staggerChild} className="card-brutal role-card-animated p-5">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary-600 dark:text-primary-300">What changed</p>
-                  <p className="font-semibold mt-0.5">{s.what}</p>
-                  {s.why && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Why it matters</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.why}</p></>)}
-                  {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">What should happen next</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.next}</p></>)}
+                <motion.article key={i} variants={staggerChild} className={INTEL}>
+                  <span className={GRADIENT_LINE} aria-hidden />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#A7D700]">What changed</p>
+                      <p className="font-semibold mt-0.5">{s.what}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-white/15 text-slate-200">
+                      {confidenceOf(selected, s)}
+                    </span>
+                  </div>
+                  {s.why && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">Why it matters</p><p className="text-sm text-slate-300 mt-0.5">{s.why}</p></>)}
+                  {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">What should happen next</p><p className="text-sm text-slate-300 mt-0.5">{s.next}</p></>)}
                   {s.evidence && (
-                    <p className="mt-3 text-xs rounded-xl bg-black/[.03] dark:bg-white/[.05] border border-[var(--cf-line)] p-3">
-                      <span className="font-semibold">Evidence: </span>{s.evidence}
+                    <p className="mt-3 text-xs rounded-[14px] bg-white/5 border border-white/10 p-3 text-slate-200">
+                      <span className="font-semibold text-[#A7D700]">Evidence: </span>{s.evidence}
                     </p>
                   )}
                 </motion.article>

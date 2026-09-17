@@ -62,13 +62,13 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
     >
       {!started || lite ? (
         <div
-          className="cf-atmosphere w-full h-full rounded-3xl border border-[var(--cf-line)] relative overflow-hidden"
+          className="cf-atmosphere w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 relative overflow-hidden"
         >
           <div className="absolute top-3 right-3 flex gap-1.5">
             <button
               onClick={() => setLowGpuInfo(true)}
               aria-label="Why am I seeing a static preview?"
-              className="p-1.5 rounded-full cf-glass border border-[var(--cf-line)] text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] transition"
+              className="p-1.5 rounded-full cf-glass border border-black/10 dark:border-white/10 text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] transition"
             >
               <Info size={14} />
             </button>
@@ -76,7 +76,7 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
               <button
                 onClick={() => { setFailed(false); setContextLost(false); setSceneKey((k) => k + 1); }}
                 aria-label="Retry 3D scene"
-                className="p-1.5 rounded-full cf-glass border border-[var(--cf-line)] text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] transition"
+                className="p-1.5 rounded-full cf-glass border border-black/10 dark:border-white/10 text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] transition"
               >
                 <RotateCcw size={14} />
               </button>
@@ -87,7 +87,7 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
               {DOMAINS.map((d) => (
                 <span
                   key={d.key}
-                  className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]"
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 cf-glass"
                 >
                   <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: d.color }} />
                   {d.label}
@@ -100,10 +100,10 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
         <ErrorBoundary onError={() => setFailed(true)}>
           <Suspense
             fallback={
-              <div className="cf-atmosphere w-full h-full rounded-3xl border border-[var(--cf-line)] animate-pulse" aria-hidden />
+              <div className="cf-atmosphere w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 animate-pulse" aria-hidden />
             }
           >
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full rounded-[24px] border border-black/10 dark:border-white/10 overflow-hidden">
               <Scene
                 key={sceneKey}
                 onHover={setHovered}
@@ -115,7 +115,7 @@ export default function SpatialCanvas({ className, style, compact, tilt = false 
                   setSceneKey((k) => k + 1); // fresh renderer on restore
                 }}
               />
-              <div className="absolute left-3 bottom-3 right-3 cf-glass rounded-2xl border border-[var(--cf-line)] px-3 py-2 pointer-events-none">
+              <div className="absolute left-3 bottom-3 right-3 cf-glass rounded-2xl border border-black/10 dark:border-white/10 px-3 py-2 pointer-events-none">
                 <DomainHint domain={hovered} />
               </div>
             </div>

@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { EmptyState, LoadingState, PageHeader, StatusPill } from '../../components/ui/primitives';
+import { EmptyState, LoadingState, PageHeader, StatusPill, Card } from '../../components/ui/primitives';
 import { btnClass } from '../../system/tokens';
 
 function MyEnrollments() {
@@ -77,26 +77,27 @@ function MyEnrollments() {
         <LoadingState label="Loading courses…" />
       ) : (
         <>
-          <h2 className="font-display text-lg font-semibold text-[var(--cf-ink)] mb-3">
-            Enrolled <span className="brutal-tag bg-volt ml-1 px-2 py-0.5 text-[11px] font-bold tabular-nums">{myEnrollments.length}</span>
+          <h2 className="font-display text-lg font-semibold text-[var(--cf-ink)] mb-3 flex items-center gap-2">
+            Enrolled
+            <span className="rounded-full border border-[var(--cf-line)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)] tabular-nums">{myEnrollments.length}</span>
           </h2>
           {myEnrollments.length === 0 ? (
-            <div className="card-brutal p-6 mb-8">
+            <Card className="mb-8">
               <p className="text-sm text-[var(--cf-ink-mute)]">
                 You are not enrolled in any courses yet. Pick one from the
                 catalog below.
               </p>
-            </div>
+            </Card>
           ) : (
-            <div className="card-brutal overflow-hidden mb-8">
+            <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden mb-8">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gold border-b-2 border-[var(--cf-ink)]">
+                  <thead className="border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
                     <tr>
-                      <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Course</th>
-                      <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Department</th>
-                      <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Year / Semester</th>
-                      <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Status</th>
+                      <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Course</th>
+                      <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Department</th>
+                      <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Year / Semester</th>
+                      <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Status</th>
                       <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
                     </tr>
                   </thead>
@@ -138,15 +139,15 @@ function MyEnrollments() {
           <h2 className="font-display text-lg font-semibold text-[var(--cf-ink)] mb-3">
             Course Catalog
           </h2>
-          <div className="card-brutal overflow-hidden">
+          <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)]">
+                <thead className="border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
                   <tr>
-                    <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Course</th>
-                    <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Code</th>
-                    <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Department</th>
-                    <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Duration</th>
+                    <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Course</th>
+                    <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Code</th>
+                    <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Department</th>
+                    <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Duration</th>
                     <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
@@ -157,7 +158,7 @@ function MyEnrollments() {
                       <tr key={course._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
                         <td className="px-4 py-3 font-medium">{course.name}</td>
                         <td className="px-4 py-3">
-                          <span className="brutal-tag bg-[var(--cf-surface-2)] px-2 py-0.5 text-[11px] font-bold">
+                          <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">
                             {course.code}
                           </span>
                         </td>

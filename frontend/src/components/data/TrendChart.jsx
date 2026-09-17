@@ -1,16 +1,18 @@
-// TrendChart: lazy-safe recharts v3 LineChart wrapper.
-// Recharts loads on mount (code-split) so dashboards never pay for it upfront.
-// Reduced-motion disables line/dot animation. Always ships a data table + summary.
+// TrendChart: lazy-safe recharts v3 AreaChart wrapper (Stitch analytics surface).
+// Props API unchanged: { data, xKey, lines, height, summary, className }.
+// Zero harsh gridlines (horizontal-only, dashed, low-opacity), gradient fills
+// #2563FF .35→0, 1.2s draw, glass tooltip, ticks in --cf-ink-mute.
+// Reduced-motion disables animation. Always ships a data table + summary.
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 
-// ponytail: fixed 3-color set, no per-theme JS — all three read on paper and coal-dark.
-const DEFAULT_COLORS = ['#0055ff', '#8b5cf6', '#e63b2e'];
+// ponytail: fixed 3-stop set, royal first — all three read on paper and coal-dark.
+const DEFAULT_COLORS = ['#2563FF', '#8B5CF6', '#25D890'];
 
 export function TrendChart({
   data = [],
   xKey = 'label',
-  lines = [{ key: 'value', color: '#0055ff' }],
+  lines = [{ key: 'value', color: '#2563FF' }],
   height = 260,
   summary,
   className
@@ -43,42 +45,67 @@ export function TrendChart({
           </div>
         ) : (
           <charts.ResponsiveContainer width="100%" height="100%">
-            <charts.LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-              <charts.CartesianGrid stroke="var(--cf-line)" strokeDasharray="3 3" />
+            <charts.AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+              <defs>
+                {lines.map((line, i) => {
+                  const c = line.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+                  return (
+                    <linearGradient key={line.key} id={`cf-area-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={c} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={c} stopOpacity={0} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+              <charts.CartesianGrid
+                vertical={false}
+                stroke="var(--cf-line)"
+                strokeOpacity={0.45}
+                strokeDasharray="4 6"
+              />
               <charts.XAxis
                 dataKey={xKey}
                 tick={{ fontSize: 11, fill: 'var(--cf-ink-mute)' }}
                 tickLine={false}
-                axisLine={{ stroke: 'var(--cf-ink)' }}
+                axisLine={{ stroke: 'var(--cf-line)' }}
               />
               <charts.YAxis
                 tick={{ fontSize: 11, fill: 'var(--cf-ink-mute)' }}
                 tickLine={false}
                 axisLine={false}
-                width={44}
+                width={40}
               />
               <charts.Tooltip
+                cursor={{ stroke: 'var(--cf-line)', strokeDasharray: '4 4' }}
                 contentStyle={{
-                  background: 'var(--cf-surface)',
-                  border: '2px solid var(--cf-ink)',
-                  borderRadius: 10,
-                  fontSize: 12
+                  background: 'color-mix(in srgb, var(--cf-surface) 82%, transparent)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid var(--cf-line)',
+                  borderRadius: 14,
+                  fontSize: 12,
+                  boxShadow: '0 12px 32px -8px rgba(16,24,40,.25)'
                 }}
               />
-              {lines.map((line, i) => (
-                <charts.Line
-                  key={line.key}
-                  type="monotone"
-                  dataKey={line.key}
-                  stroke={line.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]}
-                  strokeWidth={2.5}
-                  strokeDasharray={line.dashed ? '6 4' : undefined}
-                  dot={false}
-                   activeDot={{ r: 4, stroke: '#8b5cf6', strokeWidth: 2 }}
-                  isAnimationActive={!reduced}
-                />
-              ))}
-            </charts.LineChart>
+              {lines.map((line, i) => {
+                const c = line.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+                return (
+                  <charts.Area
+                    key={line.key}
+                    type="monotone"
+                    dataKey={line.key}
+                    stroke={c}
+                    strokeWidth={2}
+                    strokeDasharray={line.dashed ? '6 4' : undefined}
+                    fill={line.dashed ? 'none' : `url(#cf-area-${i})`}
+                    dot={false}
+                    activeDot={{ r: 4, fill: c, stroke: 'var(--cf-surface)', strokeWidth: 2 }}
+                    isAnimationActive={!reduced}
+                    animationDuration={1200}
+                  />
+                );
+              })}
+            </charts.AreaChart>
           </charts.ResponsiveContainer>
         )}
       </div>

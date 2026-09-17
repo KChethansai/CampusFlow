@@ -1,7 +1,7 @@
-// Subjects: brutal table. Endpoint preserved: GET /subjects.
+// Subjects: glass table. Endpoint preserved: GET /subjects.
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
-import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
 
 function Subjects() {
   const [subjects, setSubjects] = useState([]);
@@ -27,19 +27,19 @@ function Subjects() {
       {loading ? (
         <LoadingState label="Loading subjects…" />
       ) : subjects.length === 0 ? (
-        <div className="card-brutal p-5"><EmptyState title="No subjects found" hint="Subjects appear here once the catalog is built." /></div>
+        <Card><EmptyState title="No subjects found" hint="Subjects appear here once the catalog is built." /></Card>
       ) : (
-        <div className="card-brutal overflow-hidden">
+        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gold border-b-2 border-[var(--cf-ink)]">
+              <thead className="border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Subject</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Code</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Course</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Semester</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Credits</th>
-                  <th className="px-4 py-3 text-left font-mono text-[11px] font-bold uppercase tracking-widest">Faculty</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Subject</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Code</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Course</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Semester</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Credits</th>
+                  <th className="px-4 py-3 text-left font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">Faculty</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--cf-line)]">
@@ -47,7 +47,7 @@ function Subjects() {
                   <tr key={s._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
                     <td className="px-4 py-3 font-medium">{s.name}</td>
                     <td className="px-4 py-3">
-                      <span className="brutal-tag bg-[var(--cf-surface-2)] px-2 py-0.5 text-[11px] font-bold">
+                      <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">
                         {s.code}
                       </span>
                     </td>

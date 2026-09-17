@@ -1,5 +1,5 @@
 // Modal on Radix Dialog: focus trap, ESC, overlay + return focus come from
-// Radix. Brutal styling only. Keeps the legacy { open, onClose, title } API.
+// Radix. Cinematic glass styling. Keeps the legacy { open, onClose, title } API.
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from '../../system/tokens';
@@ -13,24 +13,23 @@ export function Modal({ open, onClose, title, children, wide, actions, descripti
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[70] bg-coal/60 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-label={typeof title === 'string' ? title : undefined}
           className={cn(
             'fixed left-1/2 top-1/2 z-[71] -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto',
-            'bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] rounded-2xl shadow-brutal-lg',
-            'focus:outline-none focus-visible:outline-[3px] focus-visible:outline-royal',
+            'glass-card bg-[var(--cf-surface)]/85 backdrop-blur-2xl border border-[var(--cf-line)] rounded-[24px] shadow-brutal-lg',
+            'focus:outline-none focus-visible:outline-[3px] focus-visible:outline-[#2563FF]',
             wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'
           )}
         >
-          <div className="racing-stripe h-2 rounded-t-[14px]" aria-hidden />
-          <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b-2 border-[var(--cf-ink)] sticky top-0 bg-[var(--cf-surface)] z-10">
+          <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-[var(--cf-line)] sticky top-0 bg-[var(--cf-surface)]/85 backdrop-blur-2xl z-10 rounded-t-[24px]">
             <Dialog.Title className="font-display text-base font-bold tracking-tight text-[var(--cf-ink)]">
               {title}
             </Dialog.Title>
             <Dialog.Close
               aria-label="Close dialog"
-              className="p-2 rounded-lg border-2 border-transparent text-[var(--cf-ink-mute)] hover:border-[var(--cf-ink)] hover:bg-volt hover:text-coal transition"
+              className="p-2 rounded-[14px] border border-transparent text-[var(--cf-ink-mute)] hover:bg-black/[.05] dark:hover:bg-white/10 hover:text-[var(--cf-ink)] focus-visible:outline-[3px] focus-visible:outline-[#2563FF] transition"
             >
               <X size={16} />
             </Dialog.Close>

@@ -1,8 +1,10 @@
-// Assignments as a task-management product: All / Upcoming / Submitted / Graded / Overdue.
-// Faculty: create, publish (status), review, grade. Students: submit.
+// Assignments as an urgency timeline: Today / This Week / Later (+ Overdue,
+// Graded rails) with priority tags. Faculty: create, publish (status),
+// review, grade. Students: submit.
 // Endpoints preserved: GET /assignments, GET /submissions, GET /subjects,
 // POST /assignments, PATCH /assignments/:id/status,
 // POST /submissions/assignments/:id, PATCH /submissions/:id.
+// Submit/grade logic untouched.
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -10,7 +12,7 @@ import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Dropzone } from '../../components/data/views';
 import { Modal } from '../../components/ui/Modal';
 
@@ -19,7 +21,8 @@ const SUBMISSION_ACCEPT = '.pdf,.doc,.docx,.txt,.md,.csv,.zip,.png,.jpg,.jpeg';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
 
-const VIEWS = ['All', 'Upcoming', 'Submitted', 'Graded', 'Overdue'];
+const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const LIFT = 'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 const classify = (a, submissions) => {
   const mine = submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(a._id));
@@ -29,6 +32,31 @@ const classify = (a, submissions) => {
   if (a.dueDate && new Date(a.dueDate).getTime() < Date.now()) return 'Overdue';
   return 'Upcoming';
 };
+
+// Urgency lane for the timeline — real due dates only.
+const laneOf = (a, submissions) => {
+  const state = classify(a, submissions);
+  if (state === 'Overdue') return 'Overdue';
+  if (state === 'Graded' || state === 'Submitted') return 'Settled';
+  if (!a.dueDate) return 'Later';
+  const ms = new Date(a.dueDate).getTime() - Date.now();
+  if (ms < 86400000) return 'Today';
+  if (ms < 86400000 * 7) return 'This Week';
+  return 'Later';
+};
+
+// Priority tags map onto the single status-pill language:
+// red = overdue/urgent, amber = due soon, green = on track.
+const priorityOf = (a, submissions) => {
+  const lane = laneOf(a, submissions);
+  if (lane === 'Overdue') return { status: 'absent', label: 'Urgent' };
+  if (lane === 'Today') return { status: 'late', label: 'Due soon' };
+  if (lane === 'This Week') return { status: 'pending', label: 'This week' };
+  if (lane === 'Settled') return { status: 'graded', label: classify(a, submissions) };
+  return { status: 'present', label: 'On track' };
+};
+
+const LANES = ['Overdue', 'Today', 'This Week', 'Later', 'Settled'];
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
@@ -40,7 +68,6 @@ export default function Assignments() {
   const [submissions, setSubmissions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('All');
   const [showForm, setShowForm] = useState(false);
   const [submitFor, setSubmitFor] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -62,10 +89,13 @@ export default function Assignments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFaculty]);
 
-  const visible = useMemo(
-    () => assignments.filter((a) => view === 'All' || classify(a, submissions) === view),
-    [assignments, submissions, view]
-  );
+  const lanes = useMemo(() => {
+    const groups = Object.fromEntries(LANES.map((l) => [l, []]));
+    [...assignments]
+      .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
+      .forEach((a) => { groups[laneOf(a, submissions)].push(a); });
+    return groups;
+  }, [assignments, submissions]);
 
   const onCreate = async (form) => {
     try {
@@ -133,17 +163,13 @@ export default function Assignments() {
     }
   };
 
-  const counts = useMemo(() => {
-    const c = Object.fromEntries(VIEWS.map((v) => [v, 0]));
-    assignments.forEach((a) => { c[classify(a, submissions)]++; c.All++; });
-    return c;
-  }, [assignments, submissions]);
+  const urgentCount = lanes.Overdue.length + lanes.Today.length;
 
   return (
     <div>
       <PageHeader
         title="Assignments"
-        subtitle={`${assignments.length} assignments · ${submissions.length} submissions on record`}
+        subtitle={`${assignments.length} assignments · ${submissions.length} submissions on record${urgentCount ? ` · ${urgentCount} need you now` : ''}`}
         actions={isFaculty && (
           <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
             <Plus size={15} /> Create
@@ -151,57 +177,68 @@ export default function Assignments() {
         )}
       />
 
-      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4" role="tablist" aria-label="Assignment views">
-        {VIEWS.map((v) => (
-          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
-            className={cn('brutal-tag px-3.5 py-2 text-xs font-bold whitespace-nowrap transition',
-              view === v ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
-            {v} · {counts[v]}
-          </button>
-        ))}
-      </div>
-
-      {loading ? <LoadingState /> : visible.length === 0 ? (
-        <Card><EmptyState editorial title={`No ${view.toLowerCase()} assignments`} hint="Try another view." /></Card>
+      {loading ? <LoadingState /> : assignments.length === 0 ? (
+        <div className={GLASS}><EmptyState editorial title="No assignments yet" hint="New work will land here." /></div>
       ) : (
-        <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-4">
-          {visible.map((a) => {
-            const mine = submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(a._id));
-            const state = classify(a, submissions);
-            return (
-              <motion.article key={a._id} variants={staggerChild} className="card-brutal role-card-animated p-5">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h3 className="font-display font-semibold leading-snug">{a.title}</h3>
-                  <Badge status={a.status || 'draft'}>{(a.status || 'draft').replace(/_/g, ' ')}</Badge>
+        <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="space-y-4">
+          {LANES.map((lane) => (
+            lanes[lane].length > 0 && (
+              <motion.section key={lane} variants={staggerChild} className={GLASS} aria-label={`${lane} assignments`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-display text-base font-semibold flex items-center gap-2">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full"
+                      aria-hidden
+                      style={{ background: lane === 'Overdue' ? '#FF5964' : lane === 'Today' ? '#FFBD4A' : lane === 'Settled' ? '#25D890' : '#2563FF' }}
+                    />
+                    {lane}
+                    <span className="text-xs font-bold tabular-nums text-[var(--cf-ink-mute)]">{lanes[lane].length}</span>
+                  </h2>
                 </div>
-                <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{a.description || 'No description'}</p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
-                  <span>{a.subject?.name || 'Subject'}</span>
-                  <span className="tabular-nums">{a.maxScore} pts</span>
-                  <span className={cn('font-medium', state === 'Overdue' && 'text-red-600 dark:text-red-400')}>Due {fmt(a.dueDate)}</span>
-                  {mine[0]?.score != null && <span className="brutal-tag bg-volt px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}
+                <div className="grid md:grid-cols-2 gap-3">
+                  {lanes[lane].map((a) => {
+                    const mine = submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(a._id));
+                    const state = classify(a, submissions);
+                    const prio = priorityOf(a, submissions);
+                    return (
+                      <article key={a._id} className={`rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/60 p-4 ${LIFT}`}>
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h3 className="font-display font-semibold leading-snug">{a.title}</h3>
+                          <Badge status={prio.status}>{prio.label}</Badge>
+                        </div>
+                        <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{a.description || 'No description'}</p>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
+                          <span>{a.subject?.name || 'Subject'}</span>
+                          <span className="tabular-nums">{a.maxScore} pts</span>
+                          <span className={cn('font-medium tabular-nums', state === 'Overdue' && 'text-red-600 dark:text-red-400')}>Due {fmt(a.dueDate)}</span>
+                          {mine[0]?.score != null && <span className="rounded-full bg-[#A7D700]/25 px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--cf-line)]">
+                          <Badge status={a.status || 'draft'}>{(a.status || 'draft').replace(/_/g, ' ')}</Badge>
+                          {isFaculty && ['draft', 'published'].includes(a.status) && (
+                            <button onClick={() => publish(a)} className={btnClass('secondary', 'small')}>
+                              {a.status === 'draft' ? 'Publish' : 'Open'}
+                            </button>
+                          )}
+                          {isFaculty && (
+                            <button onClick={() => setGradeFor(a)} className={btnClass('outline', 'small')}>Review submissions</button>
+                          )}
+                          {isStudent && state !== 'Graded' && (
+                            <button onClick={() => setSubmitFor(a)} className={btnClass('primary', 'small')}>
+                              {state === 'Submitted' ? 'Resubmit' : 'Submit'}
+                            </button>
+                          )}
+                          {mine[0]?.feedback && (
+                            <span className="text-xs text-[var(--cf-ink-mute)] italic">“{mine[0].feedback}”</span>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-wrap gap-2 border-t-2 border-[var(--cf-ink)] pt-3">
-                  {isFaculty && ['draft', 'published'].includes(a.status) && (
-                    <button onClick={() => publish(a)} className={btnClass('secondary', 'small')}>
-                      {a.status === 'draft' ? 'Publish' : 'Open'}
-                    </button>
-                  )}
-                  {isFaculty && (
-                    <button onClick={() => setGradeFor(a)} className={btnClass('outline', 'small')}>Review submissions</button>
-                  )}
-                  {isStudent && state !== 'Graded' && (
-                    <button onClick={() => setSubmitFor(a)} className={btnClass('primary', 'small')}>
-                      {state === 'Submitted' ? 'Resubmit' : 'Submit'}
-                    </button>
-                  )}
-                  {mine[0]?.feedback && (
-                    <span className="text-xs text-[var(--cf-ink-mute)] italic">“{mine[0].feedback}”</span>
-                  )}
-                </div>
-              </motion.article>
-            );
-          })}
+              </motion.section>
+            )
+          ))}
         </motion.div>
       )}
 
@@ -251,7 +288,7 @@ export default function Assignments() {
         ) : (
           <ul className="space-y-3">
             {submissions.filter((s) => String(s.assignment?._id || s.assignment) === String(gradeFor?._id)).map((s) => (
-              <li key={s._id} className="rounded-xl border-2 border-[var(--cf-ink)] p-3.5 bg-[var(--cf-surface-2)]">
+              <li key={s._id} className="rounded-[14px] border border-[var(--cf-line)] p-3.5 bg-[var(--cf-surface-2)]/50">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <p className="text-sm font-medium">{s.student?.name || 'Student'}</p>
                   <Badge status={s.status || 'submitted'}>{(s.status || 'submitted').replace(/_/g, ' ')}</Badge>
