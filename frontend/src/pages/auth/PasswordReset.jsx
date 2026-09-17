@@ -1,17 +1,40 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { Input } from '../../components/ui/primitives';
-import { btnClass } from '../../system/tokens';
+import { btnClass, cn, labelClass } from '../../system/tokens';
 import AuthLayout from './AuthLayout';
+
+const brutalInput = (hasError) => cn(
+  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] rounded-[10px] border-2 shadow-brutal-sm transition-all',
+  'focus:outline-none focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]',
+  hasError ? 'border-flag' : 'border-[var(--cf-ink)]'
+);
+
+function BrutalField({ id, label, error, errorId, ...props }) {
+  return (
+    <div>
+      {label && <label htmlFor={id} className={labelClass}>{label}</label>}
+      <input
+        id={id}
+        className={brutalInput(Boolean(error))}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
+        {...props}
+      />
+      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-flag">{error}</p>}
+    </div>
+  );
+}
+
+const backLink = <><Link to="/login" className="font-semibold text-[var(--cf-ink)] underline decoration-volt decoration-2 underline-offset-2 hover:decoration-royal">Back to sign in</Link></>;
 
 export function ForgotPassword() {
   const { forgotPassword } = useAuth();
   const [sent, setSent] = useState(false);
   const [failed, setFailed] = useState(false);
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async ({ email }) => {
     setFailed(false);
@@ -28,17 +51,27 @@ export function ForgotPassword() {
 
   return (
     <AuthLayout title="Reset password" subtitle="We’ll send reset instructions to your email — or your CampusFlow inbox if mail isn’t configured."
-      footer={<><Link to="/login" className="font-medium text-primary-600 hover:underline">Back to sign in</Link></>}>
+      footer={backLink}>
       {sent ? (
-        <div className="text-sm text-[var(--cf-ink-soft)] space-y-2">
-          <p>Check your email for a reset link (valid ~10 minutes).</p>
+        <div className="rounded-[10px] border-2 border-[var(--cf-ink)] bg-volt/20 p-4 text-sm text-[var(--cf-ink-soft)] space-y-2 shadow-brutal-sm">
+          <p className="font-display font-semibold text-[var(--cf-ink)]">Check your inbox ✓</p>
+          <p>Reset link valid ~10 minutes.</p>
           <p>No email? Sign in and open the bell icon — the token may be waiting in your notifications.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <Input label="Email address" id="email" type="email" autoComplete="email" placeholder="you@institution.edu" {...register('email', { required: true })} />
-          {failed && <p role="alert" className="text-xs text-red-600">Couldn’t reach the server. Check your connection and try again.</p>}
-          <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Send reset link</button>
+          <BrutalField
+            label="Email address"
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@institution.edu"
+            error={errors.email && 'Enter your email'}
+            errorId="email-error"
+            {...register('email', { required: true })}
+          />
+          {failed && <p role="alert" className="rounded-[10px] border-2 border-[var(--cf-ink)] border-l-8 border-l-flag bg-[var(--cf-surface-2)] px-4 py-3 text-xs font-medium">Couldn’t reach the server. Check your connection and try again.</p>}
+          <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Send reset link →</button>
         </form>
       )}
     </AuthLayout>
@@ -55,7 +88,7 @@ export function ResetPassword() {
   if (!token && !done) {
     return (
       <AuthLayout title="Choose a new password" subtitle="Minimum 8 characters."
-        footer={<><Link to="/login" className="font-medium text-primary-600 hover:underline">Back to sign in</Link></>}>
+        footer={backLink}>
         <div className="text-sm text-[var(--cf-ink-soft)] space-y-3">
           <p>This page needs a reset token. Open it from the link in your email.</p>
           <Link to="/forgot-password" className={btnClass('outline', 'medium') + ' w-full'}>Request a new link</Link>
@@ -76,19 +109,23 @@ export function ResetPassword() {
 
   return (
     <AuthLayout title="Choose a new password" subtitle="Minimum 8 characters."
-      footer={<><Link to="/login" className="font-medium text-primary-600 hover:underline">Back to sign in</Link></>}>
+      footer={backLink}>
       {done ? (
-        <Link to="/login" className={btnClass('primary', 'large') + ' w-full'}>Continue to sign in</Link>
+        <Link to="/login" className={btnClass('primary', 'large') + ' w-full'}>Continue to sign in →</Link>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <Input label="Reset token" id="token-view" value={token} readOnly />
-          <Input label="New password" id="password" type="password" autoComplete="new-password"
+          <BrutalField label="Reset token" id="token-view" value={token} readOnly />
+          <BrutalField label="New password" id="password" type="password" autoComplete="new-password"
+            placeholder="Minimum 8 characters"
             error={errors.password && 'Minimum 8 characters'}
+            errorId="password-error"
             {...register('password', { required: true, minLength: 8 })} />
-          <Input label="Confirm password" id="confirm" type="password" autoComplete="new-password"
+          <BrutalField label="Confirm password" id="confirm" type="password" autoComplete="new-password"
+            placeholder="Repeat the new password"
             error={errors.confirm && 'Passwords must match'}
+            errorId="confirm-error"
             {...register('confirm', { required: true, validate: (v) => v === watch('password') })} />
-          <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Update password</button>
+          <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Update password →</button>
         </form>
       )}
     </AuthLayout>

@@ -1,5 +1,5 @@
 // ProtectedRoute: auth gate + role gate with a real 403 instead of silent redirect.
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../store/useAuth';
 import { btnClass } from '../../system/tokens';

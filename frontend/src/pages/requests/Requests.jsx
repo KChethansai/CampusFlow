@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
-import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
+import { Badge, Card, EmptyState, LoadingState, PageHeader, StatusPill } from '../../components/ui/primitives';
 import { WorkflowTimeline } from '../../components/data/views';
 import { btnClass, cn, inputClass, selectClass } from '../../system/tokens';
 
@@ -95,15 +95,15 @@ export default function Requests() {
       <div className="flex gap-1.5 mb-4 overflow-x-auto" role="tablist" aria-label="Request filters">
         {['All', 'Open', 'pending', 'in_review', 'approved', 'rejected'].map((f) => (
           <button key={f} role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
-            className={cn('px-3.5 py-2 rounded-full text-xs font-medium capitalize whitespace-nowrap transition',
-              filter === f ? 'bg-primary-600 text-white' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)]')}>
+            className={cn('brutal-tag px-3.5 py-2 text-xs font-bold capitalize whitespace-nowrap transition',
+              filter === f ? 'bg-frame text-white' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)]')}>
             {f === 'Open' ? 'Open' : f.replace(/_/g, ' ')}
           </button>
         ))}
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit(onCreate)} className="bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-4 grid sm:grid-cols-4 gap-3">
+        <form onSubmit={handleSubmit(onCreate)} className="card-brutal p-5 mb-4 grid sm:grid-cols-4 gap-3">
           <select className={selectClass} {...register('type')} aria-label="Request type">
             {REQUEST_TYPES.map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
           </select>
@@ -120,7 +120,7 @@ export default function Requests() {
           {visible.map((r) => {
             const open = openId === r._id;
             return (
-              <article key={r._id} className="rounded-2xl bg-[var(--cf-surface)] border border-[var(--cf-line)] shadow-1 p-5">
+              <article key={r._id} className="card-brutal role-card-animated p-5">
                 <button onClick={() => setOpenId(open ? null : r._id)} aria-expanded={open} className="w-full text-left">
                   <span className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
@@ -134,7 +134,7 @@ export default function Requests() {
                         {r.assignedTo?.name ? ` · with ${r.assignedTo.name}` : ''}
                       </span>
                     </span>
-                    <Badge status={r.status}>{(r.status || 'pending').replace(/_/g, ' ')}</Badge>
+                    <StatusPill status={r.status || 'pending'}>{(r.status || 'pending').replace(/_/g, ' ')}</StatusPill>
                   </span>
                 </button>
                 {open && (

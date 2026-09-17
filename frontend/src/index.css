@@ -1,30 +1,132 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", -apple-system, "BlinkMacSystemFont", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-primary-50: #eaf4ff;
+  --color-primary-100: #d6e9ff;
+  --color-primary-200: #a8d0ff;
+  --color-primary-300: #66abff;
+  --color-primary-400: #3395ff;
+  --color-primary-500: #0071e3;
+  --color-primary-600: #0066cc;
+  --color-primary-700: #0055ad;
+  --color-primary-800: #00448c;
+  --color-primary-900: #003a75;
+
+  --color-ink: #1d1d1f;
+  --color-ink-soft: #3a3a3c;
+  --color-ink-mute: #6e6e73;
+
+  --color-navy-800: #16233f;
+  --color-navy-900: #0e1830;
+  --color-navy-950: #0a1226;
+
+  --color-graphite-700: #2c2c2e;
+  --color-graphite-800: #1c1c1e;
+  --color-graphite-900: #131315;
+
+  --color-accent-cyan: #22d3ee;
+  --color-accent-violet: #8b5cf6;
+
+  --color-obsidian-800: #111c33;
+  --color-obsidian-900: #0a1226;
+  --color-obsidian-950: #020617;
+
+  /* Neo-brutalist brand accents */
+  --color-volt: #d4ff00;
+  --color-gold: #ffcc00;
+  --color-royal: #0055ff;
+  --color-flag: #e63b2e;
+  --color-paper: #f5f0e8;
+  --color-cream: #faf7f2;
+  --color-coal: #111111;
+
+  --shadow-brutal-sm: 2px 2px 0px var(--cf-frame-shadow, #111111);
+  --shadow-brutal: 4px 4px 0px var(--cf-frame-shadow, #111111);
+  --shadow-brutal-lg: 6px 6px 0px var(--cf-frame-shadow, #111111);
+  --shadow-brutal-xl: 8px 8px 0px var(--cf-frame-shadow, #111111);
+
+  --color-frame: var(--cf-frame, #111111);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+
+  --animate-beam: beam 5s linear infinite;
+  --animate-shimmer: shimmer 2.8s linear infinite;
+  --animate-meteor: meteor 5s linear infinite;
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+
+  @keyframes beam {
+    from { background-position: 0% 50%; }
+    to { background-position: 200% 50%; }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes meteor {
+    0% { transform: rotate(215deg) translateX(0); opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.82); }
+  }
+}
 
 :root {
-  --cf-bg: #f5f5f7;
-  --cf-surface: #ffffff;
-  --cf-surface-2: #f0f0f3;
-  --cf-ink: #1d1d1f;
+  --cf-bg: #f5f0e8;
+  --cf-surface: #faf7f2;
+  --cf-surface-2: #f2ede5;
+  --cf-ink: #111111;
   --cf-ink-soft: #3a3a3c;
   --cf-ink-mute: #6e6e73;
-  --cf-line: rgba(16, 24, 40, 0.08);
-  --cf-accent: #0066cc;
+  --cf-line: rgba(17, 17, 17, 0.14);
+  --cf-accent: #0055ff;
   --cf-cyan: #22d3ee;
   --cf-violet: #8b5cf6;
+  --cf-volt: #d4ff00;
+  --cf-gold: #ffcc00;
+  --cf-flag: #e63b2e;
+  --cf-frame: #111111;
+  --cf-frame-shadow: #111111;
   color-scheme: light;
 }
 
 .dark {
-  --cf-bg: #0a1226;
-  --cf-surface: #131c33;
-  --cf-surface-2: #1a2542;
-  --cf-ink: #f2f5fa;
+  --cf-bg: #0f1013;
+  --cf-surface: #181920;
+  --cf-surface-2: #1e2029;
+  --cf-ink: #f4f4f5;
   --cf-ink-soft: #c3cbdb;
   --cf-ink-mute: #8b94a9;
-  --cf-line: rgba(148, 178, 255, 0.14);
-  --cf-accent: #3395ff;
+  --cf-line: rgba(148, 178, 255, 0.16);
+  --cf-accent: #66abff;
+  --cf-volt: #d4ff00;
+  --cf-gold: #ffcc00;
+  --cf-flag: #ff6b5e;
+  --cf-frame: #2e333f;
+  --cf-frame-shadow: #000000;
   color-scheme: dark;
 }
 
@@ -52,12 +154,7 @@ body {
   min-height: 100vh;
 }
 
-/* Focus visibility for keyboard users */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--cf-accent);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
+
 
 /* Slim scrollbars */
 *::-webkit-scrollbar {
@@ -233,4 +330,124 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ============ Neo-brutalist design system (AI Studio reference) ============ */
+
+body {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.16) 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+}
+.dark body {
+  background-image: radial-gradient(rgba(148, 178, 255, 0.14) 1px, transparent 1px);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.border-3 { border-width: 3px; }
+
+.btn-brutal {
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+  border: 2px solid var(--cf-frame);
+  box-shadow: 4px 4px 0px var(--cf-frame-shadow);
+}
+.btn-brutal:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--cf-frame-shadow);
+}
+.btn-brutal:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px var(--cf-frame-shadow);
+}
+
+.card-brutal {
+  background: var(--cf-surface);
+  border: 2px solid var(--cf-frame);
+  box-shadow: 5px 5px 0px var(--cf-frame-shadow);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px var(--cf-frame-shadow);
+}
+
+.brutal-tag {
+  border: 2px solid var(--cf-frame);
+  box-shadow: 2px 2px 0px var(--cf-frame-shadow);
+  font-family: "Space Grotesk", sans-serif;
+}
+/* Accent-surfaced tags stay coal-ink in both modes (volt/gold never change). */
+.brutal-tag.bg-volt, .brutal-tag.bg-gold {
+  color: #111111;
+}
+
+.racing-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    #111111,
+    #111111 12px,
+    #ffcc00 12px,
+    #ffcc00 24px
+  );
+}
+
+.role-card-animated {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+.role-card-animated:hover {
+  transform: translate(-4px, -4px) !important;
+  box-shadow: 8px 8px 0px var(--cf-frame-shadow) !important;
+}
+.role-card-animated .role-card-icon {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.role-card-animated:hover .role-card-icon {
+  transform: rotate(7deg) scale(1.12);
+}
+.role-card-animated .role-card-arrow {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.role-card-animated:hover .role-card-arrow {
+  transform: translateX(6px);
+}
+
+/* High-visibility keyboard focus */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #0055ff !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px var(--cf-surface) !important;
+}
+
+/* Guided tour spotlight */
+.tour-target-highlight {
+  position: relative !important;
+  z-index: 45 !important;
+  outline: 4px solid #0055ff !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 4px #d4ff00, 0 10px 30px rgba(0, 85, 255, 0.25) !important;
+}
+
+/* Print: document export layout */
+@media print {
+  @page { size: letter portrait; margin: 12mm; }
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+  }
+  nav, header, footer, button, input, [role="dialog"], .no-print {
+    display: none !important;
+  }
+  .print-only { display: block !important; }
+  .card-brutal {
+    box-shadow: none !important;
+    transform: none !important;
+    break-inside: avoid !important;
+  }
+  a { text-decoration: none !important; color: #000000 !important; }
 }

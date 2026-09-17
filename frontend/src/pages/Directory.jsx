@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import api from '../api/axios';
 import { Badge, Card, EmptyState, LoadingState, PageHeader } from '../components/ui/primitives';
+import { btnClass, cn } from '../system/tokens';
 
 const SOURCES = [
   { key: 'users', ep: '/users', label: 'People', kind: (r) => r.role?.replace(/_/g, ' ') },
@@ -51,10 +52,18 @@ export default function Directory() {
 
   return (
     <div>
-      <PageHeader title="Directory" subtitle="Everyone and everything on campus, in one search." />
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-xl border border-[var(--cf-line)] bg-[var(--cf-surface)] text-sm">
-          <Search size={15} className="text-[var(--cf-ink-mute)]" aria-hidden />
+      <PageHeader
+        title="Directory"
+        subtitle="Everyone and everything on campus, in one search."
+        actions={rows.length > 0 && (
+          <span className="brutal-tag bg-volt text-coal text-xs font-bold px-3 py-1.5 rounded-full">
+            {rows.length} result{rows.length === 1 ? '' : 's'}
+          </span>
+        )}
+      />
+      <div className="card-brutal rounded-[12px] p-2 mb-4 flex flex-col sm:flex-row gap-2">
+        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-[8px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)] text-sm focus-within:ring-[3px] focus-within:ring-[#0055ff] focus-within:border-[#0055ff] transition-all">
+          <Search size={15} className="text-[var(--cf-ink-mute)] shrink-0" aria-hidden />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -63,10 +72,11 @@ export default function Directory() {
             aria-label="Search directory"
           />
         </label>
-        <div className="flex gap-1 overflow-x-auto" role="tablist" aria-label="Directory sections">
+        <div className="flex gap-1.5 overflow-x-auto items-center" role="tablist" aria-label="Directory sections">
           {tabs.map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-              className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${tab === t ? 'bg-primary-600 text-white' : 'bg-black/[.04] dark:bg-white/10 text-[var(--cf-ink-soft)]'}`}>
+              className={cn('px-3 py-2 rounded-[8px] text-xs font-display font-semibold whitespace-nowrap transition-all border-2',
+                tab === t ? 'bg-frame text-volt border-frame dark:bg-volt dark:text-coal' : 'border-transparent text-[var(--cf-ink-soft)] hover:border-[var(--cf-ink)]')}>
               {t}
             </button>
           ))}
@@ -75,22 +85,24 @@ export default function Directory() {
       {loading ? <LoadingState label="Loading directory…" /> : rows.length === 0 ? (
         <Card><EmptyState editorial title="No matches" hint="Try a different search, or another section." /></Card>
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {rows.map(({ source, row }) => (
             <Card key={source.key + (row._id || titleOf(row))} className="p-4 group">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold truncate">{titleOf(row)}</p>
+                  <p className="font-display font-semibold truncate">{titleOf(row)}</p>
                   {row.email && <p className="text-xs text-[var(--cf-ink-mute)] truncate">{row.email}</p>}
-                  {row.code && <p className="text-xs text-[var(--cf-ink-mute)]">{row.code}</p>}
+                  {row.code && (
+                    <span className="inline-block mt-1 font-mono text-[11px] font-semibold bg-gold text-coal border-2 border-frame rounded-[6px] px-1.5 py-0.5">{row.code}</span>
+                  )}
                 </div>
                 <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{source.label.slice(0, -1)}</Badge>
               </div>
-              <p className="mt-2 text-xs text-[var(--cf-ink-mute)]">{source.kind(row)}</p>
+              <p className="mt-2 text-xs text-[var(--cf-ink-mute)] capitalize">{source.kind(row)}</p>
               {row.email && (
-                <div className="mt-3 flex gap-2 opacity-100 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-y-0 transition-all">
-                  <a href={`mailto:${row.email}`} className="px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--cf-line)] hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition">Email</a>
-                  <button onClick={() => navigator.clipboard?.writeText(row.email).catch(() => {})} className="px-3 py-1.5 rounded-full text-xs font-medium border border-[var(--cf-line)] hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition">Copy</button>
+                <div className="mt-3 flex gap-2">
+                  <a href={`mailto:${row.email}`} className={btnClass('secondary', 'small')}>Email</a>
+                  <button onClick={() => navigator.clipboard?.writeText(row.email).catch(() => {})} className={btnClass('outline', 'small')}>Copy</button>
                 </div>
               )}
             </Card>

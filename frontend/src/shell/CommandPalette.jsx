@@ -1,9 +1,10 @@
-// ⌘K / Ctrl+K command center. Fuzzy grouped results, role quick actions, full keyboard nav.
+// ⌘K / Ctrl+K command center. Fuzzy grouped results, role quick actions, action items, full keyboard nav.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Search, Zap } from 'lucide-react';
+import { ArrowRight, Download, Flag, Moon, Printer, Search, Sun, Zap } from 'lucide-react';
 import { useAuth } from '../store/useAuth';
+import { useTheme } from '../system/theme';
 import api from '../api/axios';
 import { motionVariants } from '../system/motion';
 
@@ -56,9 +57,10 @@ export function useCommandPalette() {
   return [open, setOpen];
 }
 
-export default function CommandPalette({ open, onClose }) {
+export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTour }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggle } = useTheme();
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [cache, setCache] = useState({});
@@ -85,22 +87,35 @@ export default function CommandPalette({ open, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open ]);
 
+  const actions = useMemo(() => [
+    { title: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', sub: 'Action', Icon: theme === 'dark' ? Sun : Moon, run: () => toggle() },
+    { title: 'Print this page', sub: 'Action', Icon: Printer, run: () => window.print() },
+    { title: 'Download CSV', sub: 'Action', Icon: Download, run: () => onDownloadCsv?.() },
+    { title: 'Start guided tour', sub: 'Action', Icon: Flag, run: () => onStartTour?.() },
+    { title: 'Go to Dashboard', sub: 'Go to', link: '/dashboard' },
+    { title: 'Go to Assignments', sub: 'Go to', link: '/assignments' },
+    { title: 'Go to Placement', sub: 'Go to', link: '/placement' },
+    { title: 'Go to Requests', sub: 'Go to', link: '/requests' },
+    { title: 'Go to Directory', sub: 'Go to', link: '/directory' }
+  ], [theme, toggle, onDownloadCsv, onStartTour]);
+
   const results = useMemo(() => {
     const out = [];
     const role = user?.role;
-    const quick = (QUICK_BY_ROLE[role] || QUICK_BY_ROLE.student).map(([title, link]) => ({ title, sub: 'Quick action', link, quick: true }));
-    if (!query.trim()) {
+    const q = query.trim();
+    if (!q) {
+      const quick = (QUICK_BY_ROLE[role] || QUICK_BY_ROLE.student).map(([title, link]) => ({ title, sub: 'Quick action', link, quick: true }));
       return [
         ...(quick.length ? [{ group: 'Quick actions', items: quick }] : []),
-        { group: 'Go to', items: [
-          { title: 'Dashboard', sub: 'Home', link: '/dashboard' },
-          { title: 'Assignments', sub: 'All · upcoming · graded', link: '/assignments' },
-          { title: 'Placement', sub: 'Drives · pipeline', link: '/placement' },
-          { title: 'Requests', sub: 'Workflow', link: '/requests' },
-          { title: 'Directory', sub: 'People · departments', link: '/directory' }
-        ]}
+        { group: 'Actions', items: actions.filter((a) => a.run) },
+        { group: 'Go to', items: actions.filter((a) => a.link) }
       ];
     }
+    const matchedActions = actions
+      .map((a) => ({ ...a, rank: score(q, a.title) }))
+      .filter((a) => a.rank > 0)
+      .sort((x, y) => y.rank - x.rank);
+    if (matchedActions.length) out.push({ group: 'Actions', items: matchedActions });
     GROUPS.forEach((g) => {
       const items = [];
       g.endpoints.forEach(([label, ep]) => {
@@ -125,13 +140,14 @@ export default function CommandPalette({ open, onClose }) {
       if (items.length) out.push({ group: g.label, items: items.slice(0, 6) });
     });
     return out;
-  }, [query, cache, user?.role]);
+  }, [query, cache, user?.role, actions]);
 
   const flat = useMemo(() => results.flatMap((r) => r.items), [results]);
 
   const go = (item) => {
     if (!item) return;
     onClose();
+    if (item.run) { item.run(); return; }
     navigate(item.link);
   };
 
@@ -150,10 +166,11 @@ export default function CommandPalette({ open, onClose }) {
           <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm cursor-default" />
           <motion.div
             {...motionVariants.popover}
-            className="relative w-full max-w-xl cf-glass backdrop-blur-xl bg-[var(--cf-surface)]/90 border border-white/10 rounded-2xl shadow-4 overflow-hidden"
+            className="relative w-full max-w-xl bg-[var(--cf-surface)] border-2 border-[var(--cf-ink)] shadow-brutal-lg overflow-hidden"
           >
-            <div className="flex items-center gap-2 px-4 border-b border-[var(--cf-line)]">
-              <Search size={16} className="text-[var(--cf-ink-mute)]" aria-hidden />
+            <div className="racing-stripe h-1.5 w-full border-b-2 border-[var(--cf-ink)]" aria-hidden />
+            <div className="flex items-center gap-2 px-4 border-b-2 border-[var(--cf-ink)] bg-volt">
+              <Search size={16} className="text-[#111111]" aria-hidden />
               <input
                 ref={inputRef}
                 value={query}
@@ -165,13 +182,13 @@ export default function CommandPalette({ open, onClose }) {
                   if (e.key === 'Escape') onClose();
                 }}
                 placeholder="Search students, courses, drives, requests…"
-                className="w-full py-3.5 bg-transparent text-sm text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none"
+                className="w-full py-3.5 bg-transparent font-display font-bold text-sm text-[#111111] placeholder:text-[#111111]/50 focus:outline-none"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="cf-palette-list"
                 aria-activedescendant={flat[index] ? `cf-opt-${index}` : undefined}
               />
-              <kbd className="text-[10px] px-1.5 py-0.5 rounded-md border border-[var(--cf-line)] text-[var(--cf-ink-mute)]">ESC</kbd>
+              <kbd className="brutal-tag font-mono text-[10px] font-bold px-1.5 py-0.5 bg-[var(--cf-surface)] text-[var(--cf-ink)]">ESC</kbd>
             </div>
             <div id="cf-palette-list" role="listbox" className="max-h-[46vh] overflow-y-auto p-2">
               {flat.length === 0 && (
@@ -179,9 +196,10 @@ export default function CommandPalette({ open, onClose }) {
               )}
               {results.map((g) => (
                 <div key={g.group} className="mb-1">
-                  <p className="px-2.5 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)]">{g.group}</p>
+                  <p className="px-2.5 pt-2 pb-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">{g.group}</p>
                   {g.items.map((item) => {
                     const gi = flat.indexOf(item);
+                    const ItemIcon = item.Icon;
                     return (
                       <button
                         key={`${item.sub}-${item.title}-${gi}`}
@@ -190,24 +208,27 @@ export default function CommandPalette({ open, onClose }) {
                         aria-selected={gi === index}
                         onMouseEnter={() => setIndex(gi)}
                         onClick={() => go(item)}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center gap-2 text-sm transition ${
-                          gi === index ? 'bg-primary-50 dark:bg-primary-500/15 text-[var(--cf-ink)]' : 'text-[var(--cf-ink-soft)]'
+                        className={`w-full text-left px-2.5 min-h-11 py-2 border-2 flex items-center gap-2 text-sm transition-all ${
+                          gi === index
+                            ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)] border-[var(--cf-ink)]'
+                            : 'text-[var(--cf-ink-soft)] border-transparent'
                         }`}
                       >
-                        {item.quick ? <Zap size={14} className="text-primary-500 shrink-0" aria-hidden /> : null}
+                        {item.quick ? <Zap size={14} className={gi === index ? 'text-volt shrink-0' : 'text-[var(--cf-ink-mute)] shrink-0'} aria-hidden /> : null}
+                        {ItemIcon ? <ItemIcon size={14} className="shrink-0" aria-hidden /> : null}
                         <span className="truncate font-medium flex-1">{item.title}</span>
-                        <span className="text-[11px] text-[var(--cf-ink-mute)] shrink-0">{item.sub}</span>
-                        {gi === index && <ArrowRight size={14} className="text-[var(--cf-ink-mute)]" aria-hidden />}
+                        <span className={`brutal-tag font-mono text-[10px] font-bold px-1.5 py-0.5 shrink-0 ${gi === index ? 'bg-volt text-[#111111]' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-mute)]'}`}>{item.sub}</span>
+                        {gi === index && <ArrowRight size={14} aria-hidden />}
                       </button>
                     );
                   })}
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-3 px-4 py-2.5 border-t border-[var(--cf-line)] text-[11px] text-[var(--cf-ink-mute)]">
-              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">↑↓</kbd> navigate</span>
-              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">↵</kbd> open</span>
-              <span><kbd className="px-1 rounded border border-[var(--cf-line)]">esc</kbd> close</span>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-t-2 border-[var(--cf-ink)] font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--cf-ink-mute)]">
+              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">↑↓</kbd> navigate</span>
+              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">↵</kbd> open</span>
+              <span><kbd className="brutal-tag px-1 bg-[var(--cf-surface)]">esc</kbd> close</span>
               <span className="ml-auto">Ctrl/⌘ K to toggle</span>
             </div>
           </motion.div>

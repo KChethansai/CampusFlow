@@ -292,7 +292,7 @@ export function BentoGrid({ className, children }) {
 }
 export function BentoCell({ span = 'md:col-span-2', className, children, spot = true }) {
   return (
-    <SpotCard className={cn('bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] p-5 sm:p-6 shadow-card', span, className)}>
+    <SpotCard className={cn('bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal-sm', span, className)}>
       {children}
     </SpotCard>
   );
@@ -323,6 +323,33 @@ export function BeamCard({ className, children, ...props }) {
   return (
     <div className={cn('cf-beam rounded-2xl', className)} {...props}>
       <div className="rounded-[calc(1rem-1px)] bg-[var(--cf-surface)] h-full">{children}</div>
+    </div>
+  );
+}
+
+/** SectionHeader: numbered brutal section heading — `01 / Kicker` + display title. */
+export function SectionHeader({ number, kicker, title, body, actions, className, id }) {
+  return (
+    <div id={id} className={cn('flex flex-wrap items-end justify-between gap-3 mb-5', className)}>
+      <div className="min-w-0">
+        {(number || kicker) && (
+          <p className="cf-kicker mb-1.5 flex items-center gap-2">
+            {number && (
+              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-frame text-volt border-2 border-[var(--cf-ink)] rounded-md shadow-brutal-sm font-mono text-[11px] font-bold">
+                {number}
+              </span>
+            )}
+            {kicker}
+          </p>
+        )}
+        {title && (
+          <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--cf-ink)]">
+            {title}
+          </h2>
+        )}
+        {body && <p className="mt-1 text-sm text-[var(--cf-ink-mute)] max-w-prose">{body}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }

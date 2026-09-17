@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
-import { Input } from '../../components/ui/primitives';
-import { btnClass, cn } from '../../system/tokens';
+import { btnClass, cn, labelClass } from '../../system/tokens';
 import AuthLayout from './AuthLayout';
 
 const ROLE_TABS = [
@@ -14,6 +13,29 @@ const ROLE_TABS = [
   { value: 'college_admin', label: 'Admin', hint: 'admin@institution.edu' },
   { value: 'placement_officer', label: 'Placement', hint: 'placement@institution.edu' }
 ];
+
+const brutalInput = (hasError) => cn(
+  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] rounded-[10px] border-2 shadow-brutal-sm transition-all',
+  'focus:outline-none focus:ring-[3px] focus:ring-[#0055ff] focus:border-[#0055ff]',
+  hasError ? 'border-flag' : 'border-[var(--cf-ink)]'
+);
+
+function BrutalField({ id, label, error, errorId, ...props }) {
+  const describedBy = error ? errorId : undefined;
+  return (
+    <div>
+      <label htmlFor={id} className={labelClass}>{label}</label>
+      <input
+        id={id}
+        className={brutalInput(Boolean(error))}
+        aria-invalid={Boolean(error)}
+        aria-describedby={describedBy}
+        {...props}
+      />
+      {error && <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-flag">{error}</p>}
+    </div>
+  );
+}
 
 function Login() {
   const navigate = useNavigate();
@@ -46,9 +68,9 @@ function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to your digital campus."
-      footer={<>New here? <Link to="/signup" className="text-primary-600 hover:underline">Create account</Link></>}
+      footer={<>New here? <Link to="/signup" className="font-semibold text-[var(--cf-ink)] underline decoration-volt decoration-2 underline-offset-2 hover:decoration-royal">Create account</Link></>}
     >
-      <div role="tablist" aria-label="I am signing in as" className="relative grid grid-cols-4 gap-1 p-1 mb-5 rounded-full border border-[var(--cf-line)] bg-black/[.03] dark:bg-white/[.05]">
+      <div role="tablist" aria-label="I am signing in as" className="grid grid-cols-4 gap-1.5 p-1.5 mb-5 rounded-[12px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface-2)]">
         {ROLE_TABS.map((r) => {
           const active = roleTab === r.value;
           return (
@@ -57,45 +79,46 @@ function Login() {
               role="tab"
               aria-selected={active}
               onClick={() => { setRoleTab(r.value); try { localStorage.setItem('cf_login_role', r.value); } catch {} }}
-              className={cn('relative px-2 py-1.5 rounded-full text-xs font-medium transition', active ? 'text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
+              className={cn('relative px-2 py-1.5 rounded-[8px] text-xs font-display font-semibold transition-all border-2',
+                active ? 'bg-gold text-coal border-frame shadow-brutal-sm' : 'border-transparent text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
             >
-              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-full bg-primary-600 shadow-glow" aria-hidden />}
+              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-[6px] bg-gold -z-0" aria-hidden />}
               <span className="relative">{r.label}</span>
             </button>
           );
         })}
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <Input
+        <BrutalField
           label="Email address"
           id="email"
           type="email"
           autoComplete="email"
           placeholder={ROLE_TABS.find((r) => r.value === roleTab)?.hint || 'you@institution.edu'}
           error={errors.email && 'Enter your email'}
-          className="cf-glow-focus"
+          errorId="email-error"
           {...register('email', { required: true })}
         />
-        <Input
+        <BrutalField
           label="Password"
           id="password"
           type="password"
           autoComplete="current-password"
           placeholder="Enter your password"
           error={errors.password && 'Enter your password'}
-          className="cf-glow-focus"
+          errorId="password-error"
           {...register('password', { required: true })}
         />
         {error && (
-          <div role="alert" className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm">
+          <div role="alert" className="border-2 border-[var(--cf-ink)] border-l-8 border-l-flag bg-[var(--cf-surface-2)] px-4 py-3 rounded-[10px] text-sm font-medium">
             {error}
           </div>
         )}
         <button type="submit" disabled={loading} className={btnClass('primary', 'large') + ' w-full'}>
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? 'Signing in…' : 'Sign in →'}
         </button>
-        <div className="flex items-center gap-3 text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]" aria-hidden>
-          <span className="h-px flex-1 bg-[var(--cf-line)]" /><span>Institution SSO</span><span className="h-px flex-1 bg-[var(--cf-line)]" />
+        <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-widest text-[var(--cf-ink-mute)]" aria-hidden>
+          <span className="h-0.5 flex-1 bg-[var(--cf-ink)]" /><span>Institution SSO</span><span className="h-0.5 flex-1 bg-[var(--cf-ink)]" />
         </div>
         <div className="grid grid-cols-2 gap-2">
           {['Google', 'Microsoft'].map((p) => (
@@ -103,14 +126,14 @@ function Login() {
               key={p}
               type="button"
               onClick={() => toast('SSO is provisioned by your administrator.')}
-              className="px-3 py-2 rounded-xl border border-[var(--cf-line)] text-sm font-medium hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 transition"
+              className="px-3 py-2 rounded-[10px] border-2 border-[var(--cf-ink)] bg-[var(--cf-surface)] shadow-brutal-sm text-sm font-display font-semibold hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
             >
               {p}
             </button>
           ))}
         </div>
         <p className="text-center text-sm">
-          <Link to="/forgot-password" className="text-[var(--cf-ink-mute)] hover:text-primary-600 transition">Forgot password?</Link>
+          <Link to="/forgot-password" className="text-[var(--cf-ink-mute)] underline underline-offset-2 hover:text-[var(--cf-ink)] transition">Forgot password?</Link>
         </p>
       </form>
     </AuthLayout>

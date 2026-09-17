@@ -7,15 +7,20 @@ import { twMerge } from 'tailwind-merge';
 export const cn = (...parts) => twMerge(clsx(...parts));
 
 export const colors = {
-  primary: '#0071e3',
-  primaryStrong: '#0066cc',
+  primary: '#0055ff',
+  primaryStrong: '#0055ad',
   navy: '#0e1830',
   graphite: '#1c1c1e',
   cyan: '#22d3ee',
   violet: '#8b5cf6',
   success: '#16a34a',
   warning: '#d97706',
-  error: '#dc2626'
+  error: '#e63b2e',
+  volt: '#d4ff00',
+  gold: '#ffcc00',
+  paper: '#f5f0e8',
+  cream: '#faf7f2',
+  coal: '#111111'
 };
 
 export const ROLES = [
@@ -29,18 +34,18 @@ export const ROLES = [
 export const roleLabel = (role) =>
   role ? String(role).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '—';
 
-// Typography
-export const pageHeading = 'text-2xl sm:text-3xl font-bold tracking-tight text-[var(--cf-ink)]';
+// Typography — Space Grotesk display, Inter body, JetBrains Mono meta
+export const pageHeading = 'font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--cf-ink)]';
 export const pageSubheading = 'mt-1 text-sm text-[var(--cf-ink-mute)]';
-export const cardTitle = 'text-base font-semibold text-[var(--cf-ink)]';
-export const sectionTitle = 'text-xs font-semibold uppercase tracking-wider text-[var(--cf-ink-mute)]';
+export const cardTitle = 'font-display text-base font-semibold text-[var(--cf-ink)]';
+export const sectionTitle = 'font-mono text-xs font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]';
 
-// Surfaces — spatial layers L1-L5
+// Surfaces — neo-brutalist hard-shadow layers
 export const pageHeader = 'flex flex-wrap items-center justify-between gap-3 mb-6';
 export const cardClass =
-  'bg-[var(--cf-surface)] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,.06),0_1px_3px_rgba(16,24,40,.08)] border border-[var(--cf-line)]';
+  'bg-[var(--cf-surface)] rounded-xl shadow-brutal border-2 border-[var(--cf-ink)]';
 export const floatClass =
-  'bg-[var(--cf-surface)] rounded-2xl shadow-[0_12px_32px_-8px_rgba(16,24,40,.18)] border border-[var(--cf-line)]';
+  'bg-[var(--cf-surface)] rounded-xl shadow-brutal-lg border-2 border-[var(--cf-ink)]';
 // Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
 export const glassCard =
   'cf-glass bg-[var(--cf-surface)]/70 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-white/10 shadow-card';
@@ -64,18 +69,18 @@ export const selectClass = inputClass;
 export const formCardClass =
   'bg-[var(--cf-surface)] rounded-2xl border border-[var(--cf-line)] shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-3';
 
-// Buttons
+// Buttons — tactile brutal press physics via .btn-brutal
 export const buttonBase =
-  'inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100';
+  'btn-brutal inline-flex items-center justify-center gap-1.5 rounded-[10px] font-display text-sm font-semibold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100';
 
 export const buttonVariants = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500 shadow-[0_1px_2px_rgba(16,24,40,.2)]',
-  secondary: 'bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink)] hover:bg-black/[.08] dark:hover:bg-white/[.15] focus-visible:ring-gray-400',
-  success: 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
-  outline: 'border border-[var(--cf-line)] bg-[var(--cf-surface)] text-[var(--cf-ink)] hover:bg-black/[.03] dark:hover:bg-white/[.06] focus-visible:ring-primary-500',
-  ghost: 'text-[var(--cf-ink-soft)] hover:bg-black/[.05] dark:hover:bg-white/10 focus-visible:ring-gray-400',
-  glow: 'bg-primary-600 text-white hover:bg-primary-500 focus-visible:ring-primary-400 shadow-[0_0_24px_rgba(0,113,227,.35)]'
+  primary: 'bg-gold text-[#111111] hover:bg-volt',
+  secondary: 'bg-[var(--cf-surface)] text-[var(--cf-ink)] hover:bg-[var(--cf-surface-2)]',
+  success: 'bg-green-500 text-white hover:bg-green-400',
+  danger: 'bg-flag text-white hover:brightness-110',
+  outline: 'bg-[var(--cf-surface)] text-[var(--cf-ink)] hover:bg-[var(--cf-surface-2)]',
+  ghost: 'bg-transparent text-[var(--cf-ink-soft)] hover:bg-black/[.05] dark:hover:bg-white/10',
+  glow: 'bg-volt text-[#111111] hover:brightness-105'
 };
 
 export const buttonSizes = {
