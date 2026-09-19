@@ -30,3 +30,6 @@ Thumbs.db
 *.orig
 
 graphify-out/
+
+# playwright MCP browser profile (local-only, recreated on each QA run)
+.playwright-mcp/
