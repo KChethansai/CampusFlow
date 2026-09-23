@@ -16,14 +16,14 @@ export const submissionApp = Router();
 submissionApp.use(verifyToken());
 submissionApp.use(auditLog);
 
-// GET routes — faculty and student
-submissionApp.get('/', verifyToken('faculty', 'student'), getAllSubmissions);
+// GET routes — faculty, student, and admins (scoped by controller)
+submissionApp.get('/', verifyToken('faculty', 'student', 'college_admin', 'super_admin'), getAllSubmissions);
 
 // POST — students only: multipart file submission for one assignment.
 // Accepts `file` + `comments` (+ `studentId`, ignored: identity is session-forced).
 submissionApp.post('/assignments/:assignmentId', verifyToken('student'), uploadSubmissionFile, submitAssignmentFiles);
 
-submissionApp.get('/:id', verifyToken('faculty', 'student'), getSubmissionById);
+submissionApp.get('/:id', verifyToken('faculty', 'student', 'college_admin', 'super_admin'), getSubmissionById);
 
 // POST — students only
 submissionApp.post('/', verifyToken('student'), createSubmission);

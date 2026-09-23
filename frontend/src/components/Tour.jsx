@@ -99,7 +99,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
-              Tour
+              Guide
             </span>
             <span className="font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)] tabular-nums">
               {index + 1} / {steps.length}

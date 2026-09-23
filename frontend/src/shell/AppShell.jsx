@@ -56,16 +56,13 @@ const tourStepsFor = (role) => {
 function Brand({ compact }) {
   return (
     <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0" aria-label="CampusFlow home">
-      <span className="w-9 h-9 rounded-xl bg-[#D86D3E] grid place-items-center font-display font-bold text-base text-white shrink-0" aria-hidden>
+      <span className="w-9 h-9 rounded-xl bg-[#D86D3E] grid place-items-center font-display font-bold text-base text-white shrink-0 shadow-md shadow-[#D86D3E]/30" aria-hidden>
         C
       </span>
       {!compact && (
         <span className="hidden sm:block leading-none">
           <span className="block font-display text-[15px] font-bold tracking-tight text-[var(--cf-ink)]">
             CampusFlow
-          </span>
-          <span className="block font-mono text-[9px] font-medium tracking-[0.2em] uppercase text-[var(--cf-ink-mute)] mt-0.5">
-            Academic OS
           </span>
         </span>
       )}
@@ -79,7 +76,7 @@ const railLinkClass = ({ isActive }, compact) => cn(
   `group relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all duration-200 ${EASE} hover:translate-x-1`,
   compact && 'justify-center px-0',
   isActive
-    ? 'text-[#D86D3E] dark:text-[#8db4ff]'
+    ? 'text-[#D86D3E] dark:text-[#F5B08A] font-semibold'
     : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.04] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
 );
 
@@ -113,11 +110,6 @@ const railLinkInner = ({ isActive }, { label, Icon }, compact, accent, reduced) 
       <Icon size={18} aria-hidden className="shrink-0" />
     </span>
     {!compact && <span className="truncate">{label}</span>}
-    {isActive && !compact && (
-      <span className="ml-auto rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#111111]" style={{ background: '#E7A66D' }}>
-        ACTIVE
-      </span>
-    )}
   </>
 );
 
@@ -348,7 +340,7 @@ export default function AppShell() {
                     className={({ isActive }) => cn(
                       `relative rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
                       isActive
-                        ? 'text-[#D86D3E] dark:text-[#8db4ff]'
+                        ? 'text-[#D86D3E] dark:text-[#F5B08A]'
                         : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
                     )}
                   >
@@ -483,7 +475,7 @@ export default function AppShell() {
                         <span className={cn(
                           `relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all mb-0.5 ${EASE} overflow-hidden`,
                           state.isActive
-                            ? 'text-[#D86D3E] dark:text-[#8db4ff]'
+                            ? 'text-[#D86D3E] dark:text-[#F5B08A]'
                             : 'text-[var(--cf-ink-soft)] hover:translate-x-1'
                         )}>
                           {state.isActive && (
@@ -496,9 +488,6 @@ export default function AppShell() {
                           {state.isActive && (
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#D86D3E] shadow-[0_0_12px_rgba(216,109,62,0.8)]" aria-hidden />
                           )}
-                          <span className="relative font-mono text-[10px] font-semibold text-[var(--cf-ink-mute)] w-6 shrink-0" aria-hidden>
-                            {String(i + 1).padStart(2, '0')}
-                          </span>
                           <item.Icon size={18} aria-hidden className="relative shrink-0" />
                           <span className="relative">{item.label}</span>
                         </span>
@@ -527,7 +516,7 @@ export default function AppShell() {
               to={to}
               className={({ isActive }) =>
                 `relative flex flex-col items-center gap-0.5 py-2.5 min-h-11 justify-center text-[10px] font-semibold transition ${
-                  isActive ? 'text-[#D86D3E] dark:text-[#8db4ff]' : 'text-[var(--cf-ink-mute)]'
+                  isActive ? 'text-[#D86D3E] dark:text-[#F5B08A]' : 'text-[var(--cf-ink-mute)]'
                 }`
               }
             >

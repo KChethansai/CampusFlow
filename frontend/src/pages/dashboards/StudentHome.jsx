@@ -139,15 +139,14 @@ export default function StudentHome() {
       <motion.div variants={staggerChild}>
         <RoleHero
           accent="student"
-          kicker="Academic Pulse"
-          title={<>{greeting}, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></>}
+          title="Your day, in one glance."
           metric={health == null ? '—' : `${health}%`}
           sub={
             health == null
-              ? 'No attendance recorded yet.'
+              ? `${greeting}, ${user?.name?.split(' ')[0]}. No attendance recorded yet.`
               : upcoming.length
-                ? `Next up: ${upcoming[0].title} — due ${fmtDay(upcoming[0].dueDate)}.`
-                : 'Nothing due right now. A rare, beautiful thing.'
+                ? `${greeting}, ${user?.name?.split(' ')[0]}. Next up: ${upcoming[0].title} — due ${fmtDay(upcoming[0].dueDate)}.`
+                : `${greeting}, ${user?.name?.split(' ')[0]}. Nothing due right now. A rare, beautiful thing.`
           }
           alert={overdue.length > 0 && (
             <Link to="/assignments" className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: '#FF5964' }}>

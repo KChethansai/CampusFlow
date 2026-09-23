@@ -1,7 +1,7 @@
 // Placement Mission Control: horizontal pipeline tracker + drive cards +
 // conversion analytics. Stage PATCH logic + normalizeStage untouched.
 // Same endpoints as before; eligibility rendered verbatim (dept limits are advisory).
-import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'motion/react';

@@ -35,7 +35,7 @@ export function FilePreview({ fileUrl, fileName }) {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#D86D3E] dark:text-[#8db4ff] hover:underline underline-offset-4"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#D86D3E] dark:text-[#F5B08A] hover:underline underline-offset-4"
           >
             {open ? <EyeOff size={13} aria-hidden /> : <Eye size={13} aria-hidden />}
             {open ? 'Hide' : 'Preview'}

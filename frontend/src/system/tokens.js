@@ -51,11 +51,11 @@ export const glassCard =
 export const spotCard = 'cf-card-spot cf-spotlight';
 export const glowFocus = 'cf-glow-focus';
 export const bentoClass = cn(cardClass, spotCard, 'p-5 sm:p-6');
-export const tableClass = 'w-full text-sm';
-export const tableHeadClass = 'text-[var(--cf-ink-mute)] border-b border-[var(--cf-line)]';
-export const tableCellHead = 'px-4 py-3 text-left font-medium text-xs uppercase tracking-wide';
-export const tableCell = 'px-4 py-3';
-export const tableRowHover = 'hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors';
+export const tableClass = 'w-full text-sm text-left border-collapse';
+export const tableHeadClass = 'text-[var(--cf-ink-mute)] border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/30 backdrop-blur-sm sticky top-0 z-10';
+export const tableCellHead = 'px-4 py-3 text-left font-mono font-medium text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]';
+export const tableCell = 'px-4 py-3.5 border-b border-[var(--cf-line)]/50 text-[var(--cf-ink)]';
+export const tableRowHover = 'hover:bg-[#D86D3E]/[0.03] dark:hover:bg-[#D86D3E]/[0.05] transition-colors';
 export const emptyState = 'text-center text-[var(--cf-ink-mute)] py-10 text-sm';
 export const loadingState = 'text-[var(--cf-ink-mute)] text-sm';
 

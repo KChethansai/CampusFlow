@@ -104,10 +104,9 @@ export default function AdminHome() {
         <RoleHero
           accent="admin"
           dense
-          kicker="Institution Pulse"
-          title={<>Institution <em className="cf-display font-normal">pulse.</em></>}
+          title="Campus operations."
           metric={users.length}
-          sub={`people · ${departments.length} departments · ${courses.length} courses${pending.length ? ` · ${pending.length} requests need review` : ' · queues are clear'}.`}
+          sub={`Welcome, ${user?.name?.split(' ')[0]}. ${users.length} people · ${departments.length} departments · ${courses.length} courses${pending.length ? ` · ${pending.length} requests need review` : ' · queues are clear'}.`}
           alert={
             <div className="flex flex-wrap gap-1.5 mt-3">
               {Object.entries(roleMix).map(([role, n]) => (

@@ -178,7 +178,7 @@ export default function NotificationsCenter() {
                   return (
                     <div key={g.group}>
                       <p className="flex items-center gap-1.5 px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">
-                        <GroupIcon size={13} aria-hidden className="text-[#D86D3E] dark:text-[#8db4ff]" />
+                        <GroupIcon size={13} aria-hidden className="text-[#D86D3E] dark:text-[#F5B08A]" />
                         {g.group}
                         <span className="ml-auto rounded-full border border-[var(--cf-line)] px-1.5 py-px text-[10px] tracking-normal" aria-hidden>
                           {g.rows.length}
@@ -206,7 +206,7 @@ export default function NotificationsCenter() {
                                 className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
                               >
                                 <span className="flex items-start gap-2">
-                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]')} aria-hidden>
+                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]')} aria-hidden>
                                     <RowIcon size={14} />
                                   </span>
                                   <span className="min-w-0 flex-1">

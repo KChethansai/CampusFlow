@@ -54,7 +54,7 @@ export default function QuickAction({ role }) {
               exit={reduced ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.22, ease: EASE_OUT, delay: i * 0.05 }}
               onClick={() => { setOpen(false); navigate(a.to); }}
-              className="cf-glass pl-4 pr-5 min-h-11 py-2 rounded-full border border-[var(--cf-line)] shadow-[0_12px_32px_-12px_rgba(16,24,40,0.3)] font-display text-sm font-semibold text-[var(--cf-ink)] flex items-center gap-2 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#D86D3E]/40 hover:text-[#D86D3E] dark:hover:text-[#8db4ff]"
+              className="cf-glass pl-4 pr-5 min-h-11 py-2 rounded-full border border-[var(--cf-line)] shadow-[0_12px_32px_-12px_rgba(16,24,40,0.3)] font-display text-sm font-semibold text-[var(--cf-ink)] flex items-center gap-2 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#D86D3E]/40 hover:text-[#D86D3E] dark:hover:text-[#F5B08A]"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               {a.label}

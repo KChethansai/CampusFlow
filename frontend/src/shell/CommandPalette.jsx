@@ -216,7 +216,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
             {/* Kokonut-AI-input-style search field: hero input with icon tile + hints */}
             <div className="p-3 pb-0">
               <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[#D86D3E]/60 focus-within:ring-[3px] focus-within:ring-[#D86D3E]/20">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]" aria-hidden>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]" aria-hidden>
                   {query ? <Search size={16} /> : <Sparkles size={16} />}
                 </span>
                 <input
@@ -272,7 +272,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                       >
                         <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors ${
                           item.quick || active
-                            ? 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]'
+                            ? 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]'
                             : 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]'
                         }`} aria-hidden>
                           <ItemIcon size={15} />

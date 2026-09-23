@@ -103,10 +103,9 @@ export default function FacultyHome() {
       <motion.div variants={staggerChild}>
         <RoleHero
           accent="faculty"
-          kicker="Teaching Pulse"
-          title={<>Namaste, <em className="cf-display font-normal">{user?.name?.split(' ')[0]}.</em></>}
+          title="Your teaching queue."
           metric={pulse}
-          sub={`items need you · ${todaySessions.length ? `${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''} on record today` : 'no sessions recorded today yet'}${gradeQueue.length ? ` · ${gradeQueue.length} awaiting review` : ' · grading clear'}.`}
+          sub={`Welcome, ${user?.name?.split(' ')[0]}. ${pulse} items need you · ${todaySessions.length ? `${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''} on record today` : 'no sessions recorded today yet'}${gradeQueue.length ? ` · ${gradeQueue.length} awaiting review` : ' · grading clear'}.`}
           gauge={gradedPct != null && <AttendanceRing value={gradedPct} label="Grading completion" />}
         />
       </motion.div>

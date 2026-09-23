@@ -6,9 +6,11 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../store/useAuth';
 import { btnClass } from '../../system/tokens';
 import { Input } from '../../components/ui/primitives';
+import PasswordInput from '../../components/visual/PasswordInput';
+import MagneticButton from '../../components/visual/MagneticButton';
 import AuthLayout from './AuthLayout';
 
-const backLink = <><Link to="/login" className="font-semibold text-[#D86D3E] underline underline-offset-2 hover:brightness-110">Back to sign in</Link></>;
+const backLink = <><Link to="/login" className="font-semibold text-[#D86D3E] underline underline-offset-4 hover:brightness-110">Back to sign in</Link></>;
 
 export function ForgotPassword() {
   const { forgotPassword } = useAuth();
@@ -20,17 +22,15 @@ export function ForgotPassword() {
     setFailed(false);
     try {
       await forgotPassword(email);
-      // Always 200 (enumeration-safe); token may arrive via email OR in-app notification.
       setSent(true);
       toast.success('If the account exists, reset instructions are on their way.');
     } catch {
-      // Network/server failure only — unknown emails still return success.
       setFailed(true);
     }
   };
 
   return (
-    <AuthLayout title="Reset password" subtitle="We’ll send reset instructions to your email — or your CampusFlow inbox if mail isn’t configured."
+    <AuthLayout title="Reset password" subtitle="We’ll send reset instructions to your institutional email."
       footer={backLink}>
       <AnimatePresence mode="wait" initial={false}>
         {sent ? (
@@ -44,10 +44,10 @@ export function ForgotPassword() {
           >
             <p className="flex items-center gap-1.5 font-display font-semibold text-[var(--cf-ink)]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
-              Check your inbox ✓
+              Check your inbox
             </p>
-            <p>Reset link valid ~10 minutes.</p>
-            <p>No email? Sign in and open the bell icon — the token may be waiting in your notifications.</p>
+            <p>Reset link valid for ~10 minutes.</p>
+            <p>No email? Sign in to check in-app notifications if local SMTP is unconfigured.</p>
           </motion.div>
         ) : (
           <motion.form
@@ -61,7 +61,7 @@ export function ForgotPassword() {
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           >
             <Input
-              label="Email address"
+              label="Institutional Email"
               id="email"
               type="email"
               autoComplete="email"
@@ -82,7 +82,11 @@ export function ForgotPassword() {
                 </motion.p>
               )}
             </AnimatePresence>
-            <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Send reset link →</button>
+            <div className="pt-2">
+              <MagneticButton type="submit" className="w-full h-11 text-sm">
+                Send reset link →
+              </MagneticButton>
+            </div>
           </motion.form>
         )}
       </AnimatePresence>
@@ -127,15 +131,27 @@ export function ResetPassword() {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <Input label="Reset token" id="token-view" value={token} readOnly />
-          <Input label="New password" id="password" type="password" autoComplete="new-password"
+          <PasswordInput
+            label="New password"
+            id="password"
+            autoComplete="new-password"
             placeholder="Minimum 8 characters"
             error={errors.password && 'Minimum 8 characters'}
-            {...register('password', { required: true, minLength: 8 })} />
-          <Input label="Confirm password" id="confirm" type="password" autoComplete="new-password"
+            {...register('password', { required: true, minLength: 8 })}
+          />
+          <PasswordInput
+            label="Confirm password"
+            id="confirm"
+            autoComplete="new-password"
             placeholder="Repeat the new password"
             error={errors.confirm && 'Passwords must match'}
-            {...register('confirm', { required: true, validate: (v) => v === watch('password') })} />
-          <button type="submit" className={btnClass('primary', 'large') + ' w-full'}>Update password →</button>
+            {...register('confirm', { required: true, validate: (v) => v === watch('password') })}
+          />
+          <div className="pt-2">
+            <MagneticButton type="submit" className="w-full h-11 text-sm">
+              Update password →
+            </MagneticButton>
+          </div>
         </form>
       )}
     </AuthLayout>

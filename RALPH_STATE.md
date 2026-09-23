@@ -105,3 +105,45 @@ Review gates: hub `reviewer` final pass returned **APPROVE** after fixes. Focuse
 | F4 | Real Browser Verification | VERIFIED | Tested live production build via Playwright MCP across 375px (mobile), 1280px (laptop), 1920px (FHD), 2560px (2K QHD), and 3440px (ultrawide). Zero console errors, seamless 3D initialization and frameloop, and captured fresh screenshots. |
 | F5 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: built in 1.00s with zero warnings. `git diff --check`: clean. |
 
+## Final Visual System Overhaul (2026-09-23)
+
+| ID | Scope | Status | Evidence |
+|---|---|---|---|
+| G1 | Shared 21st.dev Visual Primitives | COMPLETE | Created `SpotlightCard.jsx` (pointer-tracking radial spotlight glow without React state re-renders), `MagneticButton.jsx` (spring-physics magnetic pull button with shimmer), `PasswordInput.jsx` (accessible password reveal toggle + Obsidian Ember focus ring), and `AuthVisual.jsx` (cinematic left-panel orbital campus geometry with synchronized nodes). |
+| G2 | Asymmetrical Split Login Portal | COMPLETE | Rebuilt `AuthLayout.jsx` and `Login.jsx` into an asymmetrical split layout (cinematic left panel + focused right form surface) with home return link, dark/light theme toggle, role switcher tabs (Student/Faculty/Admin/Placement), dynamic email placeholders, eye reveal button, and magnetic CTA. |
+| G3 | Global Palette Unification | COMPLETE | Eradicated all leftover blue tokens (`#8db4ff`, `#2563ff`) across the entire repository. Replaced with `#F5B08A` (warm clay highlight) and `#E7A66D` (volt gold) in `AppShell.jsx`, `CommandPalette.jsx`, `NotificationsCenter.jsx`, `QuickAction.jsx`, `FilePreview.jsx`, and `tokens.js`. Grep for `#8db4ff` / `#2563ff` now returns 0 matches. |
+| G4 | UI Noise & Marker Elimination | COMPLETE | Removed `Academic OS` subtitle from Brand; removed `ACTIVE` badge from all navigation rail links; removed `Est. campus OS` and `Workspace` pills; updated `Tour.jsx` badge from `Tour` to `Guide`. |
+| G5 | Real Browser Multi-Viewport Verification | VERIFIED | Tested live production build via Playwright MCP at 1280px (split desktop layout) and 375px (mobile single-column layout). Zero console errors. Captured and validated dark and light screenshots. |
+| G6 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: built with zero warnings, PWA service worker generated. `git diff --check`: clean. |
+
+## 21st.dev Visual Master Pass (2026-09-23)
+
+| ID | Scope | Status | Evidence |
+|---|---|---|---|
+| H1 | 3D Campus Topology System | COMPLETE | Rebuilt `frontend/src/components/hero/heroScene/` into an architectural 3D topological universe: `ArchitecturalPlanes.jsx` (elevated floating obsidian hub platforms with wireframe boundaries & beacons), `CoreStructure.jsx` (crystalline faceted monolith with dual-axis Keplerian rings), `Pathways.jsx` (3D CatmullRom spline conduits with traveling data pulses), and `CameraRig.jsx` (mouse parallax + scroll-driven camera journey). |
+| H2 | ContainerScroll & Scroll Morph Hero | COMPLETE | Implemented `ContainerScroll.jsx` wrapping `HeroScene` with 3D perspective tilt (`rotateX(18deg)` to `0deg`), smooth scale, and elevation as the user scrolls into view. |
+| H3 | Radial Orbital Timeline Section | COMPLETE | Implemented `RadialOrbitalTimeline.jsx` as Section 07 ("Workflow Mesh: How campus workflows connect"): interactive concentric orbital rings, pulsing spoke rays, and clickable role satellites (Student, Faculty, Placement, Admin) with synchronized state cards. |
+| H4 | LiquidGlassButton & Animated Navigation | COMPLETE | Built `LiquidGlassButton.jsx` with moving border sheen, spring magnetic physics, and radial bloom; added `layoutId="nav-pill"` animated hover pill to header navbar; added continuous `SectionConnector` bridges between all landing sections. |
+| H5 | Authenticated Shell & Dashboard Polish | COMPLETE | Elevated `RoleHero`, `PANEL`, and `SpotTask` in `regions.jsx` with Obsidian Ember glass finish; built `DashboardHero.jsx`; updated `Tour.jsx` badge to `Guide`. |
+| H6 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: 3158 modules transformed, 0 warnings in 2.83s. `git diff --check`: clean. Playwright browser inspection: 0 console errors. |
+
+## Final Deconstructed Landing & Label Noise Elimination Pass (2026-09-23)
+
+| ID | Scope | Status | Evidence |
+|---|---|---|---|
+| I1 | Label Noise Elimination | COMPLETE | Purged all decorative section numbers ("01 /", "02 /", etc.), tiny eyebrow badges, category chips, and internal vocabulary across all sections. Clean monumental editorial typography leads every section. Central nucleus terminology normalized from "Core OS" to "Platform". |
+| I2 | Landing Component Modularization | COMPLETE | Decomposed monolithic `Landing.jsx` into 13 clean, maintainable components in `frontend/src/components/landing/`: `LandingHeader.jsx`, `HeroSection.jsx`, `PulseSection.jsx`, `SignalsSection.jsx`, `AttendanceSection.jsx`, `PlacementSection.jsx`, `WorkflowSection.jsx`, `DirectorySection.jsx`, `IntelligenceSection.jsx`, `RoleExperiencesSection.jsx`, `JourneySection.jsx`, `FinalCTA.jsx`, `LandingFooter.jsx`, and `shared.jsx`. `Landing.jsx` is now an elegant ~60-line orchestrator. |
+| I3 | Component Documentation | COMPLETE | Updated `SOURCES.md` and `REGISTRY.md` with full attribution and single-owner architecture matrix for adapted 21st.dev patterns. |
+| I4 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: built in 1.34s with zero warnings, PWA service worker generated. `git diff --check`: clean. |
+| I5 | Browser Multi-Viewport & Console Audit | VERIFIED | Tested live preview via Playwright MCP at 1280px (desktop) and 375px (mobile) on `/` and `/login`. Console errors: 0 on landing, 0 on login. Captured and saved master screenshots. |
+
+## Master Creative Engineering & Experience Architecture Pass (2026-09-23)
+
+| ID | Scope | Status | Evidence |
+|---|---|---|---|
+| J1 | Content Layer vs Functional Layer | COMPLETE | Grounded all content surfaces on solid `var(--cf-surface)` in `HERO`, `PANEL`, and cards. Confined `cf-glass` strictly to floating functional layers (topbar, mobile dock, command palette, notification drawers, quick action). |
+| J2 | Dashboard Contextual Openings | COMPLETE | Normalized dashboard headers across all 4 roles to refined editorial titles without redundant kicker labels: Student ("Your day, in one glance."), Faculty ("Your teaching queue."), Placement ("Recruitment in motion."), Admin ("Campus operations."). |
+| J3 | Extreme Label & Number Purge | COMPLETE | Removed numeric prefixes from mobile navigation drawer items and standardized action buttons to title-style capitalization. |
+| J4 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: built in 1.25s with zero warnings. `git diff --check`: clean. |
+| J5 | Browser Multi-Viewport & Console Audit | VERIFIED | Tested live preview via Playwright MCP at 1280px and 375px. 0 console errors, 0 warnings on `/login`, 0 console errors on `/`. Captured proof screenshots. |
+| J6 | Comprehensive Route & Viewport Audit Pass | VERIFIED | Inspected 10+ routes across desktop, tablet, and mobile viewports with live Atlas backend and real role sessions. Caught and fixed missing `Suspense` import on `/placement`, resolved 403 authorization gap for `college_admin` on `GET /submissions`, and defaulted theme to Obsidian Ember dark mode. 100% 0 console errors across all audited routes. |

@@ -101,13 +101,12 @@ export default function PlacementHome() {
       <motion.div variants={staggerChild}>
         <RoleHero
           accent="placement"
-          kicker={isStudent ? 'Your career track' : 'Placement control'}
-          title={<>Classroom to <em className="cf-display font-normal">career.</em></>}
+          title="Recruitment in motion."
           metric={funnel.total}
           sub={
             isStudent
-              ? `application${funnel.total === 1 ? '' : 's'} in motion · ${openDrives.length} drives open.`
-              : `${drives.length} drives · ${companies.length} companies · ${funnel.total} applications in the ecosystem.`
+              ? `Welcome, ${user?.name?.split(' ')[0]}. ${funnel.total} application${funnel.total === 1 ? '' : 's'} in motion · ${openDrives.length} drives open.`
+              : `Welcome, ${user?.name?.split(' ')[0]}. ${drives.length} drives · ${companies.length} companies · ${funnel.total} applications in the ecosystem.`
           }
           alert={
             <Link to="/placement" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#D86D3E] hover:underline">

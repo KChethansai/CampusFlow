@@ -1,110 +1,115 @@
-// AuthLayout: glass split — ambient radial glows on brand panel,
-// glass form card (24px, 1px var(--cf-line)), theme toggle.
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, ArrowLeft } from 'lucide-react';
 import { motionVariants } from '../../system/motion';
 import { useTheme } from '../../system/theme';
-import { SplitReveal } from '../../components/ui/editorial';
+import AuthVisual from '../../components/visual/AuthVisual';
 
 function BrandMark({ size = 'md' }) {
   const box = size === 'md' ? 'w-9 h-9 text-base' : 'w-8 h-8 text-sm';
   return (
-    <span className="flex items-center gap-2.5" aria-hidden={false}>
-      <span className={`${box} grid place-items-center font-display font-bold bg-[#A94727] text-white rounded-[10px]`} aria-hidden>C</span>
-      <span className="font-display font-bold tracking-tight text-lg">CampusFlow</span>
+    <span className="flex items-center gap-2.5">
+      <span className={`${box} grid place-items-center font-display font-bold bg-[#D86D3E] text-white rounded-xl shadow-md shadow-[#D86D3E]/30`} aria-hidden>
+        C
+      </span>
+      <span className="font-display font-bold tracking-tight text-lg text-[var(--cf-ink)]">CampusFlow</span>
     </span>
   );
 }
 
+/**
+ * AuthLayout
+ * Premium product portal layout following Obsidian Ember design tokens.
+ * Asymmetrical split on desktop (cinematic left panel + focused authentication surface).
+ */
 export default function AuthLayout({ title, subtitle, children, footer }) {
   const { theme, toggle } = useTheme();
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.05fr_1fr] bg-[var(--cf-bg)]">
-      {/* Brand panel */}
-      <div className="hidden lg:flex flex-col border-r border-[var(--cf-line)] bg-[var(--cf-surface-2)] text-[var(--cf-ink)] relative overflow-hidden">
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              'radial-gradient(560px 340px at 18% 8%, rgba(216,109,62,.16), transparent 65%), radial-gradient(480px 320px at 85% 20%, rgba(167,123,104,.12), transparent 65%), radial-gradient(600px 420px at 50% 110%, rgba(200,125,75,.10), transparent 65%)'
-          }}
-        />
-        <div className="relative flex items-center justify-between p-8">
-          <Link to="/" aria-label="CampusFlow home">
-            <BrandMark />
-          </Link>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
-            Est. campus OS
-          </span>
-        </div>
-        <div className="relative flex-1 flex flex-col justify-center px-10">
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-[var(--cf-ink-mute)]">
-            Academics · Placements · Campus life
-          </p>
-          <SplitReveal
-            as="p"
-            lines={['The operating system', 'for your campus.']}
-            className="mt-4 font-display text-5xl font-bold leading-[1.02] tracking-tight"
-          />
-          <p className="mt-4 text-sm text-[var(--cf-ink-mute)] max-w-md">
-            One identity across academics, placements and campus life.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {['Assignments', 'Attendance', 'Placements', 'Events'].map((t) => (
-              <span key={t} className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-[var(--cf-ink-soft)]">
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="relative h-px bg-[var(--cf-line)]" aria-hidden />
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr] bg-[var(--cf-bg)] text-[var(--cf-ink)]">
+      {/* Left Cinematic Visual System (Desktop) */}
+      <div className="hidden lg:block relative border-r border-[var(--cf-line)] overflow-hidden">
+        <AuthVisual />
       </div>
 
-      {/* Form side */}
-      <div className="relative flex items-center justify-center p-4 sm:p-8">
+      {/* Right Form Surface */}
+      <div className="relative flex flex-col justify-between p-4 sm:p-8 lg:p-12 overflow-y-auto">
+        {/* Background ambient radial glow */}
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
           style={{
             background:
-              'radial-gradient(520px 320px at 85% -5%, rgba(216,109,62,.10), transparent 65%), radial-gradient(420px 300px at 10% 105%, rgba(167,123,104,.08), transparent 65%)'
+              'radial-gradient(520px 320px at 85% -5%, rgba(216,109,62,.10), transparent 65%), radial-gradient(420px 300px at 10% 105%, rgba(121,184,166,.08), transparent 65%)'
           }}
         />
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 rounded-full bg-[var(--cf-surface)]/80 backdrop-blur border border-[var(--cf-line)] text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] transition"
-        >
-          {theme === 'dark' ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
-        </button>
-        <motion.div {...motionVariants.page} className="relative w-full max-w-md">
-          <Link to="/" className="lg:hidden flex items-center gap-2 mb-6" aria-label="CampusFlow home">
-            <BrandMark size="sm" />
+
+        {/* Top Controls: Return to Home & Theme Toggle */}
+        <div className="relative z-10 flex items-center justify-between mb-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] transition"
+            aria-label="Return to CampusFlow home"
+          >
+            <ArrowLeft size={15} aria-hidden />
+            <span>Home</span>
           </Link>
-          <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-6 sm:p-8">
-            <p className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
-              CampusFlow
+
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2.5 rounded-full bg-[var(--cf-surface)]/80 backdrop-blur border border-[var(--cf-line)] text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] hover:border-black/20 dark:hover:border-white/20 transition"
+          >
+            {theme === 'dark' ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
+          </button>
+        </div>
+
+        {/* Form Container */}
+        <div className="relative z-10 my-auto flex justify-center">
+          <motion.div {...motionVariants.page} className="w-full max-w-md">
+            {/* Mobile Brand Mark */}
+            <div className="lg:hidden mb-6 flex justify-center">
+              <Link to="/" aria-label="CampusFlow home">
+                <BrandMark size="md" />
+              </Link>
+            </div>
+
+            {/* Auth Card Surface */}
+            <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-2xl p-6 sm:p-8 shadow-xl shadow-black/5 dark:shadow-black/40">
+              <div className="mb-6">
+                <p className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D86D3E]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
+                  Institutional Access
+                </p>
+                <h1 className="mt-2 font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--cf-ink)]">
+                  {title}
+                </h1>
+                {subtitle && (
+                  <p className="mt-1.5 text-sm text-[var(--cf-ink-mute)] leading-relaxed">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+
+              <div>{children}</div>
+
+              {footer && (
+                <div className="mt-6 pt-5 border-t border-[var(--cf-line)] text-xs text-center text-[var(--cf-ink-mute)] leading-relaxed">
+                  {footer}
+                </div>
+              )}
+            </div>
+
+            <p className="mt-4 text-center text-[11px] text-[var(--cf-ink-mute)]">
+              Authorized access only · Protected by institution Single Sign-On
             </p>
-            <SplitReveal
-              as="h1"
-              lines={[title]}
-              className="mt-1 font-display text-2xl font-bold tracking-tight"
-            />
-            {subtitle && <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">{subtitle}</p>}
-            <div className="mt-6">{children}</div>
-            {footer && <div className="mt-6 pt-5 border-t border-[var(--cf-line)] text-sm text-center text-[var(--cf-ink-mute)]">{footer}</div>}
-          </div>
-          <p className="mt-4 text-center text-[11px] text-[var(--cf-ink-mute)]">
-            Protected by your institution · Never share your password
-          </p>
-        </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Bottom Spacer for balance */}
+        <div className="relative z-10 hidden sm:block h-6" aria-hidden />
       </div>
     </div>
   );

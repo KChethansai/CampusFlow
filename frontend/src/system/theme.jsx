@@ -1,14 +1,14 @@
 // Theme: light + real dark ("campus at night"). Class-based, persisted.
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext({ theme: 'light', toggle: () => {} });
+const ThemeContext = createContext({ theme: 'dark', toggle: () => {} });
 
 const readTheme = () => {
   try {
     const saved = localStorage.getItem('cf_theme');
     if (saved === 'light' || saved === 'dark') return saved;
   } catch { /* ignore */ }
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 };
 
 export function ThemeProvider({ children }) {

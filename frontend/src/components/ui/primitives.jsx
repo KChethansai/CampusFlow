@@ -147,16 +147,21 @@ export function PageHeader({ title, subtitle, actions, kicker, number, breadcrum
   );
 }
 
-export function EmptyState({ title = 'Nothing here yet', hint, action, editorial }) {
+export function EmptyState({ title = 'Nothing here yet', hint, action, icon: Icon, editorial }) {
   return (
-    <div className={emptyState}>
-      {editorial ? (
-        <p className="font-display font-semibold tracking-tight text-3xl text-[var(--cf-ink-soft)]">{title}</p>
-      ) : (
-        <p className="font-medium text-[var(--cf-ink-soft)]">{title}</p>
+    <div className={cn(emptyState, 'flex flex-col items-center justify-center p-8 text-center')}>
+      {Icon && (
+        <span className="w-12 h-12 rounded-2xl grid place-items-center bg-[#D86D3E]/10 dark:bg-[#D86D3E]/15 text-[#D86D3E] dark:text-[#F5B08A] mb-3" aria-hidden>
+          <Icon size={22} />
+        </span>
       )}
-      {hint && <p className="mt-1 text-sm">{hint}</p>}
-      {action && <div className="mt-4 flex justify-center">{action}</div>}
+      {editorial ? (
+        <p className="font-display font-semibold tracking-tight text-2xl sm:text-3xl text-[var(--cf-ink)]">{title}</p>
+      ) : (
+        <p className="font-display font-semibold text-base text-[var(--cf-ink)]">{title}</p>
+      )}
+      {hint && <p className="mt-1.5 text-xs sm:text-sm text-[var(--cf-ink-mute)] max-w-sm text-center leading-relaxed">{hint}</p>}
+      {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   );
 }

@@ -181,9 +181,6 @@ export default function ProductPortal() {
           <span className="font-display text-sm font-semibold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
             CampusFlow Portal
           </span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/[0.04] dark:bg-white/[0.08] text-[#4B5563] dark:text-[#A7B0BF] border border-black/10 dark:border-white/10">
-            Workspace
-          </span>
         </div>
         <div
           className="flex items-center gap-1 p-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]"

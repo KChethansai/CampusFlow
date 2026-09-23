@@ -11,8 +11,8 @@ import { AnimatedCounter, SpotCard } from '../ui/editorial';
 import { EmptyState, LoadingState } from '../ui/primitives';
 
 export const HERO =
-  'cf-glass rounded-[24px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden';
-export const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+  'bg-[var(--cf-surface)] rounded-[28px] border border-[var(--cf-line)] p-6 sm:p-8 relative overflow-hidden shadow-sm hover:border-[#D86D3E]/30 transition-colors';
+export const PANEL = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 sm:p-6 shadow-sm';
 
 // ponytail: one glow per role, hero-only. Admin is deliberately fainter + dense.
 export const ROLE_ACCENTS = {
@@ -155,7 +155,7 @@ export function TaskGrid({ children, className }) {
 }
 
 const TASK =
-  'cf-card-spot rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg block w-full text-left';
+  'cf-card-spot rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:border-[#D86D3E]/40 hover:shadow-lg hover:shadow-black/20 block w-full text-left';
 
 export function SpotTask({ to, onClick, label, children, className }) {
   const cls = cn(TASK, className);
