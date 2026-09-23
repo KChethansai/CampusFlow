@@ -94,3 +94,14 @@ Review gates: hub `reviewer` final pass returned **APPROVE** after fixes. Focuse
 | E6 | Backend Regression Suite | VERIFIED | `npm test` → **15 suites, 130 tests passed** (100% passing). `npm run check-syntax` clean. |
 | E7 | Frontend Production Build | VERIFIED | `npm run build` clean (Vite 8.3.0, 3684 modules transformed, 0 warnings, service worker generated). |
 | E8 | Scope Boundaries | documented | Background Web Push is absent (Socket.IO realtime handles active in-app sessions). Timetable period/room schedule data is absent (syllabus unit data is present and functional). |
+
+## Final Submission Overhaul & 3D Rebuild (2026-09-23)
+
+| ID | Scope | Status | Evidence |
+|---|---|---|---|
+| F1 | 3D System Teardown | COMPLETE | Fully deleted `frontend/src/components/spatial/*` (`CampusScene.jsx`, `SpatialCanvas.jsx`, `domains.js`, `ErrorBoundary.jsx`). Removed the six primitive towers, Drei Float, and ContactShadows. Uninstalled `@react-three/drei` (removed 41 unused packages). |
+| F2 | New 3D Hero System (`frontend/src/components/hero/`) | COMPLETE | Built modular Obsidian Ember centerpiece communicating "one connected campus system": `HeroScene.jsx`, `HeroSceneFallback.jsx`, `heroScene/SceneRoot.jsx`, `CoreStructure.jsx` (institutional nucleus with dual-axis rotating Keplerian rings), `Pathways.jsx` (geometric data rails, 6 interactive peripheral nodes, moving data pulses), `Particles.jsx` (ambient dust field), and `CameraRig.jsx` (mouse parallax + idle drift). Includes IntersectionObserver gating, tab visibility GPU pause, and WebGL context loss recovery. |
+| F3 | Label & Noise Elimination | COMPLETE | Audited and removed all visible demo/internal markers: removed `"Tour"` badge from `ProductPortal.jsx`, eliminated `{cells.length} panels` and `{routeCount} live routes` meta counters; removed `"Operational"` status badge from navbar; replaced `"The academic operating system"` eyebrow with `"Unified Campus Platform"`; removed fake browser window chrome (mac dots, fake URL bar, live workspace pill) from hero; updated `TrustBar.jsx` to honest platform numbers (5 roles, 6 pipeline stages, 6 core modules, 3 attendance states) eliminating `DOMAINS` and "in the tour" copy; updated Section 07 directory and Section 09 role experiences copy. |
+| F4 | Real Browser Verification | VERIFIED | Tested live production build via Playwright MCP across 375px (mobile), 1280px (laptop), 1920px (FHD), 2560px (2K QHD), and 3440px (ultrawide). Zero console errors, seamless 3D initialization and frameloop, and captured fresh screenshots. |
+| F5 | Full Regression Suite | VERIFIED | Backend `npm test`: **15 suites, 130 tests passed** (100% green). Backend `npm run check-syntax`: clean. Frontend `npm run build`: built in 1.00s with zero warnings. `git diff --check`: clean. |
+

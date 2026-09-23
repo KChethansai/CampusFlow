@@ -29,12 +29,11 @@ import {
   Sparkles,
   Users
 } from 'lucide-react';
-import SpatialCanvas from '../components/spatial/SpatialCanvas';
+import HeroScene from '../components/hero/HeroScene';
 import ProductPortal from '../components/landing/ProductPortal';
 import TrustBar from '../components/landing/TrustBar';
 import { SpotCard, SplitReveal, BeamCard } from '../components/ui/editorial';
 import { PIPELINE_STAGES, ROLES, cn, roleLabel } from '../system/tokens';
-import { DOMAINS } from '../components/spatial/domains';
 
 const NAV = [
   { label: 'Platform', to: '/dashboard' },
@@ -323,10 +322,6 @@ export default function Landing() {
             ))}
           </nav>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-xs font-medium text-[#4B5563] dark:text-[#A7B0BF]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
-              Operational
-            </span>
             <Link
               to="/login"
               className="hidden sm:block px-3 py-2 rounded-full text-sm font-semibold text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors"
@@ -361,7 +356,7 @@ export default function Landing() {
           <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-32 sm:pt-44 pb-8 text-center">
             <motion.p initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .42, delay: .02 }} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 cf-glass text-xs font-semibold uppercase tracking-[0.14em] text-[#4B5563] dark:text-[#A7B0BF]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
-              The academic operating system
+              Unified Campus Platform
             </motion.p>
             <h1
               className="font-display font-bold tracking-tight leading-[1.02] mt-6 text-balance"
@@ -391,39 +386,7 @@ export default function Landing() {
           </div>
 
           <motion.div initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .28, ease: [0.16, 1, 0.3, 1] }} style={reduced ? undefined : { y: previewY }} className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-            <div className="landing-preview cf-glass rounded-[32px] border border-black/10 dark:border-white/10 overflow-hidden shadow-2xl shadow-[#D86D3E]/[0.08] dark:shadow-black/50">
-              <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-black/10 dark:border-white/10">
-                <div className="flex items-center gap-1.5" aria-hidden>
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                </div>
-                <p className="hidden sm:block font-mono text-xs text-[#4B5563] dark:text-[#707A89] px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10">
-                  campusflow.app/dashboard
-                </p>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#4B5563] dark:text-[#A7B0BF] border border-black/10 dark:border-white/10">
-                  <span className="landing-live-dot w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
-                  Live workspace
-                </span>
-              </div>
-              <div inert aria-hidden className="h-[320px] sm:h-[420px]">
-                <SpatialCanvas className="w-full h-full" compact />
-              </div>
-              <div className="flex flex-wrap gap-1.5 px-4 sm:px-5 py-3.5 border-t border-black/10 dark:border-white/10">
-                {DOMAINS.map((d) => (
-                  <span
-                    key={d.key}
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10"
-                  >
-                    <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: d.color }} />
-                    {d.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <p className="mt-3 text-center text-[13px] text-[#4B5563] dark:text-[#707A89]">
-              A preview of the real product — sign in to enter.
-            </p>
+            <HeroScene />
           </motion.div>
         </section>
 
@@ -660,7 +623,7 @@ export default function Landing() {
             number="07"
             eyebrow="People"
             title="Everyone, findable."
-            body="Five roles, six domains — the directory mirrors the real identity model."
+            body="Five verified roles, unified authentication — the directory mirrors the real identity model."
           />
           <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {ROLES.map((role, i) => (
@@ -675,15 +638,8 @@ export default function Landing() {
                   <span>
                     <span className="block font-display font-semibold tracking-tight text-[17px]">{roleLabel(role)}</span>
                     <span className="block font-mono text-[11px] text-[#4B5563] dark:text-[#707A89] mt-0.5">@{role}</span>
-                    <span className="mt-2 flex flex-wrap gap-1">
-                      {DOMAINS.slice(0, 3).map((d) => (
-                        <span
-                          key={d.key}
-                          className="inline-block w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/20"
-                          style={{ background: d.color }}
-                          title={d.label}
-                        />
-                      ))}
+                    <span className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full border border-black/10 dark:border-white/10 font-mono text-[10px] text-[#4B5563] dark:text-[#A7B0BF]">
+                      {role === 'student' ? 'Learner Workspace' : role === 'faculty' ? 'Faculty Portal' : role === 'placement_officer' ? 'Placement Cell' : role === 'college_admin' ? 'Campus Admin' : 'System Root'}
                     </span>
                     <Link
                       to="/dashboard"
@@ -698,7 +654,7 @@ export default function Landing() {
             <Reveal delay={0.24}>
               <Link to="/dashboard" className={`group ${glassCard} p-5 flex flex-col justify-center h-full hover:border-[#D86D3E]/40 transition-colors min-h-[148px]`}>
                 <span className="inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-[#4B5563] dark:text-[#A7B0BF]">
-                  <Bell size={14} aria-hidden /> {DOMAINS.length} domains
+                  <Users size={14} aria-hidden /> Institutional Directory
                 </span>
                 <span className="mt-2 font-display font-semibold text-[17px] tracking-tight">
                   Browse the full directory after sign-in
@@ -774,7 +730,7 @@ export default function Landing() {
             number="09"
             eyebrow="Role experiences"
             title="One platform. Four tailored experiences."
-            body="Switch tabs — headline, facts, panels and CTA morph in place. No reload, every link real."
+            body="Each campus stakeholder accesses a purpose-built workspace aligned with their daily workflows, permissions, and priorities."
           />
           <Reveal className="mt-7">
             <ProductPortal />

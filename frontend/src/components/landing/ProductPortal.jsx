@@ -159,7 +159,6 @@ export default function ProductPortal() {
   const [tab, setTab] = useState('student');
   const reduced = useReducedMotion();
   const cells = PANELS[tab];
-  const routeCount = cells.reduce((n, c) => n + c.links.length, 0);
   const morph = reduced
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.01 } }
     : {
@@ -182,8 +181,8 @@ export default function ProductPortal() {
           <span className="font-display text-sm font-semibold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
             CampusFlow Portal
           </span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[#E7A66D]/15 text-[#4d6a00] dark:text-[#E7A66D] border border-[#E7A66D]/30">
-            Tour
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/[0.04] dark:bg-white/[0.08] text-[#4B5563] dark:text-[#A7B0BF] border border-black/10 dark:border-white/10">
+            Workspace
           </span>
         </div>
         <div
@@ -217,20 +216,17 @@ export default function ProductPortal() {
             <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
               {HEADLINES[tab]}
             </h3>
-            <ul className="flex flex-wrap gap-1.5" aria-label={`${roleLabel(tab)} workspace facts`}>
-              <li className="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
-                {cells.length} panels
-              </li>
-              <li className="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
-                {routeCount} live routes
-              </li>
-            </ul>
+            <div className="flex flex-wrap gap-1.5" aria-label={`${roleLabel(tab)} workspace profile`}>
+              <span className="px-2.5 py-1 rounded-full border border-black/10 dark:border-white/10 font-mono text-[11px] text-[#4B5563] dark:text-[#A7B0BF]">
+                {tab === 'student' ? 'Academic & Career Pipeline' : tab === 'faculty' ? 'Instruction & Records' : tab === 'placement' ? 'Corporate Recruitment' : 'Institutional Governance'}
+              </span>
+            </div>
           </div>
 
           <div
             className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 sm:p-5"
             role="tabpanel"
-            aria-label={`${roleLabel(tab)} workspace tour`}
+            aria-label={`${roleLabel(tab)} workspace preview`}
           >
             {cells.map((cell) => (
               <div
@@ -283,7 +279,7 @@ export default function ProductPortal() {
 
           <div className="flex flex-wrap items-center justify-between gap-2 px-5 sm:px-6 pb-5">
             <p className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280] dark:text-[#707A89]">
-              Every link opens the real workspace
+              Role-governed workspace · Single sign-on
             </p>
             <Link
               to="/dashboard"

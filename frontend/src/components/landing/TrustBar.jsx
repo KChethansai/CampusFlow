@@ -1,14 +1,13 @@
 // TrustBar: platform pulse — Magic Number Ticker stats, structural truths only.
-// Counts derive from tokens + domains + portal tabs, never marketing numbers.
+// Counts derive directly from tokens and schema rules, never marketing numbers.
 import { PIPELINE_STAGES, ROLES } from '../../system/tokens';
-import { DOMAINS } from '../spatial/domains';
 import { AnimatedCounter } from '../ui/editorial';
 
 const METRICS = [
-  { value: ROLES.length, label: 'Roles, one identity' },
+  { value: ROLES.length, label: 'Campus roles supported' },
   { value: PIPELINE_STAGES.length, label: 'Placement pipeline stages' },
-  { value: DOMAINS.length, label: 'Campus domains in 3D' },
-  { value: 4, label: 'Role workspaces in the tour' } // mirrors ProductPortal TABS
+  { value: 6, label: 'Core operational modules' },
+  { value: 3, label: 'Live attendance states' }
 ];
 
 export default function TrustBar() {

@@ -35,7 +35,7 @@ export default defineConfig({
             if (id.includes('motion')) return 'motion';
             if (id.includes('lucide-react')) return 'icons';
             if (id.includes('recharts')) return 'charts';
-            if (id.includes('three') || id.includes('@react-three')) return 'spatial';
+            if (id.includes('three') || id.includes('@react-three')) return 'hero-3d';
             if (id.includes('react') || id.includes('zustand') || id.includes('axios')) return 'vendor';
           }
           return undefined;
