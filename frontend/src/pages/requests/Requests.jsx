@@ -96,7 +96,7 @@ export default function Requests() {
         {['All', 'Open', 'pending', 'in_review', 'approved', 'rejected'].map((f) => (
           <button key={f} role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
             className={cn('rounded-xl px-3.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap transition',
-              filter === f ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
+              filter === f ? 'bg-[#A94727] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
             {f === 'Open' ? 'Open' : f.replace(/_/g, ' ')}
           </button>
         ))}

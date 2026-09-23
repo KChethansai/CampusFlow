@@ -40,25 +40,6 @@ export const useAuth = create((set) => ({
     }
   },
 
-  registerUser: async (payload) => {
-    set({ loading: true, error: null });
-    try {
-      const { data } = await api.post('/auth/register-public', payload);
-      const session = {
-        user: data.user,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken
-      };
-      localStorage.setItem('cf_auth', JSON.stringify(session));
-      set({ ...session, isAuthenticated: true, loading: false, error: null });
-      return data;
-    } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed';
-      set({ loading: false, error: message });
-      throw err;
-    }
-  },
-
   logoutUser: async () => {
     try {
       const auth = readStoredAuth();
@@ -118,6 +99,19 @@ export const useAuth = create((set) => ({
       currentPassword,
       newPassword
     });
+    return data;
+  },
+
+  completeOnboardingTour: async () => {
+    const { data } = await api.patch('/users/me/onboarding-tour', { completed: true });
+    const user = data.data || data.user;
+    if (user) {
+      const auth = readStoredAuth();
+      if (auth) localStorage.setItem('cf_auth', JSON.stringify({ ...auth, user }));
+      set({ user });
+    } else {
+      set((state) => ({ user: state.user ? { ...state.user, onboardingTourCompleted: true } : null }));
+    }
     return data;
   },
 

@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { X } from 'lucide-react';
 import { cn } from '../../system/tokens';
+import { useFocusTrap } from '../../system/focusTrap';
 import { Badge } from '../ui/primitives';
 
 /** Task card: spotlight hover-lift over the urgency-lane surface. */
@@ -19,7 +20,7 @@ export const AssignmentCard = memo(function AssignmentCard({
   return (
     <article className="cf-card-spot rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/60 p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <button onClick={onOpen} className="min-w-0 text-left font-display font-semibold leading-snug hover:text-[#2563FF] transition">
+        <button onClick={onOpen} className="min-w-0 text-left font-display font-semibold leading-snug hover:text-[#D86D3E] transition">
           {title}
         </button>
         {badge}
@@ -58,6 +59,7 @@ export function LaneProgress({ done, total, label }) {
 /** Local detail drawer: slide-over for one assignment. Flows stay in caller. */
 export function DetailDrawer({ open, onClose, title, children }) {
   const reduced = useReducedMotion();
+  const trapRef = useFocusTrap(open);
   return (
     <AnimatePresence>
       {open && (
@@ -71,6 +73,7 @@ export function DetailDrawer({ open, onClose, title, children }) {
             aria-hidden
           />
           <motion.aside
+            ref={trapRef}
             role="dialog"
             aria-modal="true"
             aria-label={typeof title === 'string' ? title : 'Details'}

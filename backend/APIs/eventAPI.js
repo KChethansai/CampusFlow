@@ -8,6 +8,7 @@ import {
   updateEvent,
   deleteEvent,
   registerForEvent,
+  exportEventIcs,
 } from '../controllers/eventcontroller.js';
 
 export const eventApp = Router();
@@ -16,8 +17,9 @@ export const eventApp = Router();
 eventApp.use(verifyToken());
 eventApp.use(auditLog);
 
-// GET routes — all roles
+// GET routes — all roles (ics before :id so "ics" never parses as an id)
 eventApp.get('/', getAllEvents);
+eventApp.get('/:id/ics', exportEventIcs);
 eventApp.get('/:id', getEventById);
 
 // Write routes — restricted

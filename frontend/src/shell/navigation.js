@@ -25,6 +25,7 @@ export const NAV = [
   { label: 'Dashboard', to: '/dashboard', Icon: LayoutDashboard },
   { label: 'Users', to: '/users', roles: ADMIN, Icon: Users },
   { label: 'Departments', to: '/departments', roles: ADMIN, Icon: Building2 },
+  { label: 'Institutions', to: '/institutions', roles: ['super_admin'], Icon: Building2 },
   { label: 'Courses', to: '/courses', roles: ADMIN, Icon: BookOpen },
   { label: 'Subjects', to: '/subjects', roles: [...ADMIN, 'faculty'], Icon: BookMarked },
   { label: 'Assignments', to: '/assignments', roles: LEARN, Icon: ClipboardList },

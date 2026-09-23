@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router';
 import { Bell, Briefcase, GraduationCap, Inbox, Megaphone, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import api from '../api/axios';
+import { useSocket } from '../store/useSocket';
 import { cn } from '../system/tokens';
 import { EASE_OUT, motionVariants } from '../system/motion';
 
@@ -71,9 +72,18 @@ export default function NotificationsCenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open ]);
 
-  // Poll unread count lightly while mounted.
+  // Live updates via socket; slow poll retained as offline fallback.
+  const lastEvent = useSocket((s) => s.lastEvent);
   useEffect(() => {
-    const id = setInterval(refresh, 60000);
+    if (lastEvent?.channel === 'notification:new' && lastEvent.payload?.notification) {
+      setItems((prev) => [lastEvent.payload.notification, ...prev]);
+    } else if (lastEvent && ['announcement:posted', 'attendance:marked', 'request:updated'].includes(lastEvent.channel)) {
+      refresh(); // merged campus feed — refetch on live signal
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastEvent]);
+  useEffect(() => {
+    const id = setInterval(refresh, 300000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => clearInterval(id);
   }, []);
@@ -119,7 +129,7 @@ export default function NotificationsCenter() {
         <Bell size={19} aria-hidden />
         {unread > 0 && (
           <span
-            className="absolute right-2 top-2 w-2.5 h-2.5 rounded-full bg-[#A7D700] ring-2 ring-[var(--cf-surface)] cf-unread-pulse"
+            className="absolute right-2 top-2 w-2.5 h-2.5 rounded-full bg-[#E7A66D] ring-2 ring-[var(--cf-surface)] cf-unread-pulse"
             aria-hidden
           />
         )}
@@ -149,7 +159,7 @@ export default function NotificationsCenter() {
                         className={cn(
                           'px-2.5 min-h-11 sm:min-h-0 sm:py-1 rounded-full font-mono text-[10px] font-medium uppercase tracking-wider transition-all whitespace-nowrap',
                           filter === f
-                            ? 'bg-[#2563FF] text-white'
+                            ? 'bg-[#A94727] text-white'
                             : 'text-[var(--cf-ink-mute)] hover:bg-black/[0.05] dark:hover:bg-white/10'
                         )}
                       >
@@ -168,7 +178,7 @@ export default function NotificationsCenter() {
                   return (
                     <div key={g.group}>
                       <p className="flex items-center gap-1.5 px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">
-                        <GroupIcon size={13} aria-hidden className="text-[#2563FF] dark:text-[#8db4ff]" />
+                        <GroupIcon size={13} aria-hidden className="text-[#D86D3E] dark:text-[#8db4ff]" />
                         {g.group}
                         <span className="ml-auto rounded-full border border-[var(--cf-line)] px-1.5 py-px text-[10px] tracking-normal" aria-hidden>
                           {g.rows.length}
@@ -196,13 +206,13 @@ export default function NotificationsCenter() {
                                 className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
                               >
                                 <span className="flex items-start gap-2">
-                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]')} aria-hidden>
+                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]')} aria-hidden>
                                     <RowIcon size={14} />
                                   </span>
                                   <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--cf-ink)]">
                                       <span className="truncate">{n.title}</span>
-                                      {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[#A7D700]" aria-label="Unread" role="img" />}
+                                      {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7A66D]" aria-label="Unread" role="img" />}
                                     </span>
                                     {n.message && <span className="block text-xs text-[var(--cf-ink-mute)] line-clamp-2 mt-0.5">{n.message}</span>}
                                   </span>

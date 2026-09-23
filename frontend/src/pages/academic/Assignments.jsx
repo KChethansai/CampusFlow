@@ -15,6 +15,7 @@ import { useAuth } from '../../store/useAuth';
 import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Dropzone } from '../../components/data/views';
 import { Modal } from '../../components/ui/Modal';
+import FilePreview from '../../components/ui/FilePreview';
 
 // Mirrors backend/middlewares/upload.js SUBMISSION_EXTS — keep in sync.
 const SUBMISSION_ACCEPT = '.pdf,.doc,.docx,.txt,.md,.csv,.zip,.png,.jpg,.jpeg';
@@ -189,7 +190,7 @@ export default function Assignments() {
                     <span
                       className="inline-block w-2 h-2 rounded-full"
                       aria-hidden
-                      style={{ background: lane === 'Overdue' ? '#FF5964' : lane === 'Today' ? '#FFBD4A' : lane === 'Settled' ? '#25D890' : '#2563FF' }}
+                      style={{ background: lane === 'Overdue' ? '#FF5964' : lane === 'Today' ? '#FFBD4A' : lane === 'Settled' ? '#25D890' : '#D86D3E' }}
                     />
                     {lane}
                     <span className="text-xs font-bold tabular-nums text-[var(--cf-ink-mute)]">{lanes[lane].length}</span>
@@ -211,7 +212,7 @@ export default function Assignments() {
                           <span>{a.subject?.name || 'Subject'}</span>
                           <span className="tabular-nums">{a.maxScore} pts</span>
                           <span className={cn('font-medium tabular-nums', state === 'Overdue' && 'text-red-600 dark:text-red-400')}>Due {fmt(a.dueDate)}</span>
-                          {mine[0]?.score != null && <span className="rounded-full bg-[#A7D700]/25 px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}
+                          {mine[0]?.score != null && <span className="rounded-full bg-[#E7A66D]/25 px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--cf-line)]">
                           <Badge status={a.status || 'draft'}>{(a.status || 'draft').replace(/_/g, ' ')}</Badge>
@@ -294,6 +295,7 @@ export default function Assignments() {
                   <Badge status={s.status || 'submitted'}>{(s.status || 'submitted').replace(/_/g, ' ')}</Badge>
                 </div>
                 {s.textNotes && <p className="text-xs text-[var(--cf-ink-mute)] mb-2 line-clamp-3">{s.textNotes}</p>}
+                <FilePreview fileUrl={s.fileUrl} fileName={s.fileName} />
                 <form onSubmit={(e) => grade(e, s._id)} className="flex flex-wrap gap-2 items-end">
                   <div className="w-24">
                     <label className={labelClass} htmlFor={`score-${s._id}`}>Score</label>

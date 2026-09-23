@@ -18,6 +18,7 @@ beforeAll(async () => {
   institution = await Institution.create({
     name: 'CRUD Test Institute',
     code: 'CTEST',
+    emailDomainPattern: 'test.edu',
     address: { city: 'Mumbai', state: 'Maharashtra', country: 'India' }
   });
 
@@ -177,7 +178,7 @@ describe('Institution CRUD (super_admin only)', () => {
     const res = await request(app)
       .post('/api/v1/institutions')
       .set('Authorization', `Bearer ${superToken}`)
-      .send({ name: 'New Institute', code: 'NEWINST' });
+      .send({ name: 'New Institute', code: 'NEWINST', emailDomainPattern: 'newinst.edu' });
     expect(res.status).toBe(201);
     expect(res.body.data.code).toBe('NEWINST');
     institutionId = res.body.data._id;
@@ -187,7 +188,7 @@ describe('Institution CRUD (super_admin only)', () => {
     const res = await request(app)
       .post('/api/v1/institutions')
       .set('Authorization', `Bearer ${superToken}`)
-      .send({ name: 'Dupe', code: 'NEWINST' });
+      .send({ name: 'Dupe', code: 'NEWINST', emailDomainPattern: 'newinst.edu' });
     expect(res.status).toBe(409);
   });
 

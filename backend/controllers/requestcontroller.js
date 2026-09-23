@@ -2,6 +2,7 @@ import { RequestModel as Request } from '../models/RequestModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrlArray } from '../utils/sanitize.js';
+import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
 
 // Student submits a new request
 export const createRequest = asyncHandler(async (req, res) => {
@@ -100,5 +101,7 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
 
   await request.save();
 
+  publishRealtimeToUser(request.student, 'request:updated', { request }); // live status for owner
+  publishRealtimeToInstitution(req.user.institution, 'request:updated', { request }); // live queue for staff
   res.json({ success: true, data: request });
 });

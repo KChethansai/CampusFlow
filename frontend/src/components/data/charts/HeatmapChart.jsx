@@ -13,10 +13,10 @@ import { cn } from '../../../system/tokens';
 
 const SHADES = [
   'bg-black/[.06] dark:bg-white/[.07]',
-  'bg-[#2563FF]/15 dark:bg-[#2563FF]/25',
-  'bg-[#2563FF]/35 dark:bg-[#2563FF]/45',
-  'bg-[#2563FF]/60 dark:bg-[#2563FF]/70',
-  'bg-[#8B5CF6] dark:bg-[#8B5CF6]'
+  'bg-[#D86D3E]/15 dark:bg-[#D86D3E]/25',
+  'bg-[#D86D3E]/35 dark:bg-[#D86D3E]/45',
+  'bg-[#D86D3E]/60 dark:bg-[#D86D3E]/70',
+  'bg-[#A77B68] dark:bg-[#A77B68]'
 ];
 
 export const HeatmapChart = memo(function HeatmapChart({

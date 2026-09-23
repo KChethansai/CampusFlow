@@ -16,6 +16,7 @@ import {
   roleBadge as roleBadgeFn,
   statusBadge as statusBadgeFn
 } from '../../system/tokens';
+import { useFocusTrap } from '../../system/focusTrap';
 
 export { cn, statusBadgeFn as statusBadge, roleBadgeFn as roleBadge };
 
@@ -25,7 +26,7 @@ export function Button({ variant = 'primary', size = 'medium', className, ...pro
 
 // Glass fields: hairline borders + 14px radius + royal focus ring.
 const glassField =
-  'border border-[var(--cf-line)] rounded-[14px] focus:border-[#2563FF] focus:ring-[3px] focus:ring-[#2563FF]/30 focus:outline-none';
+  'border border-[var(--cf-line)] rounded-[14px] focus:border-[#D86D3E] focus:ring-[3px] focus:ring-[#D86D3E]/30 focus:outline-none';
 const glassError = 'border-[#FF5964] focus:border-[#FF5964] focus:ring-[#FF5964]/30';
 
 const FieldShell = ({ label, error, id, children }) => (
@@ -126,7 +127,7 @@ export function PageHeader({ title, subtitle, actions, kicker, number, breadcrum
         {(kicker || number) && (
           <p className="cf-kicker mb-1.5 flex items-center gap-2">
             {number && (
-              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#A7D700] text-[#0A0D12] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
+              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#E7A66D] text-[#100D0B] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
                 {number}
               </span>
             )}
@@ -224,7 +225,7 @@ export function GlowButton({ variant = 'primary', size = 'medium', className, ch
       className={cn(
         btnClass(variant, size),
         'relative group overflow-hidden transition-all duration-300',
-        'hover:shadow-[0_0_24px_rgba(37,99,255,0.45)]',
+        'hover:shadow-[0_0_24px_rgba(216,109,62,0.45)]',
         className
       )}
       {...props}
@@ -255,7 +256,7 @@ export function Tabs({ tabs = [], value, onChange, className }) {
             aria-selected={active}
             onClick={() => onChange?.(id)}
             className={cn(
-              'relative px-3.5 py-1.5 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[3px] focus-visible:outline-[#2563FF]',
+              'relative px-3.5 py-1.5 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[3px] focus-visible:outline-[#D86D3E]',
               active ? 'text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]'
             )}
           >
@@ -263,7 +264,7 @@ export function Tabs({ tabs = [], value, onChange, className }) {
               <motion.span
                 layoutId="cf-tabs-indicator"
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                className="absolute inset-0 rounded-xl bg-[#2563FF] shadow-[0_2px_12px_rgba(37,99,255,0.45)]"
+                className="absolute inset-0 rounded-xl bg-[#D86D3E] shadow-[0_2px_12px_rgba(216,109,62,0.45)]"
                 aria-hidden
               />
             )}
@@ -277,6 +278,7 @@ export function Tabs({ tabs = [], value, onChange, className }) {
 
 export function Drawer({ open, onClose, title, children, wide, className }) {
   const reduced = useReducedMotion();
+  const trapRef = useFocusTrap(open);
   useEffect(() => {
     if (!open) return;
     const handleKey = (e) => {
@@ -301,6 +303,7 @@ export function Drawer({ open, onClose, title, children, wide, className }) {
           />
           <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
             <motion.div
+              ref={trapRef}
               initial={reduced ? { opacity: 0 } : { x: '100%' }}
               animate={reduced ? { opacity: 1 } : { x: 0 }}
               exit={reduced ? { opacity: 0 } : { x: '100%' }}
@@ -357,7 +360,7 @@ export function Tooltip({ content, children, side = 'top', className }) {
             transition={{ duration: 0.15 }}
             role="tooltip"
             className={cn(
-              'pointer-events-none absolute z-50 px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap bg-[#0A0D12] text-white border border-white/10 shadow-lg',
+              'pointer-events-none absolute z-50 px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap bg-[#100D0B] text-white border border-white/10 shadow-lg',
               positionClass,
               className
             )}
@@ -423,12 +426,12 @@ export function StepBar({ steps = [], current = 0, className }) {
             <div
               className={cn(
                 'h-1.5 rounded-full transition-all duration-300',
-                done ? 'bg-[#2563FF]' : active ? 'bg-[#7C5CFF] shadow-[0_0_8px_rgba(124,92,255,0.6)]' : 'bg-black/[0.08] dark:bg-white/10'
+                done ? 'bg-[#D86D3E]' : active ? 'bg-[#B4806A] shadow-[0_0_8px_rgba(180,128,106,0.6)]' : 'bg-black/[0.08] dark:bg-white/10'
               )}
               title={label}
             />
             {label && (
-              <p className={cn('mt-1 text-[10px] truncate', active ? 'font-semibold text-[#2563FF] dark:text-[#8fabff]' : 'text-[var(--cf-ink-mute)]')}>
+              <p className={cn('mt-1 text-[10px] truncate', active ? 'font-semibold text-[#D86D3E] dark:text-[#F5B08A]' : 'text-[var(--cf-ink-mute)]')}>
                 {label}
               </p>
             )}

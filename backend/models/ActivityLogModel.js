@@ -18,4 +18,6 @@ const activityLogSchema = new Schema(
   { timestamps: true, versionKey: false, strict: 'throw' }
 )
 
+activityLogSchema.index({ institution: 1, createdAt: -1 });
+activityLogSchema.index({ actor: 1, createdAt: -1 });
 export const ActivityLogModel = model('ActivityLog', activityLogSchema);

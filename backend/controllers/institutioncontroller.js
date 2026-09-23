@@ -23,17 +23,17 @@ export const getInstitutionById = asyncHandler(async (req, res) => {
 });
 
 export const createInstitution = asyncHandler(async (req, res) => {
-  const { name, code, address, contactEmail, logoUrl, settings } = req.body;
+  const { name, code, address, contactEmail, emailDomainPattern, logoUrl, settings } = req.body;
   const existing = await Institution.findOne({ code: String(code).toUpperCase().trim() });
   if (existing) throw new ApiError(409, 'Institution code already exists');
-  const doc = await Institution.create({ name, code, address, contactEmail, logoUrl, settings });
+  const doc = await Institution.create({ name, code, address, contactEmail, emailDomainPattern, logoUrl, settings });
   res.status(201).json({ success: true, data: doc });
 });
 
 export const updateInstitution = asyncHandler(async (req, res) => {
   const doc = await Institution.findByIdAndUpdate(
     req.params.id,
-    pick(req.body, ['name', 'code', 'address', 'contactEmail', 'logoUrl', 'settings', 'isActive']),
+    pick(req.body, ['name', 'code', 'address', 'contactEmail', 'emailDomainPattern', 'logoUrl', 'settings', 'isActive']),
     { new: true, runValidators: true }
   );
   if (!doc) throw new ApiError(404, 'Institution not found');

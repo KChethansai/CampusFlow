@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Compass, Download, Flag, Moon, Printer, Search, Sparkles, Sun, Zap } from 'lucide-react';
 import { useAuth } from '../store/useAuth';
+import { useFocusTrap } from '../system/focusTrap';
 import { useTheme } from '../system/theme';
 import api from '../api/axios';
 import { motionVariants, useReducedMotion } from '../system/motion';
@@ -83,7 +84,25 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [cache, setCache] = useState({});
+  const [serverRows, setServerRows] = useState([]); // cross-entity /search hits
+
+  // Debounced server search — replaces per-open collection fan-out for queries.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setServerRows([]);
+      return;
+    }
+    const id = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/search', { params: { q } });
+        setServerRows(data.data || []);
+      } catch { /* role-gated 403 — fall back to client cache */ }
+    }, 250);
+    return () => clearTimeout(id);
+  }, [query]);
   const inputRef = useRef(null);
+  const trapRef = useFocusTrap(open);
   const reduced = useReducedMotion();
 
   useEffect(() => {
@@ -155,8 +174,16 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
     });
     data.sort((a, b) => b.rank - a.rank);
     if (data.length) out.push({ group: 'Data', items: data.slice(0, 8) });
+    if (serverRows.length) {
+      out.push({
+        group: 'Search',
+        items: serverRows.slice(0, 8).map((r) => ({
+          title: r.title, sub: r.entity, link: r.link || '/dashboard'
+        }))
+      });
+    }
     return out;
-  }, [query, cache, user?.role, actions]);
+  }, [query, cache, serverRows, user?.role, actions]);
 
   const flat = useMemo(() => results.flatMap((r) => r.items), [results]);
 
@@ -182,13 +209,14 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
         >
           <button aria-label="Close command center" onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default" />
           <motion.div
+            ref={trapRef}
             {...(reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : motionVariants.modal)}
             className="glass-card relative w-full max-w-xl rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)]/90 backdrop-blur-2xl shadow-[0_24px_80px_-16px_rgba(0,0,0,0.65)] overflow-hidden"
           >
             {/* Kokonut-AI-input-style search field: hero input with icon tile + hints */}
             <div className="p-3 pb-0">
-              <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[#2563FF]/60 focus-within:ring-[3px] focus-within:ring-[#2563FF]/20">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]" aria-hidden>
+              <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[#D86D3E]/60 focus-within:ring-[3px] focus-within:ring-[#D86D3E]/20">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]" aria-hidden>
                   {query ? <Search size={16} /> : <Sparkles size={16} />}
                 </span>
                 <input
@@ -238,20 +266,20 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                         onClick={() => go(item)}
                         className={`w-full text-left px-2 min-h-11 py-1.5 rounded-[14px] flex items-center gap-2.5 text-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                           active
-                            ? 'bg-[#2563FF]/10 text-[var(--cf-ink)] ring-1 ring-inset ring-[#2563FF]/25'
+                            ? 'bg-[#D86D3E]/10 text-[var(--cf-ink)] ring-1 ring-inset ring-[#D86D3E]/25'
                             : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
                         }`}
                       >
                         <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors ${
                           item.quick || active
-                            ? 'bg-[#2563FF]/12 text-[#2563FF] dark:text-[#8db4ff]'
+                            ? 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#8db4ff]'
                             : 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]'
                         }`} aria-hidden>
                           <ItemIcon size={15} />
                         </span>
                         <span className="truncate font-medium flex-1">{item.title}</span>
                         <span className="rounded-full bg-[var(--cf-surface-2)]/80 font-mono text-[10px] font-medium px-1.5 py-0.5 shrink-0 text-[var(--cf-ink-mute)]">{item.sub}</span>
-                        {active && <ArrowRight size={14} className="text-[#2563FF] shrink-0" aria-hidden />}
+                        {active && <ArrowRight size={14} className="text-[#D86D3E] shrink-0" aria-hidden />}
                       </button>
                     );
                   })}

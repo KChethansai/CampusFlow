@@ -19,7 +19,7 @@ export function Modal({ open, onClose, title, children, wide, actions, descripti
           className={cn(
             'fixed left-1/2 top-1/2 z-[71] -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto',
             'glass-card bg-[var(--cf-surface)]/85 backdrop-blur-2xl border border-[var(--cf-line)] rounded-[24px] shadow-brutal-lg',
-            'focus:outline-none focus-visible:outline-[3px] focus-visible:outline-[#2563FF]',
+            'focus:outline-none focus-visible:outline-[3px] focus-visible:outline-[#D86D3E]',
             wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'
           )}
         >
@@ -29,7 +29,7 @@ export function Modal({ open, onClose, title, children, wide, actions, descripti
             </Dialog.Title>
             <Dialog.Close
               aria-label="Close dialog"
-              className="p-2 rounded-[14px] border border-transparent text-[var(--cf-ink-mute)] hover:bg-black/[.05] dark:hover:bg-white/10 hover:text-[var(--cf-ink)] focus-visible:outline-[3px] focus-visible:outline-[#2563FF] transition"
+              className="p-2 rounded-[14px] border border-transparent text-[var(--cf-ink-mute)] hover:bg-black/[.05] dark:hover:bg-white/10 hover:text-[var(--cf-ink)] focus-visible:outline-[3px] focus-visible:outline-[#D86D3E] transition"
             >
               <X size={16} />
             </Dialog.Close>

@@ -17,4 +17,5 @@ const attendanceSessionSchema = new Schema({
   }]
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
+attendanceSessionSchema.index({ institution: 1, date: -1 });
 export const AttendanceSessionModel = model('AttendanceSession', attendanceSessionSchema);

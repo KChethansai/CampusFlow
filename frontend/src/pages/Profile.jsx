@@ -13,14 +13,25 @@ import { btnClass, cn, inputClass, labelClass, roleBadge } from '../system/token
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity' },
+  { id: 'notifications', label: 'Notifications' },
   { id: 'security', label: 'Password & sessions' }
 ];
+
+const notificationKinds = [
+  ['assignment', 'Assignments'], ['event', 'Events'], ['announcement', 'Announcements'],
+  ['request', 'Requests'], ['placement', 'Placement'], ['account', 'Account'], ['system', 'System']
+];
+const defaultPreferences = Object.fromEntries(notificationKinds.map(([key]) => [key, { inApp: true, push: true, email: true }]));
 
 export default function Profile() {
   const { user, changePassword, logoutUser } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [tab, setTab] = useState('overview');
   const [activity, setActivity] = useState(null);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [notificationPrefs, setNotificationPrefs] = useState(defaultPreferences);
+  const [prefsLoading, setPrefsLoading] = useState(true);
+  const [prefsSaving, setPrefsSaving] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   useEffect(() => {
@@ -35,9 +46,33 @@ export default function Profile() {
         applications: j.status === 'fulfilled' ? (j.value.data.data || []).length : null,
         requests: r.status === 'fulfilled' ? (r.value.data.data || []).length : null
       });
+      setActivityLoading(false);
     })();
     return () => { live = false; };
   }, []);
+
+  useEffect(() => {
+    let live = true;
+    api.get('/notifications/preferences')
+      .then(({ data }) => {
+        if (live) setNotificationPrefs({ ...defaultPreferences, ...(data.data?.preferences || data.data || {}) });
+      })
+      .catch(() => { if (live) toast.error('Could not load notification preferences'); })
+      .finally(() => { if (live) setPrefsLoading(false); });
+    return () => { live = false; };
+  }, []);
+
+  const saveNotificationPrefs = async () => {
+    setPrefsSaving(true);
+    try {
+      const { data } = await api.patch('/notifications/preferences', { preferences: notificationPrefs });
+      const saved = data.data?.preferences || data.data;
+      if (saved) setNotificationPrefs({ ...defaultPreferences, ...saved });
+      toast.success('Notification preferences saved');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not save notification preferences');
+    } finally { setPrefsSaving(false); }
+  };
 
   const onPassword = async ({ currentPassword, newPassword }) => {
     try {
@@ -66,7 +101,7 @@ export default function Profile() {
   if (!user) return <LoadingState />;
 
   const stats = [
-    { Icon: GraduationCap, label: 'Assignments', v: activity?.assignments, tint: 'bg-[#2563FF]/10 text-[#2563FF]' },
+    { Icon: GraduationCap, label: 'Assignments', v: activity?.assignments, tint: 'bg-[#D86D3E]/10 text-[#D86D3E]' },
     { Icon: Briefcase, label: 'Applications', v: activity?.applications, tint: 'bg-violet-500/10 text-violet-500' },
     { Icon: Inbox, label: 'Requests', v: activity?.requests, tint: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-300' }
   ];
@@ -81,17 +116,17 @@ export default function Profile() {
               className="absolute inset-0"
               style={{
                 background:
-                  'radial-gradient(420px 200px at 15% 0%, rgba(37,99,255,.14), transparent 65%), radial-gradient(360px 200px at 90% 10%, rgba(139,92,246,.10), transparent 65%)'
+                  'radial-gradient(420px 200px at 15% 0%, rgba(216,109,62,.14), transparent 65%), radial-gradient(360px 200px at 90% 10%, rgba(167,123,104,.10), transparent 65%)'
               }}
             />
             <span className="relative inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               Digital identity
             </span>
           </div>
           <div className="px-5 pb-5">
             <div className="flex flex-wrap items-end gap-4 -mt-8 relative">
-              <span className="w-20 h-20 rounded-3xl bg-[#2563FF] text-white border border-[#2563FF]/30 grid place-items-center text-3xl font-display font-bold" aria-hidden>
+              <span className="w-20 h-20 rounded-3xl bg-[#A94727] text-white border border-[#D86D3E]/30 grid place-items-center text-3xl font-display font-bold" aria-hidden>
                 {user.name?.[0]?.toUpperCase()}
               </span>
               <div className="flex-1 min-w-[12rem]">
@@ -105,19 +140,18 @@ export default function Profile() {
       </motion.div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1.5 mb-4 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur" role="tablist" aria-label="Profile sections">
+      <div className="flex flex-wrap gap-1 p-1.5 mb-4 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur" role="group" aria-label="Profile sections">
         {TABS.map((t) => {
           const active = tab === t.id;
           return (
             <button
               key={t.id}
-              role="tab"
-              aria-selected={active}
+              aria-pressed={active}
               onClick={() => setTab(t.id)}
-              className={cn('relative flex-1 px-3 py-2 rounded-xl text-xs font-display font-semibold transition',
+              className={cn('relative min-w-fit flex-1 px-3 py-2 rounded-xl text-xs font-display font-semibold transition',
                 active ? 'text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
             >
-              {active && <motion.span layoutId="cf-profile-tab" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#2563FF]" aria-hidden />}
+              {active && <motion.span layoutId="cf-profile-tab" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#D86D3E]" aria-hidden />}
               <span className="relative">{t.label}</span>
             </button>
           );
@@ -163,6 +197,7 @@ export default function Profile() {
           <Card>
             <h2 className="font-display font-semibold mb-1">Activity</h2>
             <p className="text-xs text-[var(--cf-ink-mute)] mb-4">Live counts from your assignments, applications and requests.</p>
+            {activityLoading ? <LoadingState label="Loading activity…" /> :
             <div className="grid grid-cols-3 gap-3">
               {stats.map(({ Icon, label, v, tint }) => (
                 <div key={label} className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3 text-center">
@@ -173,7 +208,33 @@ export default function Profile() {
                   <p className="text-[11px] text-[var(--cf-ink-mute)]">{label}</p>
                 </div>
               ))}
-            </div>
+            </div>}
+          </Card>
+        </motion.div>
+      )}
+
+      {tab === 'notifications' && (
+        <motion.div variants={staggerChild}>
+          <Card>
+            <h2 className="font-display font-semibold mb-1">Notification channels</h2>
+            <p className="text-xs text-[var(--cf-ink-mute)] mb-4">Choose how each update reaches you. Realtime means an active browser session; email is included in the weekly digest.</p>
+            {prefsLoading ? <LoadingState label="Loading preferences…" /> : <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[34rem] text-sm">
+                  <thead><tr className="border-b border-[var(--cf-line)] text-left text-xs text-[var(--cf-ink-mute)]"><th scope="col" className="py-2 pr-3">Type</th><th scope="col" className="p-2 text-center">In app</th><th scope="col" className="p-2 text-center">Realtime</th><th scope="col" className="p-2 text-center">Weekly email</th></tr></thead>
+                  <tbody className="divide-y divide-[var(--cf-line)]">{notificationKinds.map(([key, label]) => <tr key={key}>
+                    <th scope="row" className="py-2.5 pr-3 text-left font-medium">{label}</th>
+                    {['inApp', 'push', 'email'].map((channel) => <td key={channel} className="p-2 text-center"><input
+                      type="checkbox" checked={Boolean(notificationPrefs[key]?.[channel])}
+                      aria-label={`${label}: ${channel === 'inApp' ? 'in app' : channel === 'push' ? 'realtime browser' : 'weekly email'}`}
+                      onChange={(event) => setNotificationPrefs((current) => ({ ...current, [key]: { ...current[key], [channel]: event.target.checked } }))}
+                      className="h-4 w-4 accent-[#D86D3E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cf-accent)]"
+                    /></td>)}
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <button type="button" disabled={prefsSaving || prefsLoading} onClick={saveNotificationPrefs} className={btnClass('primary', 'medium') + ' mt-4'}>{prefsSaving ? 'Saving…' : 'Save preferences'}</button>
+            </>}
           </Card>
         </motion.div>
       )}

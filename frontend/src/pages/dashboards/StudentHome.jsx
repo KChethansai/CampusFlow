@@ -11,6 +11,7 @@ import { useAuth } from '../../store/useAuth';
 import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui/primitives';
 import { AttendanceRing, Sparkline } from '../../components/data/views';
 import { AnalyticsPanel, LazyChart, RoleHero, SpotTask, TaskGrid, TaskStat, ActivityStream } from '../../components/campus/regions';
+import { AttendanceTrend } from '../../components/campus/analytics';
 import { staggerChild, staggerParent } from '../../system/motion';
 
 const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : '—';
@@ -172,16 +173,16 @@ export default function StudentHome() {
         <motion.div variants={staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Workload trajectory"
-            icon={<ClipboardList size={17} className="text-[#2563FF]" aria-hidden />}
+            icon={<ClipboardList size={17} className="text-[#D86D3E]" aria-hidden />}
             question="When is your crunch?"
             period="Due per day · next 7 days"
             tooltip="Counts live assignments by real due date. Peak load flags the day to start early."
             summary={peakLoad ? `Peak ${peakLoad} due in a single day — front-load that morning.` : 'Clear week ahead — bank the time into revision.'}
             empty={workload.every((w) => w.due === 0) ? 'Clear skies' : null}
             emptyHint="Check the placement board?"
-            action={<Link to="/assignments" className="text-xs font-medium text-[#2563FF] hover:underline">All assignments</Link>}
+            action={<Link to="/assignments" className="text-xs font-medium text-[#D86D3E] hover:underline">All assignments</Link>}
           >
-            <LazyChart data={workload} xKey="day" series={[{ key: 'due', color: '#2563FF' }]} height={200} />
+            <LazyChart data={workload} xKey="day" series={[{ key: 'due', color: '#D86D3E' }]} height={200} />
           </AnalyticsPanel>
         </motion.div>
 
@@ -202,7 +203,7 @@ export default function StudentHome() {
                       renderItem={(a) => (
                         <Link to="/assignments" className="flex items-center gap-2 group py-1">
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-medium truncate group-hover:text-[#2563FF] transition">{a.title}</span>
+                            <span className="block text-sm font-medium truncate group-hover:text-[#D86D3E] transition">{a.title}</span>
                             <span className="block text-xs text-[var(--cf-ink-mute)] tabular-nums">{dueIn(a.dueDate)}</span>
                           </span>
                           <Badge status={new Date(a.dueDate).getTime() - Date.now() < 86400000 * 2 ? 'late' : 'open'}>
@@ -237,16 +238,16 @@ export default function StudentHome() {
         <TaskGrid>
           <SpotTask to="/study" label="Open study">
             <p className="font-display text-sm font-bold flex items-center gap-2">
-              <GraduationCap size={16} className="text-[#8B5CF6]" aria-hidden /> Study preview
+              <GraduationCap size={16} className="text-[#A77B68]" aria-hidden /> Study preview
             </p>
             <p className="mt-1 text-xs text-[var(--cf-ink-mute)]">
               {weakest.length ? `Start with ${weakest[0].subject} — lowest at ${Math.round(weakest[0].percentage ?? 0)}%.` : 'Revise anything, any time.'}
             </p>
-            <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#2563FF]">Open study <ArrowRight size={13} aria-hidden /></span>
+            <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#D86D3E]">Open study <ArrowRight size={13} aria-hidden /></span>
           </SpotTask>
           <SpotTask to="/placement" label="Open placement board">
             <p className="font-display text-sm font-bold flex items-center gap-2">
-              <Briefcase size={16} className="text-[#8B5CF6]" aria-hidden /> Placement strip
+              <Briefcase size={16} className="text-[#A77B68]" aria-hidden /> Placement strip
             </p>
             {applications.length === 0 ? (
               <p className="mt-1 text-xs text-[var(--cf-ink-mute)]">No applications yet — browse open drives.</p>
@@ -266,6 +267,9 @@ export default function StudentHome() {
             <TaskStat label="Applications" value={applications.length} sub="in the pipeline" />
           </SpotTask>
         </TaskGrid>
+      </motion.div>
+      <motion.div variants={staggerChild} className="mt-4">
+        <AttendanceTrend />
       </motion.div>
     </motion.div>
   );

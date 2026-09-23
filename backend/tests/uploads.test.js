@@ -30,8 +30,8 @@ beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
 
-  institution = await Institution.create({ name: 'Upload Institute', code: 'UPT' });
-  otherInstitution = await Institution.create({ name: 'Other Institute', code: 'UPTO' });
+  institution = await Institution.create({ name: 'Upload Institute', code: 'UPT', emailDomainPattern: 'upload.test' });
+  otherInstitution = await Institution.create({ name: 'Other Institute', code: 'UPTO', emailDomainPattern: 'other.test' });
 
   const dept = await Department.create({ name: 'CS', code: 'CSE', institution: institution._id });
   const course = await Course.create({

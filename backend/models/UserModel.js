@@ -1,6 +1,28 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export const NOTIFICATION_CATEGORIES = ['assignment', 'event', 'announcement', 'request', 'placement', 'account', 'system'];
+const channelPreferenceSchema = new Schema({
+  inApp: { type: Boolean, default: true },
+  push: { type: Boolean, default: true },
+  email: { type: Boolean, default: true }
+}, { _id: false, strict: 'throw' });
+const notificationPreferencesSchema = new Schema(
+  Object.fromEntries(NOTIFICATION_CATEGORIES.map((category) => [category, { type: channelPreferenceSchema, default: () => ({}) }])),
+  { _id: false, strict: 'throw' }
+);
+
+export const DEFAULT_NOTIFICATION_PREFERENCES = Object.fromEntries(
+  NOTIFICATION_CATEGORIES.map((category) => [category, { inApp: true, push: true, email: true }])
+);
+
+export const getNotificationPreferences = (value) => Object.fromEntries(
+  NOTIFICATION_CATEGORIES.map((category) => [category, {
+    ...DEFAULT_NOTIFICATION_PREFERENCES[category],
+    ...(value?.[category]?.toObject?.() ?? value?.[category] ?? {})
+  }])
+);
+
 const userSchema = new Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -33,7 +55,9 @@ const userSchema = new Schema({
   passwordResetExpires: Date,
   passwordChangedAt: Date,
   isActive: { type: Boolean, default: true },
-  lastLoginAt: Date
+  lastLoginAt: Date,
+  onboardingTourCompleted: { type: Boolean, default: false },
+  notificationPreferences: { type: notificationPreferencesSchema, default: () => ({}) }
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
 userSchema.pre('save', async function (next) {

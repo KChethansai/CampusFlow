@@ -2,18 +2,18 @@
 // Props API unchanged: { data, xKey, lines, height, summary, className }.
 // Callers keep their React.lazy call sites; this module lazy-loads the chart
 // engine internally (same pattern as before, recharts-free). Zero harsh
-// gridlines, gradient fills #2563FF .35→0, 1.2s draw, glass tooltip.
+// gridlines, gradient fills #D86D3E .35→0, 1.2s draw, glass tooltip.
 import { Suspense, lazy } from 'react';
 
 const AreaChart = lazy(() => import('./charts/AreaChart'));
 
 // ponytail: fixed 3-stop set, royal first — all three read on paper and coal-dark.
-const DEFAULT_COLORS = ['#2563FF', '#8B5CF6', '#25D890'];
+const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
 
 export function TrendChart({
   data = [],
   xKey = 'label',
-  lines = [{ key: 'value', color: '#2563FF' }],
+  lines = [{ key: 'value', color: '#D86D3E' }],
   height = 260,
   summary,
   className

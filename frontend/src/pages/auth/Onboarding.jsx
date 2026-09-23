@@ -19,10 +19,10 @@ const STEP_COPY = {
 };
 
 const AVATARS = [
-  { id: 'scholar', label: 'Scholar', bg: 'bg-[#2563FF]' },
+  { id: 'scholar', label: 'Scholar', bg: 'bg-[#D86D3E]' },
   { id: 'mentor', label: 'Mentor', bg: 'bg-green-500' },
   { id: 'builder', label: 'Builder', bg: 'bg-violet-500' },
-  { id: 'explorer', label: 'Explorer', bg: 'bg-cyan-500' }
+  { id: 'explorer', label: 'Explorer', bg: 'bg-[#C87D4B]' }
 ];
 
 const PROGRESS_KEY = 'cf_onboarding_progress';
@@ -90,12 +90,12 @@ export default function Onboarding() {
           return (
             <li key={label} className="flex-1 min-w-0" aria-current={current ? 'step' : undefined}>
               <div className={cn('flex items-center gap-1.5 rounded-full border px-2 py-1.5 transition-colors',
-                current ? 'border-[#2563FF]/40 bg-[#2563FF] text-white' : done ? 'border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink)]' : 'border-[var(--cf-line)] bg-transparent text-[var(--cf-ink-mute)]')}>
+                current ? 'border-[#D86D3E]/40 bg-[#A94727] text-white' : done ? 'border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink)]' : 'border-[var(--cf-line)] bg-transparent text-[var(--cf-ink-mute)]')}>
                 <span className={cn('w-5 h-5 shrink-0 grid place-items-center rounded-full text-[10px] font-display font-bold',
                   current ? 'bg-white/20 text-white' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]')}>
                   {done ? <Check size={11} strokeWidth={3} aria-hidden /> : i + 1}
                 </span>
-                {current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A7D700]" aria-hidden />}
+                {current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E7A66D]" aria-hidden />}
                 <span className="truncate text-[11px] font-display font-semibold hidden sm:block">{label}</span>
               </div>
             </li>
@@ -119,7 +119,7 @@ export default function Onboarding() {
                     onClick={() => setForm((f) => ({ ...f, avatar: a.id }))}
                     whileTap={{ scale: 0.96 }}
                     className={cn('flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition',
-                      active ? 'border-[#2563FF]/50 bg-[#2563FF]/[.06]' : 'border-[var(--cf-line)] hover:border-[var(--cf-ink-mute)]')}
+                      active ? 'border-[#D86D3E]/50 bg-[#D86D3E]/[.06]' : 'border-[var(--cf-line)] hover:border-[var(--cf-ink-mute)]')}
                   >
                     <span className={cn('w-9 h-9 rounded-xl grid place-items-center text-white text-sm font-bold', a.bg)} aria-hidden>
                       {(user?.name?.[0] || a.label[0]).toUpperCase()}

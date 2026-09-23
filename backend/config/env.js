@@ -49,6 +49,11 @@ export const env = {
     dir: process.env.UPLOAD_DIR || 'uploads/',
     maxMB: Math.max(Number(process.env.MAX_FILE_MB) || 10, 1)
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || ''
+  },
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,

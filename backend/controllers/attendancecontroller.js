@@ -4,6 +4,7 @@ import { SubjectModel as Subject } from '../models/SubjectModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { scopedOne } from '../utils/scope.js';
+import { publishRealtimeToInstitution } from '../services/notification.service.js';
 
 // Mark (create) an attendance session
 export const markSession = asyncHandler(async (req, res) => {
@@ -24,6 +25,7 @@ export const markSession = asyncHandler(async (req, res) => {
     records,
   });
 
+  publishRealtimeToInstitution(req.user.institution, 'attendance:marked', { session }); // live grid
   res.status(201).json({ success: true, data: session });
 });
 

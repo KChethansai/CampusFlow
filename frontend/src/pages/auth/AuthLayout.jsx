@@ -11,7 +11,7 @@ function BrandMark({ size = 'md' }) {
   const box = size === 'md' ? 'w-9 h-9 text-base' : 'w-8 h-8 text-sm';
   return (
     <span className="flex items-center gap-2.5" aria-hidden={false}>
-      <span className={`${box} grid place-items-center font-display font-bold bg-[#2563FF] text-white rounded-[10px]`} aria-hidden>C</span>
+      <span className={`${box} grid place-items-center font-display font-bold bg-[#A94727] text-white rounded-[10px]`} aria-hidden>C</span>
       <span className="font-display font-bold tracking-tight text-lg">CampusFlow</span>
     </span>
   );
@@ -29,7 +29,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           aria-hidden
           style={{
             background:
-              'radial-gradient(560px 340px at 18% 8%, rgba(37,99,255,.16), transparent 65%), radial-gradient(480px 320px at 85% 20%, rgba(139,92,246,.12), transparent 65%), radial-gradient(600px 420px at 50% 110%, rgba(34,211,238,.10), transparent 65%)'
+              'radial-gradient(560px 340px at 18% 8%, rgba(216,109,62,.16), transparent 65%), radial-gradient(480px 320px at 85% 20%, rgba(167,123,104,.12), transparent 65%), radial-gradient(600px 420px at 50% 110%, rgba(200,125,75,.10), transparent 65%)'
           }}
         />
         <div className="relative flex items-center justify-between p-8">
@@ -37,7 +37,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             <BrandMark />
           </Link>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
             Est. campus OS
           </span>
         </div>
@@ -71,7 +71,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           aria-hidden
           style={{
             background:
-              'radial-gradient(520px 320px at 85% -5%, rgba(37,99,255,.10), transparent 65%), radial-gradient(420px 300px at 10% 105%, rgba(139,92,246,.08), transparent 65%)'
+              'radial-gradient(520px 320px at 85% -5%, rgba(216,109,62,.10), transparent 65%), radial-gradient(420px 300px at 10% 105%, rgba(167,123,104,.08), transparent 65%)'
           }}
         />
         <button
@@ -89,7 +89,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           </Link>
           <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-6 sm:p-8">
             <p className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               CampusFlow
             </p>
             <SplitReveal

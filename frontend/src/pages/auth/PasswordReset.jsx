@@ -8,7 +8,7 @@ import { btnClass } from '../../system/tokens';
 import { Input } from '../../components/ui/primitives';
 import AuthLayout from './AuthLayout';
 
-const backLink = <><Link to="/login" className="font-semibold text-[#2563FF] underline underline-offset-2 hover:brightness-110">Back to sign in</Link></>;
+const backLink = <><Link to="/login" className="font-semibold text-[#D86D3E] underline underline-offset-2 hover:brightness-110">Back to sign in</Link></>;
 
 export function ForgotPassword() {
   const { forgotPassword } = useAuth();
@@ -43,7 +43,7 @@ export function ForgotPassword() {
             className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 p-4 text-sm text-[var(--cf-ink-soft)] space-y-2"
           >
             <p className="flex items-center gap-1.5 font-display font-semibold text-[var(--cf-ink)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               Check your inbox ✓
             </p>
             <p>Reset link valid ~10 minutes.</p>

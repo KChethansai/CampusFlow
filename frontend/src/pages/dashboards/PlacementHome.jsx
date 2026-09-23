@@ -11,6 +11,7 @@ import { useAuth } from '../../store/useAuth';
 import { Badge, ErrorState, LoadingState } from '../../components/ui/primitives';
 import { AttendanceRing, PipelineLabels } from '../../components/data/views';
 import { AnalyticsPanel, LazyChart, RoleHero, SpotTask, TaskGrid, TaskStat, ActivityStream } from '../../components/campus/regions';
+import { PlacementFunnel } from '../../components/campus/analytics';
 import { PipelineFunnel } from '../../components/campus/placement';
 import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
 import { staggerChild, staggerParent } from '../../system/motion';
@@ -109,7 +110,7 @@ export default function PlacementHome() {
               : `${drives.length} drives · ${companies.length} companies · ${funnel.total} applications in the ecosystem.`
           }
           alert={
-            <Link to="/placement" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#2563FF] hover:underline">
+            <Link to="/placement" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#D86D3E] hover:underline">
               Full board <ArrowRight size={13} aria-hidden />
             </Link>
           }
@@ -125,19 +126,19 @@ export default function PlacementHome() {
         <motion.div variants={staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Conversion analytics"
-            icon={<Briefcase size={17} className="text-[#8B5CF6]" aria-hidden />}
+            icon={<Briefcase size={17} className="text-[#A77B68]" aria-hidden />}
             question="Is the pipeline compounding?"
             period={`Cumulative applications vs wins · ${funnel.total} total`}
             tooltip="Buckets applications oldest→newest; wins counts offers + placements. A widening gap means top-of-funnel without closes."
             summary={conversion != null ? `${conversion}% of live applications convert to offer or better.` : undefined}
             empty={conversionRows.length === 0 ? 'No pipeline motion yet' : null}
             emptyHint="Applications will chart here."
-            action={<Link to="/placement" className="text-xs font-medium text-[#2563FF] hover:underline">Marketplace</Link>}
+            action={<Link to="/placement" className="text-xs font-medium text-[#D86D3E] hover:underline">Marketplace</Link>}
           >
             <LazyChart
               data={conversionRows}
               xKey="bucket"
-              series={[{ key: 'applications', color: '#2563FF' }, { key: 'wins', color: '#8B5CF6' }]}
+              series={[{ key: 'applications', color: '#D86D3E' }, { key: 'wins', color: '#A77B68' }]}
               height={200}
             />
           </AnalyticsPanel>
@@ -147,7 +148,7 @@ export default function PlacementHome() {
         <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-base font-semibold">Open drives</h2>
-            <Link to="/placement" className="text-xs font-medium text-[#2563FF] hover:underline">All</Link>
+            <Link to="/placement" className="text-xs font-medium text-[#D86D3E] hover:underline">All</Link>
           </div>
           {openDrives.length === 0 ? (
             <p className="text-sm text-[var(--cf-ink-mute)] py-4 text-center">No open drives right now.</p>
@@ -157,11 +158,11 @@ export default function PlacementHome() {
               items={openDrives}
               renderItem={(d) => (
                 <Link to="/placement" className="flex items-center gap-3 py-2.5 group">
-                  <span className="grid place-items-center w-9 h-9 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                  <span className="grid place-items-center w-9 h-9 shrink-0 rounded-[14px] bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
                     <Building2 size={17} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium truncate group-hover:text-[#2563FF] transition">{d.role} · {d.company?.name}</span>
+                    <span className="block text-sm font-medium truncate group-hover:text-[#D86D3E] transition">{d.role} · {d.company?.name}</span>
                     <span className="block text-xs text-[var(--cf-ink-mute)]">{d.location || ''}{d.packageLPA ? ` · ${d.packageLPA} LPA` : ''}</span>
                   </span>
                   <Badge status="open">Apply</Badge>
@@ -188,6 +189,9 @@ export default function PlacementHome() {
             <TaskStat label="Offers" value={funnel.counts.offer + funnel.counts.placed} />
           </SpotTask>
         </TaskGrid>
+      </motion.div>
+      <motion.div variants={staggerChild} className="mt-4">
+        <PlacementFunnel />
       </motion.div>
     </motion.div>
   );

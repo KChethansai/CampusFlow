@@ -10,4 +10,5 @@ const announcementSchema = new Schema({
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
+announcementSchema.index({ institution: 1, createdAt: -1 });
 export const AnnouncementModel = model('Announcement', announcementSchema);

@@ -16,10 +16,10 @@ export const PANEL = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5
 
 // ponytail: one glow per role, hero-only. Admin is deliberately fainter + dense.
 export const ROLE_ACCENTS = {
-  student: { glow: 'bg-gradient-to-r from-[#2563FF]/15 to-[#8B5CF6]/15', dot: '#8B5CF6' },
-  faculty: { glow: 'bg-gradient-to-r from-[#2563FF]/15 to-[#22d3ee]/15', dot: '#22d3ee' },
-  placement: { glow: 'bg-gradient-to-r from-[#8B5CF6]/15 to-[#2563FF]/15', dot: '#8B5CF6' },
-  admin: { glow: 'bg-gradient-to-r from-[#2563FF]/[.07] to-black/[.04] dark:to-white/[.04]', dot: '#2563FF' }
+  student: { glow: 'bg-gradient-to-r from-[#D86D3E]/15 to-[#A77B68]/15', dot: '#A77B68' },
+  faculty: { glow: 'bg-gradient-to-r from-[#D86D3E]/15 to-[#C87D4B]/15', dot: '#C87D4B' },
+  placement: { glow: 'bg-gradient-to-r from-[#A77B68]/15 to-[#D86D3E]/15', dot: '#A77B68' },
+  admin: { glow: 'bg-gradient-to-r from-[#D86D3E]/[.07] to-black/[.04] dark:to-white/[.04]', dot: '#D86D3E' }
 };
 
 /** Hero Pulse KPI: NumberTicker macro-metric + ring/gauge slot + role accent. */
@@ -187,7 +187,7 @@ export function TaskStat({ label, value, sub }) {
 
 // --- Lazy recharts viz: Area / Bar / Composed over one glass-tooltip language.
 // ponytail: one loader + one style instead of three chart components.
-const CHART_COLORS = ['#2563FF', '#8B5CF6', '#25D890'];
+const CHART_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
 
 export function LazyChart({
   kind = 'area',
@@ -366,12 +366,12 @@ export function PillTabs({ tabs = [], active, onChange, label, id = 'cf-tabs' })
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(t.key)}
-            style={selected && reduced ? { background: '#2563FF' } : undefined}
+            style={selected && reduced ? { background: '#D86D3E' } : undefined}
             className={cn(
               'relative rounded-full px-4 py-2 text-xs font-bold border transition isolate',
               selected
                 ? 'text-white border-transparent'
-                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)] border-[var(--cf-line)] hover:border-[#2563FF]/50'
+                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)] border-[var(--cf-line)] hover:border-[#D86D3E]/50'
             )}
           >
             {!reduced && selected && (
@@ -379,7 +379,7 @@ export function PillTabs({ tabs = [], active, onChange, label, id = 'cf-tabs' })
                 layoutId={id}
                 aria-hidden
                 className="absolute inset-0 rounded-full"
-                style={{ background: '#2563FF', zIndex: -1 }}
+                style={{ background: '#D86D3E', zIndex: -1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 32 }}
               />
             )}

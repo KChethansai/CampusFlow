@@ -11,7 +11,7 @@ import { memo } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
 // ponytail: royal→violet ramp mirrors the AreaChart 3-stop set.
-const DEFAULT_COLORS = ['#2563FF', '#4F46E5', '#7C3AED', '#8B5CF6', '#A78BFA', '#25D890'];
+const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#C39279', '#A77B68', '#C39279', '#25D890'];
 
 export const FunnelChart = memo(function FunnelChart({
   stages = [],

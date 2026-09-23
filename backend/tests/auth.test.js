@@ -15,6 +15,7 @@ beforeAll(async () => {
   institution = await Institution.create({
     name: 'Test Institute',
     code: 'TEST',
+    emailDomainPattern: 'test.edu',
     address: { city: 'Bangalore', state: 'Karnataka', country: 'India' },
     contactEmail: 'test@test.edu'
   });
@@ -244,40 +245,36 @@ describe('404 Handler', () => {
   });
 });
 
-describe('Public registration', () => {
-  it('should register a student and issue tokens', async () => {
+describe('Public registration (removed — login-only auth)', () => {
+  it('should return 404 for student signup payload', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register-public')
       .send({ name: 'New Student', email: 'newstudent@test.edu', password: 'Student@123', role: 'student', rollNumber: 'PUB001' });
 
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.accessToken).toBeDefined();
-    expect(res.body.refreshToken).toBeDefined();
-    expect(res.body.user.password).toBeUndefined();
+    expect(res.status).toBe(404);
   });
 
-  it('should reject duplicate email', async () => {
+  it('should return 404 for duplicate-email payload', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register-public')
       .send({ name: 'Dupe', email: 'newstudent@test.edu', password: 'Student@123', role: 'student' });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(404);
   });
 
-  it('should block admin role self-registration', async () => {
+  it('should return 404 for admin-role payload', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register-public')
       .send({ name: 'Hacker', email: 'hacker@test.edu', password: 'Password@123', role: 'super_admin' });
 
-    expect([403, 422]).toContain(res.status);
+    expect(res.status).toBe(404);
   });
 
-  it('should reject invalid institution code', async () => {
+  it('should return 404 for invalid-institution-code payload', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register-public')
       .send({ name: 'Lost', email: 'lost@test.edu', password: 'Student@123', role: 'student', institutionCode: 'NOPE' });
 
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(404);
   });
 });

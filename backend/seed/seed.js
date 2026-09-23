@@ -74,10 +74,11 @@ async function seed() {
     // ====================================================================
     const [institution] = await Institution.insertMany([
       {
-        name: 'Suntek Institute of Technology',
-        code: 'SIT',
+        name: 'Anurag University',
+        code: 'ANURAG',
+        emailDomainPattern: 'anurag.edu.in',
         address: { city: 'Bangalore', state: 'Karnataka', country: 'India' },
-        contactEmail: 'info@sit.edu',
+        contactEmail: 'info@anurag.edu.in',
         settings: {
           attendanceThreshold: 75,
           gradingScale: '10-point',
@@ -191,7 +192,7 @@ async function seed() {
     // --- College Admin ---
     const collegeAdminDoc = {
       name: 'Dr. Ramesh Kulkarni',
-      email: 'admin@sit.edu',
+      email: 'admin@anurag.edu.in',
       password: hashedAdmin,
       role: 'college_admin',
       institution: institution._id,
@@ -202,7 +203,7 @@ async function seed() {
     // --- Placement Officer ---
     const placementOfficerDoc = {
       name: 'Sneha Rao',
-      email: 'placement@sit.edu',
+      email: 'placement@anurag.edu.in',
       password: hashedAdmin,
       role: 'placement_officer',
       institution: institution._id,
@@ -220,7 +221,7 @@ async function seed() {
     ];
     const facultyDocs = facultyDetails.map((f, i) => ({
       name: f.name,
-      email: `faculty${i + 1}@sit.edu`,
+      email: `faculty${i + 1}@anurag.edu.in`,
       password: hashedFaculty,
       role: 'faculty',
       institution: institution._id,
@@ -254,13 +255,13 @@ async function seed() {
       const backlogs = randInt(0, 3);
       return {
         name: `${firstName} ${pick(['Kumar', 'Reddy', 'Sharma', 'Patil', 'Joshi', 'Nair', 'Rao', 'Gupta', 'Iyer', 'Das'])}`,
-        email: `student${i + 1}@sit.edu`,
+        email: `student${i + 1}@anurag.edu.in`,
         password: hashedStudent,
         role: 'student',
         institution: institution._id,
         department: deptMap[deptCode]._id,
         profile: {
-          rollNumber: `SIT${deptCode}${String(i + 1).padStart(3, '0')}`,
+          rollNumber: `AU${deptCode}${String(i + 1).padStart(3, '0')}`,
           course: courseMap[courseCode]._id,
           semester,
           section: sections[i % 2],
@@ -284,23 +285,23 @@ async function seed() {
 
     const allFaculty = users.filter((u) => u.role === 'faculty');
     const allStudents = users.filter((u) => u.role === 'student');
-    const collegeAdmin = userByEmail['admin@sit.edu'];
-    const placementOfficer = userByEmail['placement@sit.edu'];
+    const collegeAdmin = userByEmail['admin@anurag.edu.in'];
+    const placementOfficer = userByEmail['placement@anurag.edu.in'];
 
     // Assign faculty to subjects (update the subject docs)
     const facultySubjectAssignment = {
-      CS401: 'faculty1@sit.edu',
-      CS402: 'faculty1@sit.edu',
-      CS501: 'faculty2@sit.edu',
-      CS502: 'faculty2@sit.edu',
-      EC401: 'faculty3@sit.edu',
-      EC402: 'faculty3@sit.edu',
-      EC501: 'faculty4@sit.edu',
-      EC502: 'faculty4@sit.edu',
-      ME401: 'faculty5@sit.edu',
-      ME402: 'faculty5@sit.edu',
-      ME501: 'faculty5@sit.edu',
-      ME502: 'faculty5@sit.edu',
+      CS401: 'faculty1@anurag.edu.in',
+      CS402: 'faculty1@anurag.edu.in',
+      CS501: 'faculty2@anurag.edu.in',
+      CS502: 'faculty2@anurag.edu.in',
+      EC401: 'faculty3@anurag.edu.in',
+      EC402: 'faculty3@anurag.edu.in',
+      EC501: 'faculty4@anurag.edu.in',
+      EC502: 'faculty4@anurag.edu.in',
+      ME401: 'faculty5@anurag.edu.in',
+      ME402: 'faculty5@anurag.edu.in',
+      ME501: 'faculty5@anurag.edu.in',
+      ME502: 'faculty5@anurag.edu.in',
     };
     for (const [subCode, email] of Object.entries(facultySubjectAssignment)) {
       await Subject.updateOne(
@@ -311,9 +312,9 @@ async function seed() {
     console.log('  → Assigned faculty to subjects');
 
     // Assign HODs
-    await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['faculty1@sit.edu']._id });
-    await Department.updateOne({ _id: deptMap['ECE']._id },  { hod: userByEmail['faculty3@sit.edu']._id });
-    await Department.updateOne({ _id: deptMap['MECH']._id }, { hod: userByEmail['faculty5@sit.edu']._id });
+    await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['faculty1@anurag.edu.in']._id });
+    await Department.updateOne({ _id: deptMap['ECE']._id },  { hod: userByEmail['faculty3@anurag.edu.in']._id });
+    await Department.updateOne({ _id: deptMap['MECH']._id }, { hod: userByEmail['faculty5@anurag.edu.in']._id });
     console.log('  → Assigned HODs to departments');
 
     // ====================================================================
@@ -577,16 +578,16 @@ async function seed() {
     // 14. Announcements (10)
     // ====================================================================
     const announcementDefs = [
-      { title: 'Mid-Semester Examination Schedule Released',         by: 'admin@sit.edu',    dept: null },
-      { title: 'Library Hours Extended During Exam Week',            by: 'admin@sit.edu',    dept: null },
-      { title: 'Hackathon Registration Open – CodeSprint 2026',     by: 'faculty1@sit.edu', dept: 'CSE' },
-      { title: 'Guest Lecture on 5G Technologies',                  by: 'faculty3@sit.edu', dept: 'ECE' },
-      { title: 'Workshop on CNC Programming – Register Now',        by: 'faculty5@sit.edu', dept: 'MECH' },
-      { title: 'Fee Payment Deadline: August 31, 2026',             by: 'admin@sit.edu',    dept: null },
-      { title: 'Annual Sports Day – Volunteer Registration',        by: 'admin@sit.edu',    dept: null },
-      { title: 'Internship Opportunities – Apply Before Sept 15',   by: 'placement@sit.edu', dept: null },
-      { title: 'DBMS Lab Rescheduled to Thursday',                  by: 'faculty1@sit.edu', dept: 'CSE' },
-      { title: 'ECE Project Expo – Submissions Due Sept 10',        by: 'faculty4@sit.edu', dept: 'ECE' },
+      { title: 'Mid-Semester Examination Schedule Released',         by: 'admin@anurag.edu.in',    dept: null },
+      { title: 'Library Hours Extended During Exam Week',            by: 'admin@anurag.edu.in',    dept: null },
+      { title: 'Hackathon Registration Open – CodeSprint 2026',     by: 'faculty1@anurag.edu.in', dept: 'CSE' },
+      { title: 'Guest Lecture on 5G Technologies',                  by: 'faculty3@anurag.edu.in', dept: 'ECE' },
+      { title: 'Workshop on CNC Programming – Register Now',        by: 'faculty5@anurag.edu.in', dept: 'MECH' },
+      { title: 'Fee Payment Deadline: August 31, 2026',             by: 'admin@anurag.edu.in',    dept: null },
+      { title: 'Annual Sports Day – Volunteer Registration',        by: 'admin@anurag.edu.in',    dept: null },
+      { title: 'Internship Opportunities – Apply Before Sept 15',   by: 'placement@anurag.edu.in', dept: null },
+      { title: 'DBMS Lab Rescheduled to Thursday',                  by: 'faculty1@anurag.edu.in', dept: 'CSE' },
+      { title: 'ECE Project Expo – Submissions Due Sept 10',        by: 'faculty4@anurag.edu.in', dept: 'ECE' },
     ];
     const announcements = await Announcement.insertMany(
       announcementDefs.map((a, i) => ({

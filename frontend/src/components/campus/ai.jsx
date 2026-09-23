@@ -8,7 +8,7 @@ import { cn } from '../../system/tokens';
 export const INTEL =
   'rounded-[24px] border border-white/10 bg-[#0B1020]/80 backdrop-blur-xl p-5 relative overflow-hidden text-slate-100';
 export const GRADIENT_LINE =
-  'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#8B5CF6] via-[#6366F1] to-[#2563FF]';
+  'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#A77B68] via-[#6366F1] to-[#D86D3E]';
 
 // Structured output wins; free text falls back to summary.
 export const signalsOf = (report) => {
@@ -60,7 +60,7 @@ export const FindingCard = memo(function FindingCard({ signal, provider, feature
     <Shell>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#A7D700]">Finding</p>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#E7A66D]">Finding</p>
           <p className="font-semibold mt-0.5">{signal.what}</p>
         </div>
         <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-white/15 text-slate-200">
@@ -69,7 +69,7 @@ export const FindingCard = memo(function FindingCard({ signal, provider, feature
       </div>
       {signal.evidence && (
         <p className="mt-3 text-xs rounded-[14px] bg-white/5 border border-white/10 p-3 text-slate-200">
-          <span className="font-semibold text-[#A7D700]">Evidence: </span>
+          <span className="font-semibold text-[#E7A66D]">Evidence: </span>
           {signal.evidence}
         </p>
       )}

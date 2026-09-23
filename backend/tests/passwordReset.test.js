@@ -27,6 +27,7 @@ beforeAll(async () => {
   const institution = await Institution.create({
     name: 'Reset Test Institute',
     code: 'RESET',
+    emailDomainPattern: 'test.edu',
     address: { city: 'Delhi', state: 'DL', country: 'India' },
     contactEmail: 'reset@test.edu'
   });

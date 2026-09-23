@@ -13,6 +13,7 @@ import { Badge, EmptyState, ErrorState, LoadingState } from '../../components/ui
 import { AttendanceRing, Sparkline } from '../../components/data/views';
 import { AnimatedCounter } from '../../components/ui/editorial';
 import { AnalyticsPanel, LazyChart, RoleHero, ActivityStream } from '../../components/campus/regions';
+import { EnrollmentOverview } from '../../components/campus/analytics';
 import { staggerChild, staggerParent } from '../../system/motion';
 
 const deptId = (v) => String(v?._id || v || '');
@@ -130,7 +131,7 @@ export default function AdminHome() {
             empty={growthRows.every((r) => r.users === 0) ? 'No growth signal yet' : null}
             emptyHint="Accounts will chart here once people join."
           >
-            <LazyChart data={growthRows} xKey="bucket" series={[{ key: 'users', color: '#2563FF' }]} height={200} />
+            <LazyChart data={growthRows} xKey="bucket" series={[{ key: 'users', color: '#D86D3E' }]} height={200} />
           </AnalyticsPanel>
         </motion.div>
 
@@ -138,7 +139,7 @@ export default function AdminHome() {
         <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-semibold text-sm">Request queue</h2>
-            <Link to="/requests" className="text-xs font-medium text-[#2563FF] hover:underline">Review</Link>
+            <Link to="/requests" className="text-xs font-medium text-[#D86D3E] hover:underline">Review</Link>
           </div>
           {pending.length === 0 ? (
             <p className="text-xs text-[var(--cf-ink-mute)]">All clear.</p>
@@ -159,7 +160,7 @@ export default function AdminHome() {
             className="cf-card-spot rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 mt-4 flex items-center justify-between gap-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
           >
             <span>
-              <span className="font-display text-sm font-bold flex items-center gap-1.5"><Sparkles size={14} className="text-[#8B5CF6]" aria-hidden /> Intelligence</span>
+              <span className="font-display text-sm font-bold flex items-center gap-1.5"><Sparkles size={14} className="text-[#A77B68]" aria-hidden /> Intelligence</span>
               <span className="block text-[11px] text-[var(--cf-ink-mute)] mt-0.5">
                 {reports.length} reports · {reports.some((r) => r.provider === 'none') ? 'provider not configured' : 'provider live'}
               </span>
@@ -173,7 +174,7 @@ export default function AdminHome() {
       <motion.section variants={staggerChild} className="rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-5 mt-4" aria-label="Department health">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-base font-semibold">Department health</h2>
-          <Link to="/departments" className="text-xs font-medium text-[#2563FF] hover:underline">All departments</Link>
+          <Link to="/departments" className="text-xs font-medium text-[#D86D3E] hover:underline">All departments</Link>
         </div>
         {deptHealth.length === 0 ? (
           <EmptyState title="No departments yet" hint="Departments will appear here." />
@@ -208,6 +209,9 @@ export default function AdminHome() {
           </div>
         )}
       </motion.section>
+      <motion.div variants={staggerChild} className="mt-4">
+        <EnrollmentOverview />
+      </motion.div>
       <p className="sr-only">Signed in as {user?.name}, {user?.role}.</p>
     </motion.div>
   );

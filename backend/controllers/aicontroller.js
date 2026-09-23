@@ -4,7 +4,7 @@ import { AttendanceSessionModel as AttendanceSession } from '../models/Attendanc
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { generatePerformanceSummary } from '../services/ai.service.js';
+import { generatePerformanceSummary, hashDataSnapshot } from '../services/ai.service.js';
 import { logActivity } from '../services/activityLog.service.js';
 
 const gatherPerformanceData = async (studentId) => {
@@ -65,6 +65,8 @@ export const getAIReports = asyncHandler(async (req, res) => {
   res.json({ success: true, data: reports });
 });
 
+const REPORT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // identical snapshot → cache hit
+
 export const generateReport = asyncHandler(async (req, res) => {
   const { studentId } = req.body;
   if (!studentId) throw new ApiError(400, 'studentId is required');
@@ -73,6 +75,18 @@ export const generateReport = asyncHandler(async (req, res) => {
   if (!student) throw new ApiError(404, 'Student not found');
 
   const { student: withProfile, data } = await gatherPerformanceData(studentId);
+  const freshHash = hashDataSnapshot(data);
+
+  // Cache: same student + type + snapshot within TTL → no duplicate spend.
+  const cached = await AIReport.findOne({
+    student: studentId,
+    type: 'performance_summary',
+    dataSnapshotHash: freshHash,
+    expiresAt: { $gt: new Date() }
+  }).sort('-createdAt');
+  if (cached) {
+    return res.json({ success: true, cached: true, data: cached });
+  }
 
   const result = await generatePerformanceSummary(withProfile || student, data);
 
@@ -81,6 +95,7 @@ export const generateReport = asyncHandler(async (req, res) => {
     type: 'performance_summary',
     generatedBy: req.user._id,
     dataSnapshotHash: result.snapshotHash,
+    expiresAt: new Date(Date.now() + REPORT_TTL_MS),
     input: data,
     output: { summary: result.summary, provider: result.provider },
     provider: result.provider
@@ -94,4 +109,26 @@ export const generateReport = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({ success: true, data: report });
+});
+
+// SSE: progressively deliver a stored report's summary (fetch + reader on
+// the client, so Authorization header auth stays intact — no query tokens).
+export const streamReport = asyncHandler(async (req, res) => {
+  const report = await AIReport.findById(req.params.id).populate('student', 'institution');
+  if (!report || String(report.student?.institution) !== String(req.user.institution)) {
+    throw new ApiError(404, 'Report not found');
+  }
+  const text = report.output?.summary || '';
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive'
+  });
+  const CHUNK = 160; // progressive render, not a spinner
+  for (let i = 0; i < text.length; i += CHUNK) {
+    res.write(`data: ${JSON.stringify({ chunk: text.slice(i, i + CHUNK) })}\n\n`);
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  res.write(`data: ${JSON.stringify({ done: true, id: report._id })}\n\n`);
+  res.end();
 });

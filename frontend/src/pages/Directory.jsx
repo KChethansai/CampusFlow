@@ -57,13 +57,13 @@ export default function Directory() {
         subtitle="Everyone and everything on campus, in one search."
         actions={rows.length > 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-1.5 text-xs font-semibold tabular-nums text-[var(--cf-ink-soft)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
             {rows.length} result{rows.length === 1 ? '' : 's'}
           </span>
         )}
       />
       <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl p-2 mb-4 flex flex-col sm:flex-row gap-2">
-        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 text-sm focus-within:border-[#2563FF]/50 transition">
+        <label className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 text-sm focus-within:border-[#D86D3E]/50 transition">
           <Search size={15} className="text-[var(--cf-ink-mute)] shrink-0" aria-hidden />
           <input
             value={query}
@@ -77,7 +77,7 @@ export default function Directory() {
           {tabs.map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
               className={cn('px-3 py-2 rounded-xl text-xs font-display font-semibold whitespace-nowrap transition',
-                tab === t ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
+                tab === t ? 'bg-[#A94727] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
               {t}
             </button>
           ))}

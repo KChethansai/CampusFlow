@@ -122,9 +122,9 @@ export default function FacultyHome() {
             summary={loadRows.length ? `“${loadRows[0].assignment}” holds ${loadRows[0].pending} of ${gradeQueue.length} pending reviews — clear it first.` : undefined}
             empty={loadRows.length === 0 ? 'Inbox zero' : null}
             emptyHint="Enjoy it while it lasts."
-            action={<Link to="/assignments" className="text-xs font-medium text-[#2563FF] hover:underline">Open assignments</Link>}
+            action={<Link to="/assignments" className="text-xs font-medium text-[#D86D3E] hover:underline">Open assignments</Link>}
           >
-            <LazyChart kind="bar" data={loadRows} xKey="assignment" series={[{ key: 'pending', color: '#22d3ee' }]} height={200} />
+            <LazyChart kind="bar" data={loadRows} xKey="assignment" series={[{ key: 'pending', color: '#C87D4B' }]} height={200} />
           </AnalyticsPanel>
         </motion.div>
 
@@ -175,7 +175,7 @@ export default function FacultyHome() {
               <ul className="space-y-2">
                 {pendingRequests.slice(0, 4).map((r) => (
                   <li key={r._id}>
-                    <Link to="/requests" className="block text-xs hover:text-[#2563FF] transition">
+                    <Link to="/requests" className="block text-xs hover:text-[#D86D3E] transition">
                       <span className="font-medium">{r.title}</span>
                       <span className="text-[var(--cf-ink-mute)]"> · {r.student?.name}</span>
                     </Link>
@@ -192,7 +192,7 @@ export default function FacultyHome() {
         <TaskGrid>
           {ACTIONS.map(({ to, Icon, label, hint, hintKey }) => (
             <SpotTask key={label} to={to} label={label}>
-              <span className="inline-grid place-items-center w-9 h-9 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+              <span className="inline-grid place-items-center w-9 h-9 rounded-[14px] bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
                 <Icon size={18} />
               </span>
               <p className="mt-3 text-sm font-bold font-display">{label}</p>

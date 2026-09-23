@@ -7,6 +7,7 @@ import { sendPasswordResetEmail, isSmtpConfigured } from '../services/email.serv
 import { createNotification } from '../services/notification.service.js';
 import { logActivity } from '../services/activityLog.service.js';
 import { env } from '../config/env.js';
+import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -104,45 +105,23 @@ export const refresh = asyncHandler(async (req, res) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, institution, department, profile } = req.body;
 
-  if (!['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'].includes(role)) {
-    throw new ApiError(400, 'Invalid role');
-  }
-
-  // Privilege-escalation guard: only a super_admin may mint super_admins,
-  // and non-super callers cannot place users outside their own institution.
-  const callerIsSuper = req.user.role === 'super_admin';
-  if (role === 'super_admin' && !callerIsSuper) {
-    throw new ApiError(403, 'Only super_admin can create super_admin users');
-  }
-  const resolvedInstitution = callerIsSuper
-    ? (institution || req.user.institution)
-    : req.user.institution;
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new ApiError(409, 'Email already registered');
-  }
+  const { institution: targetInstitution, email: normalizedEmail, department: departmentId } = await provisionInstitutionForAccount({
+    caller: req.user,
+    role,
+    email,
+    requestedInstitution: institution,
+    department
+  });
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password,
     role,
-    institution: resolvedInstitution,
-    department,
+    institution: targetInstitution._id,
+    department: departmentId,
     profile,
     isEmailVerified: true
-  });
-
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
-
-  await RefreshToken.create({
-    user: user._id,
-    tokenHash: sha256(refreshToken),
-    expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000),
-    userAgent: req.headers['user-agent'],
-    ip: req.ip
   });
 
   await logActivity({
@@ -158,87 +137,7 @@ export const register = asyncHandler(async (req, res) => {
   const created = user.toObject();
   delete created.password;
 
-  res.status(201).json({ success: true, user: created, accessToken, refreshToken });
-});
-
-export const registerPublic = asyncHandler(async (req, res) => {
-  const { name, email, password, role, institutionCode, department, rollNumber, idNumber } = req.body;
-
-  // Block privilege escalation: public signup can never mint admin roles
-  // (validate() already allowlists, this is defense-in-depth).
-  if (!['student', 'faculty', 'placement_officer'].includes(role)) {
-    throw new ApiError(403, 'Self-registration is only open for student, faculty or placement_officer');
-  }
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new ApiError(409, 'Email already registered');
-  }
-
-  // Resolve institution: explicit code wins, else fall back to the single
-  // demo institution (or first match) so signup works out of the box.
-  const { InstitutionModel: Institution } = await import('../models/InstitutionModel.js');
-  const { DepartmentModel: Department } = await import('../models/DepartmentModel.js');
-  let institutionDoc = null;
-  if (institutionCode) {
-    institutionDoc = await Institution.findOne({ code: String(institutionCode).toUpperCase().trim() });
-    if (!institutionDoc) throw new ApiError(422, 'Invalid institution code');
-  } else {
-    institutionDoc = await Institution.findOne().sort({ createdAt: 1 });
-    if (!institutionDoc) throw new ApiError(422, 'No institution available for registration');
-  }
-
-  // Resolve department: accept ObjectId, code, or name within the institution.
-  let departmentId;
-  if (department) {
-    const raw = String(department).trim();
-    if (/^[0-9a-fA-F]{24}$/.test(raw)) {
-      const dep = await Department.findOne({ _id: raw, institution: institutionDoc._id });
-      if (dep) departmentId = dep._id;
-    } else {
-      const dep = await Department.findOne({
-        institution: institutionDoc._id,
-        $or: [{ code: raw.toUpperCase() }, { name: raw }],
-      });
-      if (dep) departmentId = dep._id;
-    }
-  }
-
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role,
-    institution: institutionDoc._id,
-    ...(departmentId ? { department: departmentId } : {}),
-    ...((rollNumber || idNumber) ? { profile: { rollNumber: rollNumber || idNumber } } : {}),
-    isEmailVerified: true,
-  });
-
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
-
-  await RefreshToken.create({
-    user: user._id,
-    tokenHash: sha256(refreshToken),
-    expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000),
-    userAgent: req.headers['user-agent'],
-    ip: req.ip,
-  });
-
-  await logActivity({
-    req,
-    action: 'auth.register_public',
-    entityType: 'User',
-    entityId: user._id,
-    actor: user._id,
-    institution: user.institution,
-  });
-
-  const created = user.toObject();
-  delete created.password;
-
-  res.status(201).json({ success: true, user: created, accessToken, refreshToken });
+  res.status(201).json({ success: true, user: created });
 });
 
 export const logout = asyncHandler(async (req, res) => {
@@ -281,6 +180,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const fallbackToInApp = async () =>
     createNotification({
       recipient: user._id,
+      category: 'account',
       title: 'Password Reset Request',
       message: `Your password reset token: ${resetToken} (valid for 10 minutes)`,
       type: 'info'

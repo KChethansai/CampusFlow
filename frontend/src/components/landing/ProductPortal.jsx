@@ -174,15 +174,15 @@ export default function ProductPortal() {
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-black/10 dark:border-white/10">
         <div className="flex items-center gap-2.5">
           <span
-            className="w-7 h-7 rounded-full grid place-items-center font-display font-bold text-xs bg-[#2563FF] text-white"
+            className="w-7 h-7 rounded-full grid place-items-center font-display font-bold text-xs bg-[#A94727] text-white"
             aria-hidden
           >
             C
           </span>
-          <span className="font-display text-sm font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+          <span className="font-display text-sm font-semibold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
             CampusFlow Portal
           </span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[#A7D700]/15 text-[#4d6a00] dark:text-[#A7D700] border border-[#A7D700]/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[#E7A66D]/15 text-[#4d6a00] dark:text-[#E7A66D] border border-[#E7A66D]/30">
             Tour
           </span>
         </div>
@@ -201,8 +201,8 @@ export default function ProductPortal() {
               className={cn(
                 'px-3 py-1.5 rounded-full font-display text-xs font-semibold transition-all',
                 tab === t
-                  ? 'bg-[#2563FF] text-white'
-                  : 'text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#0A0D12] dark:hover:text-white'
+                  ? 'bg-[#A94727] text-white'
+                  : 'text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white'
               )}
             >
               {t === 'admin' ? 'Admin' : roleLabel(t).split(' ')[0]}
@@ -214,7 +214,7 @@ export default function ProductPortal() {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} {...morph}>
           <div className="flex flex-wrap items-end justify-between gap-3 px-5 sm:px-6 pt-5">
-            <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+            <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
               {HEADLINES[tab]}
             </h3>
             <ul className="flex flex-wrap gap-1.5" aria-label={`${roleLabel(tab)} workspace facts`}>
@@ -238,7 +238,7 @@ export default function ProductPortal() {
                 className="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-4 sm:p-5 flex flex-col justify-between gap-3"
               >
                 <div>
-                  <h4 className="font-display text-base font-semibold tracking-tight text-[#0A0D12] dark:text-[#F5F7FA]">
+                  <h4 className="font-display text-base font-semibold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
                     {cell.title}
                   </h4>
                   <p className="mt-1 text-[13px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF]">
@@ -265,7 +265,7 @@ export default function ProductPortal() {
                     <li key={l.to + l.label}>
                       <Link
                         to={l.to}
-                        className="group flex items-center justify-between px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold text-[#0A0D12] dark:text-[#F5F7FA] hover:border-[#2563FF]/50 hover:bg-[#2563FF]/[0.06] dark:hover:bg-[#2563FF]/10 transition-colors"
+                        className="group flex items-center justify-between px-3 py-2 rounded-2xl border border-black/10 dark:border-white/10 text-[13px] font-semibold text-[#100D0B] dark:text-[#F5F7FA] hover:border-[#D86D3E]/50 hover:bg-[#D86D3E]/[0.06] dark:hover:bg-[#D86D3E]/10 transition-colors"
                       >
                         {l.label}
                         <ArrowUpRight
@@ -287,7 +287,7 @@ export default function ProductPortal() {
             </p>
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#A7D700] text-[#0A0D12] text-xs font-display font-semibold hover:brightness-95 transition"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#E7A66D] text-[#100D0B] text-xs font-display font-semibold hover:brightness-95 transition"
             >
               Open {tab === 'admin' ? 'Admin' : roleLabel(tab).split(' ')[0]} workspace <ArrowRight size={14} aria-hidden />
             </Link>

@@ -9,7 +9,7 @@
 import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
-const DEFAULT_COLORS = ['#2563FF', '#8B5CF6', '#25D890'];
+const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
 const PAD = { top: 10, right: 10, bottom: 24, left: 38 };
 
 function useChartWidth(ref) {
@@ -28,7 +28,7 @@ function useChartWidth(ref) {
 export const BarChart = memo(function BarChart({
   data = [],
   xKey = 'label',
-  series = [{ key: 'value', color: '#2563FF' }],
+  series = [{ key: 'value', color: '#D86D3E' }],
   height = 260,
   title,
   measure,

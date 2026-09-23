@@ -170,8 +170,8 @@ export const createLearningResource = asyncHandler(async (req, res) => {
     topic,
     title,
     url: cleanUrl(url),
-    // server-generated local path (never client-supplied, so cleanUrl exempt)
-    fileUrl: req.file ? `/uploads/${req.file.filename}` : undefined,
+    // server-resolved URL (Cloudinary or local; never client-supplied, so cleanUrl exempt)
+    fileUrl: req.file ? await (await import('../config/multer.js')).resolveFileUrl(req) : undefined,
     fileName: req.file?.originalname,
     fileSize: req.file?.size,
     type: type || (req.file ? 'document' : undefined),

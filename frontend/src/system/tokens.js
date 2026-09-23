@@ -1,5 +1,5 @@
 // CampusFlow Design System — single source of truth.
-// Platform DS: cinematic glass, royal/volt/violet + success/warning/danger.
+// Platform DS: warm Obsidian Ember surfaces, ember accent, and quiet status colors.
 // Radius: sm 8 / md 12 / lg 16 / pill. Spacing: 8px base. Elevation soft.
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -7,19 +7,19 @@ import { twMerge } from 'tailwind-merge';
 export const cn = (...parts) => twMerge(clsx(...parts));
 
 export const colors = {
-  primary: '#2563FF',
-  primaryStrong: '#1D4FD7',
-  navy: '#0e1830',
-  graphite: '#1c1c1e',
-  cyan: '#22d3ee',
-  violet: '#7C5CFF',
-  success: '#25D890',
-  warning: '#FFBD4A',
-  error: '#FF5964',
-  volt: '#A7D700',
-  paper: '#F6F7F9',
-  cream: '#FFFFFF',
-  coal: '#0A0D12'
+  primary: '#D86D3E',
+  primaryStrong: '#B6532B',
+  navy: '#211713',
+  graphite: '#241B15',
+  cyan: '#C87D4B',
+  violet: '#B4806A',
+  success: '#43845E',
+  warning: '#A66C1F',
+  error: '#B94C43',
+  volt: '#E7A66D',
+  paper: '#F4EFE8',
+  cream: '#FBF8F3',
+  coal: '#100D0B'
 };
 
 export const ROLES = [
@@ -63,7 +63,7 @@ export const loadingState = 'text-[var(--cf-ink-mute)] text-sm';
 export const formGroup = 'mb-4';
 export const labelClass = 'block mb-1.5 text-sm font-medium text-[var(--cf-ink-soft)]';
 export const inputClass =
-  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] border border-[var(--cf-line)] rounded-[14px] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none focus:ring-[3px] focus:ring-[#2563FF]/30 focus:border-[#2563FF] transition';
+  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] border border-[var(--cf-line)] rounded-[14px] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none focus:ring-[3px] focus:ring-[#D86D3E]/30 focus:border-[#D86D3E] transition';
 export const selectClass = inputClass;
 export const formCardClass =
   'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-brutal p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-3';
@@ -73,13 +73,13 @@ export const buttonBase =
   'inline-flex items-center justify-center gap-1.5 rounded-[14px] font-display text-sm font-semibold transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98]';
 
 export const buttonVariants = {
-  primary: 'bg-[#2563FF] text-white hover:brightness-110 shadow-brutal-sm',
+  primary: 'bg-[#A94727] text-white hover:brightness-110 shadow-brutal-sm',
   secondary: 'glass-surface text-[var(--cf-ink)] hover:bg-[var(--cf-surface-2)]',
-  success: 'bg-[#25D890] text-[#0A0D12] hover:brightness-105',
+  success: 'bg-[#25D890] text-[#100D0B] hover:brightness-105',
   danger: 'bg-[#FF5964] text-white hover:brightness-110',
   outline: 'bg-[var(--cf-surface)] text-[var(--cf-ink)] border border-[var(--cf-line)] hover:bg-[var(--cf-surface-2)]',
   ghost: 'bg-transparent text-[var(--cf-ink-soft)] hover:bg-black/[.05] dark:hover:bg-white/10',
-  glow: 'bg-[#A7D700] text-[#0A0D12] hover:brightness-105'
+  glow: 'bg-[#E7A66D] text-[#100D0B] hover:brightness-105'
 };
 
 export const buttonSizes = {
@@ -99,39 +99,39 @@ export const badge = (color = 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:t
 
 export const statusColors = {
   pending: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]',
-  in_review: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
-  under_review: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
+  in_review: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
+  under_review: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
   approved: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   rejected: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
   draft: 'bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-gray-300',
-  published: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
+  published: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
   open: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   closed: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]',
-  graded: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  graded: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
   archived: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400',
   active: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   inactive: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  applied: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
-  shortlisted: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  assessment: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  interview_1: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  interview_2: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  interview: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  hr_round: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  applied: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
+  shortlisted: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  assessment: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  interview_1: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  interview_2: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  interview: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  hr_round: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
   offer: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   placed: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   selected: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  submitted: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
+  submitted: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
   late: 'bg-[#FFBD4A]/20 text-[#8a5a00] dark:text-[#FFBD4A]',
   present: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   absent: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  od: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]'
+  od: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]'
 };
 
 export const roleColors = {
   super_admin: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  college_admin: 'bg-[#7C5CFF]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
-  faculty: 'bg-[#2563FF]/12 text-[#1D4FD7] dark:text-[#8fabff]',
+  college_admin: 'bg-[#B4806A]/12 text-[#5a3fd4] dark:text-[#b3a1ff]',
+  faculty: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
   student: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
   placement_officer: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]'
 };

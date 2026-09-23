@@ -9,7 +9,7 @@ faculty, student, placement officer.
 | Layer | Technology |
 |---|---|
 | Backend | Express.js, Mongoose, JWT access + DB-backed refresh rotation |
-| Frontend | React 18 (Vite), Zustand, Tailwind, Motion.dev, lazy Three.js |
+| Frontend | React 19 (Vite), Zustand, Tailwind, Motion.dev, lazy Three.js |
 | Database | MongoDB (Atlas in production) |
 | AI | OpenAI optional — reports degrade gracefully without a key |
 
@@ -30,8 +30,9 @@ npm install
 npm run dev                 # http://localhost:5173
 ```
 
-Seed logins: `superadmin@campusflow.app` / `admin@sit.edu` / `placement@sit.edu`
-(`Admin@123`), `faculty1@sit.edu` (`Faculty@123`), `student1@sit.edu` (`Student@123`).
+Seed logins: `superadmin@campusflow.app` / `admin@anurag.edu.in` /
+`placement@anurag.edu.in` (`Admin@123`), `faculty1@anurag.edu.in`
+(`Faculty@123`), `student1@anurag.edu.in` (`Student@123`).
 
 ## Environment
 
@@ -48,7 +49,7 @@ have never been committed.
 ## Testing
 
 ```bash
-cd backend && npm test      # jest + supertest + mongodb-memory-server (54 tests)
+cd backend && npm test      # jest + supertest + mongodb-memory-server (130 tests)
 cd frontend && npm run build
 ```
 
@@ -63,6 +64,9 @@ cd frontend && npm run build
   with `/api/v1` suffix.
 - Smoke: `GET {backend}/api/health` → `{"status":"ok"}`; login; spot-check
   dashboard, assignments, placement, requests.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for environment-by-environment Atlas, Render,
+and Vercel setup, production indexes, and release checks.
 
 ## Security model
 

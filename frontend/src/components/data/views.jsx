@@ -15,9 +15,9 @@ const HeatmapChart = lazy(() => import('./charts/HeatmapChart'));
 const OK = '#25D890';
 const WARN = '#FFBD4A';
 const BAD = '#FF5964';
-const ROYAL = '#2563FF';
-const VIOLET = '#8B5CF6';
-const VOLT = '#A7D700';
+const ROYAL = '#D86D3E';
+const VIOLET = '#A77B68';
+const VOLT = '#E7A66D';
 
 export function WorkflowTimeline({ steps }) {
   // steps: [{ label, at, done, active, note }]
@@ -169,10 +169,10 @@ function HeatmapGrid({ weeks = [], legend = ['Less', 'More'] }) {
   // weeks: array of 7-length columns of 0..4 intensity — royal→violet glass scale.
   const shades = [
     'bg-black/[.06] dark:bg-white/[.07]',
-    'bg-[#2563FF]/15 dark:bg-[#2563FF]/25',
-    'bg-[#2563FF]/35 dark:bg-[#2563FF]/45',
-    'bg-[#2563FF]/60 dark:bg-[#2563FF]/70',
-    'bg-[#8B5CF6] dark:bg-[#8B5CF6]'
+    'bg-[#D86D3E]/15 dark:bg-[#D86D3E]/25',
+    'bg-[#D86D3E]/35 dark:bg-[#D86D3E]/45',
+    'bg-[#D86D3E]/60 dark:bg-[#D86D3E]/70',
+    'bg-[#A77B68] dark:bg-[#A77B68]'
   ];
   return (
     <div className="cf-glass rounded-[14px] border border-[var(--cf-line)] p-3 inline-block">
@@ -212,10 +212,10 @@ export function Dropzone({ onFiles, accept, multiple = true, progress = null, la
       onDrop={(e) => { e.preventDefault(); setDragging(false); onFiles?.(e.dataTransfer.files); }}
       className={cn(
         'cf-glass rounded-[14px] border border-dashed p-6 text-center transition cursor-pointer',
-        dragging ? 'border-[#2563FF] scale-[1.01]' : 'border-[var(--cf-line)] hover:border-[#2563FF]/60'
+        dragging ? 'border-[#D86D3E] scale-[1.01]' : 'border-[var(--cf-line)] hover:border-[#D86D3E]/60'
       )}
     >
-      <UploadCloud size={22} className="mx-auto text-[#2563FF]" aria-hidden />
+      <UploadCloud size={22} className="mx-auto text-[#D86D3E]" aria-hidden />
       <p className="mt-2 text-sm font-medium">{label}</p>
       <p className="text-xs text-[var(--cf-ink-mute)]">or click to browse</p>
       <input

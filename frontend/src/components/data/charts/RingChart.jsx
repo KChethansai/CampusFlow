@@ -10,7 +10,7 @@
 import { memo, useMemo } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
-const DEFAULT_COLORS = ['#2563FF', '#8B5CF6', '#25D890', '#FFBD4A', '#FF5964'];
+const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#25D890', '#FFBD4A', '#FF5964'];
 
 export const RingChart = memo(function RingChart({
   segments = [],

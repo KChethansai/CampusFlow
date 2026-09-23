@@ -8,8 +8,9 @@ import {
   Moon, Search, Settings, Sun, X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Toaster, toast } from 'react-hot-toast';
+import { Toaster, toast, useToasterStore } from 'react-hot-toast';
 import { useAuth } from '../store/useAuth';
+import { useSocket } from '../store/useSocket';
 import { useTheme } from '../system/theme';
 import { visibleMobileNav, visibleNav } from './navigation';
 import CommandPalette, { useCommandPalette } from './CommandPalette';
@@ -32,24 +33,30 @@ const SOFT = 'shadow-[0_16px_48px_-20px_rgba(16,24,40,0.3)]';
 // Subtle per-role accent pairs: student blue+violet, faculty blue+cyan,
 // placement violet+blue, admin blue+neutral. Applied as soft gradient washes only.
 const ROLE_ACCENT = {
-  student: ['#2563FF', '#7C5CFF'],
-  faculty: ['#2563FF', '#22d3ee'],
-  placement_officer: ['#7C5CFF', '#2563FF'],
-  college_admin: ['#2563FF', '#64748b'],
-  super_admin: ['#2563FF', '#94a3b8']
+  student: ['#D86D3E', '#B4806A'],
+  faculty: ['#D86D3E', '#C87D4B'],
+  placement_officer: ['#B4806A', '#D86D3E'],
+  college_admin: ['#D86D3E', '#64748b'],
+  super_admin: ['#D86D3E', '#94a3b8']
 };
 
-const APP_TOUR_STEPS = [
-  { target: '#cf-search-trigger', title: 'Command center', body: 'Press Ctrl/⌘+K to jump anywhere — courses, drives, people, requests.' },
-  { target: '#cf-notifications', title: 'Notifications', body: 'Announcements, events and mentions land here. Mark them read as you go.' },
-  { target: '#cf-primary-nav', title: 'Sections', body: 'Your role decides what appears here. Everything else stays hidden, not just disabled.' },
-  { target: '#main-content', title: 'Workspace', body: 'Dashboards, queues and reports live here — real data, exportable anywhere.' },
-];
+const tourStepsFor = (role) => {
+  const focus = role === 'student' ? 'assignments, attendance, study plans and placements'
+    : role === 'faculty' ? 'your courses, assignments, attendance and student requests'
+      : role === 'placement_officer' ? 'drives, applicants and placement activity'
+        : 'institution users, courses, reports and operational requests';
+  return [
+    { target: '#cf-search-trigger', title: 'Command center', body: 'Press Ctrl/⌘+K to jump to the sections and actions available to you.' },
+    { target: '#cf-notifications', title: 'Notifications', body: 'Updates for your role land here. Open the preferences in Profile to choose channels.' },
+    { target: '#cf-primary-nav', title: 'Your workspace', body: `Your role gives you access to ${focus}.` },
+    { target: '#main-content', title: 'Get started', body: 'Your dashboard brings together live campus information and the next useful actions.' },
+  ];
+};
 
 function Brand({ compact }) {
   return (
     <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0" aria-label="CampusFlow home">
-      <span className="w-9 h-9 rounded-xl bg-[#2563FF] grid place-items-center font-display font-bold text-base text-white shrink-0" aria-hidden>
+      <span className="w-9 h-9 rounded-xl bg-[#D86D3E] grid place-items-center font-display font-bold text-base text-white shrink-0" aria-hidden>
         C
       </span>
       {!compact && (
@@ -72,7 +79,7 @@ const railLinkClass = ({ isActive }, compact) => cn(
   `group relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all duration-200 ${EASE} hover:translate-x-1`,
   compact && 'justify-center px-0',
   isActive
-    ? 'text-[#2563FF] dark:text-[#8db4ff]'
+    ? 'text-[#D86D3E] dark:text-[#8db4ff]'
     : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.04] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
 );
 
@@ -97,26 +104,40 @@ const railLinkInner = ({ isActive }, { label, Icon }, compact, accent, reduced) 
           layoutId="cf-rail-line"
           transition={{ duration: 0.3, ease: EASE_OUT }}
           className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full"
-          style={{ background: `linear-gradient(180deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(37,99,255,0.55)' }}
+          style={{ background: `linear-gradient(180deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(216,109,62,0.55)' }}
           aria-hidden
         />
       )
     )}
-    <span className={cn('grid place-items-center rounded-lg transition-colors', isActive && 'bg-[#2563FF]/10 p-0')}>
+    <span className={cn('grid place-items-center rounded-lg transition-colors', isActive && 'bg-[#D86D3E]/10 p-0')}>
       <Icon size={18} aria-hidden className="shrink-0" />
     </span>
     {!compact && <span className="truncate">{label}</span>}
     {isActive && !compact && (
-      <span className="ml-auto rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#111111]" style={{ background: '#A7D700' }}>
+      <span className="ml-auto rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#111111]" style={{ background: '#E7A66D' }}>
         ACTIVE
       </span>
     )}
   </>
 );
 
+// Screen-reader mirror of the latest toast (react-hot-toast renders
+// outside the live tree, so announce its message explicitly).
+function ToastAnnouncer() {
+  const { toasts } = useToasterStore();
+  const visible = toasts.filter((t) => t.visible);
+  const latest = visible[visible.length - 1];
+  const message = typeof latest?.message === 'string' ? latest.message : '';
+  return (
+    <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
+      {message}
+    </div>
+  );
+}
+
 export default function AppShell() {
   const navigate = useNavigate();
-  const { user, logoutUser } = useAuth();
+  const { user, logoutUser, completeOnboardingTour } = useAuth();
   const { theme, toggle } = useTheme();
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
   const [tourSignal, setTourSignal] = useState(0);
@@ -163,6 +184,37 @@ export default function AppShell() {
     return () => window.removeEventListener('keydown', onKey);
   }, [mobileOpen]);
 
+  // Realtime: connect socket on auth, toast live events (no full refetch).
+  const socketConnect = useSocket((s) => s.connect);
+  const socketDisconnect = useSocket((s) => s.disconnect);
+  const lastEvent = useSocket((s) => s.lastEvent);
+  const bumpUnread = useSocket((s) => s.bumpUnread);
+  const refreshUnread = useSocket((s) => s.refreshUnread);
+  useEffect(() => {
+    if (!user) {
+      socketDisconnect();
+      return;
+    }
+    socketConnect();
+    refreshUnread();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]);
+  useEffect(() => {
+    if (!lastEvent) return;
+    const { channel, payload } = lastEvent;
+    if (channel === 'notification:new' && payload?.notification) {
+      bumpUnread();
+      toast.success(payload.notification.title || 'New notification');
+    } else if (channel === 'announcement:posted') {
+      toast.success(`New announcement: ${payload?.announcement?.title || ''}`.trim());
+    } else if (channel === 'request:updated') {
+      toast.success(`Request ${payload?.request?.status || 'updated'}`);
+    } else if (channel === 'attendance:marked') {
+      toast.success('Attendance updated');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastEvent]);
+
   const logout = async () => {
     await logoutUser();
     navigate('/login');
@@ -177,7 +229,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen cf-atmosphere text-[var(--cf-ink)]">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-[#2563FF] focus:text-white focus:text-sm focus:font-medium">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-[#D86D3E] focus:text-white focus:text-sm focus:font-medium">
         Skip to content
       </a>
 
@@ -204,7 +256,7 @@ export default function AppShell() {
               aria-label="Open command center"
               title={collapsed ? 'Search (Ctrl/⌘+K)' : undefined}
               className={cn(
-                `flex items-center gap-2 min-h-11 rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink-mute)] transition-all duration-200 ${EASE} hover:border-[#2563FF]/40 hover:text-[var(--cf-ink)]`,
+                `flex items-center gap-2 min-h-11 rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink-mute)] transition-all duration-200 ${EASE} hover:border-[#D86D3E]/40 hover:text-[var(--cf-ink)]`,
                 collapsed ? 'justify-center px-0' : 'px-3'
               )}
             >
@@ -273,7 +325,7 @@ export default function AppShell() {
           <motion.header
             animate={reduced ? {} : { y: barHidden ? '-130%' : '0%', opacity: barHidden ? 0 : 1 }}
             transition={{ duration: 0.25, ease: EASE_OUT }}
-            className={`cf-glass sticky top-3 z-40 mt-3 rounded-2xl border border-[var(--cf-line)] ${SOFT}`}
+            className={`cf-glass sticky top-3 z-40 mt-3 rounded-2xl border border-[var(--cf-line)] ${SOFT} print-hide`}
           >
             <div className="flex h-16 items-center gap-1.5 px-3 sm:gap-2 sm:px-4">
               <button
@@ -285,7 +337,7 @@ export default function AppShell() {
                 <Menu size={20} />
               </button>
               <span className="hidden md:inline-flex items-center gap-1.5 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-3 text-xs font-semibold text-[var(--cf-ink-soft)]">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#A7D700' }} aria-hidden />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E7A66D' }} aria-hidden />
                 {semester ? `Sem ${semester}` : 'Campus'}
               </span>
               <nav aria-label="Sections" className="hidden xl:flex flex-1 items-center justify-center gap-1">
@@ -296,14 +348,14 @@ export default function AppShell() {
                     className={({ isActive }) => cn(
                       `relative rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
                       isActive
-                        ? 'text-[#2563FF] dark:text-[#8db4ff]'
+                        ? 'text-[#D86D3E] dark:text-[#8db4ff]'
                         : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
                     )}
                   >
                     {({ isActive }) => (
                       <>
                         {isActive && (reduced ? (
-                          <span className="absolute inset-0 rounded-full bg-[#2563FF]/10" aria-hidden />
+                          <span className="absolute inset-0 rounded-full bg-[#D86D3E]/10" aria-hidden />
                         ) : (
                           <motion.span
                             layoutId="cf-topbar-pill"
@@ -321,7 +373,7 @@ export default function AppShell() {
               </nav>
               <div className="flex-1 xl:hidden" />
               <span className="hidden lg:inline-flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] px-3 text-xs font-semibold capitalize text-[var(--cf-ink-soft)]">
-                <span className="w-2 h-2 rounded-full bg-[#A7D700] animate-pulse-dot" aria-hidden />
+                <span className="w-2 h-2 rounded-full bg-[#E7A66D] animate-pulse-dot" aria-hidden />
                 {roleLabel(user?.role)}
               </span>
               <button onClick={() => setPaletteOpen(true)} aria-label="Search" className={iconBtn}>
@@ -346,7 +398,7 @@ export default function AppShell() {
               </Link>
               <Link
                 to="/profile"
-                className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[#2563FF]/40`}
+                className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[#D86D3E]/40`}
               >
                 <span className="w-8 h-8 rounded-full grid place-items-center text-white text-xs font-bold shrink-0" style={{ background: `linear-gradient(135deg, ${accent[0]}, ${accent[1]})` }} aria-hidden>
                   {(user?.name?.[0] || 'U').toUpperCase()}
@@ -396,13 +448,13 @@ export default function AppShell() {
               aria-hidden
               initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT }}
-              className="absolute left-0 top-0 bottom-0 w-[17.5rem] rounded-r-3xl bg-[#2563FF]/15"
+              className="absolute left-0 top-0 bottom-0 w-[17.5rem] rounded-r-3xl bg-[#D86D3E]/15"
             />
             <motion.span
               aria-hidden
               initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT, delay: 0.06 }}
-              className="absolute left-0 top-0 bottom-0 w-[17.25rem] rounded-r-3xl bg-[#A7D700]/10"
+              className="absolute left-0 top-0 bottom-0 w-[17.25rem] rounded-r-3xl bg-[#E7A66D]/10"
             />
             <motion.nav
               aria-label="Mobile"
@@ -431,7 +483,7 @@ export default function AppShell() {
                         <span className={cn(
                           `relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all mb-0.5 ${EASE} overflow-hidden`,
                           state.isActive
-                            ? 'text-[#2563FF] dark:text-[#8db4ff]'
+                            ? 'text-[#D86D3E] dark:text-[#8db4ff]'
                             : 'text-[var(--cf-ink-soft)] hover:translate-x-1'
                         )}>
                           {state.isActive && (
@@ -442,7 +494,7 @@ export default function AppShell() {
                             />
                           )}
                           {state.isActive && (
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#2563FF] shadow-[0_0_12px_rgba(37,99,255,0.8)]" aria-hidden />
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#D86D3E] shadow-[0_0_12px_rgba(216,109,62,0.8)]" aria-hidden />
                           )}
                           <span className="relative font-mono text-[10px] font-semibold text-[var(--cf-ink-mute)] w-6 shrink-0" aria-hidden>
                             {String(i + 1).padStart(2, '0')}
@@ -457,7 +509,7 @@ export default function AppShell() {
               </motion.div>
               <button
                 onClick={logout}
-                className="mt-4 w-full flex items-center justify-center gap-2 min-h-11 rounded-full bg-[#2563FF] text-white text-sm font-semibold transition-all"
+                className="mt-4 w-full flex items-center justify-center gap-2 min-h-11 rounded-full bg-[#A94727] text-white text-sm font-semibold transition-all"
               >
                 <LogOut size={17} /> Log out
               </button>
@@ -475,20 +527,20 @@ export default function AppShell() {
               to={to}
               className={({ isActive }) =>
                 `relative flex flex-col items-center gap-0.5 py-2.5 min-h-11 justify-center text-[10px] font-semibold transition ${
-                  isActive ? 'text-[#2563FF] dark:text-[#8db4ff]' : 'text-[var(--cf-ink-mute)]'
+                  isActive ? 'text-[#D86D3E] dark:text-[#8db4ff]' : 'text-[var(--cf-ink-mute)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   {isActive && (reduced ? (
-                    <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[#2563FF]" aria-hidden />
+                    <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[#D86D3E]" aria-hidden />
                   ) : (
                     <motion.span
                       layoutId="cf-bottom-tab"
                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                       className="absolute top-0 inset-x-6 h-1 rounded-full"
-                      style={{ background: `linear-gradient(90deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(37,99,255,0.8)' }}
+                      style={{ background: `linear-gradient(90deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(216,109,62,0.8)' }}
                       aria-hidden
                     />
                   ))}
@@ -508,7 +560,9 @@ export default function AppShell() {
         onDownloadCsv={downloadNotificationsCsv}
         onStartTour={() => setTourSignal((s) => s + 1)}
       />
-      <Tour steps={APP_TOUR_STEPS} storageKey="cf_tour_app" startSignal={tourSignal} />
+      <Tour steps={tourStepsFor(user?.role)} storageKey={`cf_tour_app:${user?._id || 'account'}`} autoOpen={!user?.onboardingTourCompleted} startSignal={tourSignal}
+        onDone={() => completeOnboardingTour().catch(() => toast.error('Tour completion could not be saved to your account.'))} />
+      <ToastAnnouncer />
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
     </div>
   );

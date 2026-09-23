@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { motion } from 'motion/react';
-import { AlertTriangle, Sparkles, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Printer, Sparkles, TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { staggerChild, staggerParent } from '../../system/motion';
@@ -16,7 +16,7 @@ const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', mon
 
 // Dark glass intelligence surfaces; violet→blue gradient hairline on top.
 const INTEL = 'rounded-[24px] border border-white/10 bg-[#0B1020]/80 backdrop-blur-xl p-5 relative overflow-hidden text-slate-100';
-const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#8B5CF6] via-[#6366F1] to-[#2563FF]';
+const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#A77B68] via-[#6366F1] to-[#D86D3E]';
 
 // Heuristic signal extraction: structured output wins; free text falls back to summary.
 const signalsOf = (report) => {
@@ -65,15 +65,57 @@ export default function AIReports() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [streaming, setStreaming] = useState(''); // progressive chunks, not a spinner
+
+  // Progressive delivery: POST generates (or cache-hits), then GET stream
+  // renders the stored summary chunk-by-chunk via fetch reader (keeps
+  // Authorization header auth — EventSource can't send headers).
+  const streamInto = async (report) => {
+    setSelected(report);
+    setStreaming('');
+    try {
+      const token = JSON.parse(localStorage.getItem('cf_auth') || 'null')?.accessToken;
+      const res = await fetch(`${api.defaults.baseURL}/ai-reports/${report._id}/stream`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('no stream');
+      const decoder = new TextDecoder();
+      let buf = '';
+      let acc = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n\n');
+        buf = parts.pop();
+        for (const part of parts) {
+          const line = part.trim().replace(/^data:\s*/, '');
+          if (!line) continue;
+          try {
+            const evt = JSON.parse(line);
+            if (evt.chunk) {
+              acc += evt.chunk;
+              setStreaming(acc); // progressive generation
+            }
+          } catch { /* partial frame — wait for more */ }
+        }
+      }
+    } catch {
+      setStreaming(''); // fall back to stored full text below
+    }
+  };
+
   const onGenerate = async ({ studentId }) => {
     if (!studentId) return toast.error('Select a student first');
     setGenerating(true);
     try {
       const { data } = await api.post('/ai-reports/generate', { studentId });
       const created = data.data || data;
-      toast.success(created?.provider === 'none' ? 'Snapshot stored — AI provider not configured' : 'Report generated');
+      if (data.cached) toast.success('Served from cache — snapshot unchanged');
+      else toast.success(created?.provider === 'none' ? 'Snapshot stored — AI provider not configured' : 'Report generated');
       await fetchReports();
-      if (created?._id) setSelected(created);
+      if (created?._id) await streamInto(created);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to generate report');
     } finally {
@@ -81,12 +123,28 @@ export default function AIReports() {
     }
   };
 
+  // History diff: previous report for the same student (this month vs last).
+  const previous = useMemo(() => {
+    if (!selected) return null;
+    const same = reports
+      .filter((r) => String(r.student?._id || r.student) === String(selected.student?._id || selected.student)
+        && String(r._id) !== String(selected._id))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return same[0] || null;
+  }, [reports, selected]);
+  const [showDiff, setShowDiff] = useState(false);
+
   const unconfigured = useMemo(() => reports.some((r) => r.provider === 'none'), [reports]);
-  const signals = useMemo(() => (selected ? signalsOf(selected) : []), [selected]);
+  // While streaming, render progressive chunks in place of the stored text.
+  const effective = useMemo(() => (
+    selected && streaming ? { ...selected, output: { ...(selected.output || {}), summary: streaming } } : selected
+  ), [selected, streaming]);
+  const signals = useMemo(() => (effective ? signalsOf(effective) : []), [effective]);
 
   return (
-    <div>
-      <PageHeader title="Campus Intelligence" subtitle="What changed, why it matters, and what happens next — with evidence." />
+    <div className="print-report">
+      <PageHeader title="Campus Intelligence" subtitle="What changed, why it matters, and what happens next — with evidence."
+        actions={selected && <button type="button" onClick={() => window.print()} className={btnClass('outline', 'small') + ' print-hide'}><Printer size={14} aria-hidden /> Export / print</button>} />
 
       {unconfigured && (
         <p className="cf-glass rounded-[14px] border border-[var(--cf-line)] mb-4 flex items-start gap-2 px-4 py-3 text-xs font-semibold">
@@ -125,11 +183,11 @@ export default function AIReports() {
                 {reports.map((r) => (
                   <li key={r._id}>
                     <button
-                      onClick={() => setSelected(r)}
+                      onClick={() => { setSelected(r); setStreaming(''); setShowDiff(false); }}
                       aria-current={selected?._id === r._id}
                       className={cn('w-full text-left px-3 py-2.5 rounded-[14px] border transition',
                         selected?._id === r._id
-                          ? 'border-[#8B5CF6]/60 bg-[#8B5CF6]/10'
+                          ? 'border-[#A77B68]/60 bg-[#A77B68]/10'
                           : 'border-transparent hover:bg-black/[.03] dark:hover:bg-white/[.05]')}
                     >
                       <span className="flex items-center justify-between gap-2">
@@ -157,7 +215,7 @@ export default function AIReports() {
                   <span className={GRADIENT_LINE} aria-hidden />
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <h2 className="font-display font-semibold flex items-center gap-1.5">
-                      <TrendingUp size={16} className="text-[#A7D700]" aria-hidden /> {selected.student?.name}
+                      <TrendingUp size={16} className="text-[#E7A66D]" aria-hidden /> {selected.student?.name}
                     </h2>
                     <span className="text-[11px] text-slate-400">{fmt(selected.createdAt)}</span>
                   </div>
@@ -165,13 +223,31 @@ export default function AIReports() {
                     <p className="text-[11px] text-slate-400">Grounded snapshot <code className="px-1 rounded bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#8B5CF6] to-[#2563FF] text-white">
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#A77B68] to-[#D86D3E] text-white">
                       Provider: {selected.provider || 'none'}
                     </span>
                     <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest border border-white/15 text-slate-300">
                       {selected.provider === 'none' ? 'Confidence: snapshot' : 'Confidence: ranked per signal'}
                     </span>
+                    {previous && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDiff((v) => !v)}
+                        aria-expanded={showDiff}
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest border border-[#E7A66D]/50 text-[#E7A66D] hover:bg-[#E7A66D]/10 transition"
+                      >
+                        {showDiff ? 'Hide previous' : `Compare vs ${fmt(previous.createdAt)}`}
+                      </button>
+                    )}
                   </div>
+                  {showDiff && previous && (
+                    <div className="mt-3 rounded-[14px] bg-white/5 border border-white/10 p-3" aria-label="Previous report comparison">
+                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                        Previous · {fmt(previous.createdAt)} · snapshot <code className="px-1 rounded bg-white/10">{String(previous.dataSnapshotHash || '').slice(0, 12)}…</code>
+                      </p>
+                      <p className="text-sm text-slate-300 mt-1 whitespace-pre-wrap">{previous.output?.summary || '—'}</p>
+                    </div>
+                  )}
                 </section>
               </motion.div>
               {signals.length === 0 && (
@@ -184,7 +260,7 @@ export default function AIReports() {
                   <span className={GRADIENT_LINE} aria-hidden />
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#A7D700]">What changed</p>
+                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#E7A66D]">What changed</p>
                       <p className="font-semibold mt-0.5">{s.what}</p>
                     </div>
                     <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-white/15 text-slate-200">
@@ -195,7 +271,7 @@ export default function AIReports() {
                   {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">What should happen next</p><p className="text-sm text-slate-300 mt-0.5">{s.next}</p></>)}
                   {s.evidence && (
                     <p className="mt-3 text-xs rounded-[14px] bg-white/5 border border-white/10 p-3 text-slate-200">
-                      <span className="font-semibold text-[#A7D700]">Evidence: </span>{s.evidence}
+                      <span className="font-semibold text-[#E7A66D]">Evidence: </span>{s.evidence}
                     </p>
                   )}
                 </motion.article>

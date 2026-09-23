@@ -335,7 +335,7 @@ export function SectionHeader({ number, kicker, title, body, actions, className,
         {(number || kicker) && (
           <p className="cf-kicker mb-1.5 flex items-center gap-2">
             {number && (
-              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#A7D700] text-[#0A0D12] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
+              <span className="inline-flex items-center justify-center min-w-7 px-1.5 py-0.5 bg-[#E7A66D] text-[#100D0B] border border-[var(--cf-line)] rounded-md font-mono text-[11px] font-bold">
                 {number}
               </span>
             )}
@@ -438,7 +438,7 @@ export function ParticleButton({ children, className, onClick, ...props }) {
       onClick={handleClick}
       className={cn(
         'relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-[16px] px-5 py-2.5 font-display font-semibold text-sm transition-all duration-200 active:scale-[0.98]',
-        'bg-[#2563FF] text-white shadow-lg hover:shadow-[0_0_24px_rgba(37,99,255,0.5)] hover:brightness-110',
+        'bg-[#A94727] text-white shadow-lg hover:shadow-[0_0_24px_rgba(216,109,62,0.5)] hover:brightness-110',
         className
       )}
       {...props}
@@ -447,7 +447,7 @@ export function ParticleButton({ children, className, onClick, ...props }) {
       {bursts.map((b) => (
         <span
           key={b.id}
-          className="pointer-events-none absolute w-2 h-2 rounded-full bg-[#A7D700] animate-ping"
+          className="pointer-events-none absolute w-2 h-2 rounded-full bg-[#E7A66D] animate-ping"
           style={{ left: b.x, top: b.y, transform: 'translate(-50%, -50%)' }}
           aria-hidden
         />

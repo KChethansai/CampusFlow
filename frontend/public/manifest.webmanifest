@@ -1,17 +1,27 @@
 {
+  "id": "/",
   "name": "CampusFlow",
   "short_name": "CampusFlow",
   "description": "The operating system for your campus.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f6f7",
-  "theme_color": "#0071e3",
+  "orientation": "portrait-primary",
+  "background_color": "#100D0B",
+  "theme_color": "#C85D34",
+  "categories": ["education", "productivity"],
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

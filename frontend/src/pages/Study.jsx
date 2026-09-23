@@ -3,19 +3,23 @@
 // rule-based, never presented as LLM output.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'motion/react';
-import { AlertTriangle, ArrowUpRight, BookOpen, Brain, CalendarCheck, ExternalLink } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { AlertTriangle, ArrowUpRight, BookOpen, Brain, CalendarCheck, ChevronDown, ExternalLink, Printer } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, PageHeader } from '../components/ui/primitives';
+import FilePreview from '../components/ui/FilePreview';
 import { staggerChild, staggerParent } from '../system/motion';
 import { btnClass, cn } from '../system/tokens';
 
 export default function Study() {
   const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [subjects, setSubjects] = useState([]);
+  const [expandedSyllabus, setExpandedSyllabus] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -23,21 +27,25 @@ export default function Study() {
       .then(({ data }) => { if (live) setPlan(data.data); })
       .catch(() => { if (live) setError(true); })
       .finally(() => { if (live) setLoading(false); });
+    api.get('/subjects')
+      .then(({ data }) => { if (live) setSubjects(data.data || []); })
+      .catch(() => {});
     return () => { live = false; };
   }, []);
 
   return (
-    <div>
+    <div className="print-report">
       <PageHeader
         title="Study assistant"
         subtitle="Weak spots, a revision order and matched resources — computed from your records."
         actions={
           <>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               Rule-based · not AI
             </span>
             <Link to="/assignments" className={btnClass('outline', 'small')}>Open assignments <ArrowUpRight size={13} /></Link>
+            <button type="button" onClick={() => window.print()} className={btnClass('outline', 'small') + ' print-hide'}><Printer size={14} aria-hidden /> Print study view</button>
           </>
         }
       />
@@ -45,12 +53,12 @@ export default function Study() {
       {loading ? <LoadingState label="Reading your records…" /> : error || !plan ? (
         <Card><ErrorState message="Couldn’t build your plan right now." onRetry={() => window.location.reload()} /></Card>
       ) : (
-        <motion.div {...staggerParent(0.06)} initial="initial" animate="animate" className="space-y-4">
-          <motion.div variants={staggerChild}>
+        <motion.div {...staggerParent(0.06)} initial={reducedMotion ? false : 'initial'} animate={reducedMotion ? undefined : 'animate'} className="space-y-4">
+          <motion.div variants={reducedMotion ? undefined : staggerChild}>
             <Card>
               <div className="flex items-center justify-between gap-2 mb-1">
                 <h2 className="font-display font-bold flex items-center gap-2">
-                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
                     <AlertTriangle size={15} />
                   </span>
                   Weak subjects
@@ -61,7 +69,7 @@ export default function Study() {
               </div>
               <p className="text-[11px] text-[var(--cf-ink-mute)] mb-3">Scores below 60% or attendance below 75%.</p>
               {plan.weakSubjects.length === 0 ? (
-                <p className="flex items-center gap-1.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 px-4 py-3 text-sm font-display font-semibold"><span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />No weak spots detected. Keep the streak. ✓</p>
+                <p className="flex items-center gap-1.5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 px-4 py-3 text-sm font-display font-semibold"><span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />No weak spots detected. Keep the streak. ✓</p>
               ) : (
                 <ul className="space-y-2.5">
                   {plan.weakSubjects.map((w) => (
@@ -84,7 +92,7 @@ export default function Study() {
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-4">
-            <motion.div variants={staggerChild}>
+            <motion.div variants={reducedMotion ? undefined : staggerChild}>
               <Card>
                 <h2 className="font-display font-bold flex items-center gap-2 mb-3">
                   <span className="w-8 h-8 grid place-items-center rounded-xl bg-violet-500/10 text-violet-500" aria-hidden>
@@ -98,8 +106,8 @@ export default function Study() {
                   <ol className="space-y-2">
                     {plan.revisionPlan.map((p, i) => (
                       <li key={i} className={cn('flex items-start gap-2.5 text-sm rounded-2xl border p-2.5',
-                        p.priority === 'high' ? 'border-[#2563FF]/30 bg-[#2563FF]/[.05]' : 'border-[var(--cf-line)]')}>
-                        <span className="mt-0.5 w-6 h-6 rounded-full bg-[#2563FF] text-white grid place-items-center text-[11px] font-display font-bold shrink-0" aria-hidden>{i + 1}</span>
+                        p.priority === 'high' ? 'border-[#D86D3E]/30 bg-[#D86D3E]/[.05]' : 'border-[var(--cf-line)]')}>
+                        <span className="mt-0.5 w-6 h-6 rounded-full bg-[#A94727] text-white grid place-items-center text-[11px] font-display font-bold shrink-0" aria-hidden>{i + 1}</span>
                         <span className="min-w-0">
                           <span className="block font-medium">{p.title}</span>
                           <span className="block text-xs text-[var(--cf-ink-mute)]">{p.detail}</span>
@@ -111,7 +119,7 @@ export default function Study() {
                 )}
               </Card>
             </motion.div>
-            <motion.div variants={staggerChild}>
+            <motion.div variants={reducedMotion ? undefined : staggerChild}>
               <Card>
                 <h2 className="font-display font-bold flex items-center gap-2 mb-1">
                   <span className="w-8 h-8 grid place-items-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-300" aria-hidden>
@@ -125,18 +133,21 @@ export default function Study() {
                 ) : (
                   <ul className="space-y-2">
                     {plan.resources.map((r) => (
-                      <li key={r._id} className="flex items-center gap-2 text-sm rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-2.5">
+                      <li key={r._id} className="text-sm rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-2.5">
+                        <span className="flex items-center gap-2">
                         <span className="min-w-0 flex-1">
                           <span className="block font-medium truncate">{r.title}</span>
                           <span className="block text-xs text-[var(--cf-ink-mute)]">{r.subject?.name || ''} · {r.topic} · {r.difficulty}</span>
                         </span>
                         {r.url ? (
-                          <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${r.title}`} className="p-1.5 rounded-xl border border-[var(--cf-line)] hover:border-[#2563FF]/50 hover:text-[#2563FF] transition">
+                          <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${r.title}`} className="p-1.5 rounded-xl border border-[var(--cf-line)] hover:border-[#D86D3E]/50 hover:text-[#D86D3E] transition">
                             <ExternalLink size={15} />
                           </a>
                         ) : (
                           <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{r.type}</Badge>
                         )}
+                        </span>
+                        {r.fileUrl && <FilePreview fileUrl={r.fileUrl} fileName={r.fileName || r.title} />}
                       </li>
                     ))}
                   </ul>
@@ -144,6 +155,53 @@ export default function Study() {
               </Card>
             </motion.div>
           </div>
+
+          {subjects.some((subject) => subject.syllabus?.units?.length) && (
+            <motion.div variants={reducedMotion ? undefined : staggerChild}>
+              <Card>
+                <h2 className="font-display font-bold flex items-center gap-2 mb-1">
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
+                    <BookOpen size={15} />
+                  </span>
+                  Syllabus by subject
+                </h2>
+                <p className="text-[11px] text-[var(--cf-ink-mute)] mb-3">Unit outlines from your institution’s subject records.</p>
+                <div className="divide-y divide-[var(--cf-line)]">
+                  {subjects.filter((subject) => subject.syllabus?.units?.length).map((subject) => {
+                    const isExpanded = expandedSyllabus === String(subject._id);
+                    const panelId = `syllabus-${subject._id}`;
+                    return (
+                      <section key={subject._id} className="py-1">
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={isExpanded ? panelId : undefined}
+                          onClick={() => setExpandedSyllabus(isExpanded ? null : String(subject._id))}
+                          className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[var(--cf-surface-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cf-accent)]"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold">{subject.name}</span>
+                            <span className="block text-xs text-[var(--cf-ink-mute)]">{subject.code} · {subject.syllabus.units.length} units</span>
+                          </span>
+                          <ChevronDown size={16} aria-hidden className={`shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isExpanded && (
+                          <div id={panelId} className="space-y-2 px-3 pb-3">
+                            {subject.syllabus.units.map((unit, index) => (
+                              <article key={`${unit.title}-${index}`} className="rounded-xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/50 p-3">
+                                <h3 className="text-sm font-semibold">{unit.title}</h3>
+                                {unit.content && <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-[var(--cf-ink-soft)]">{unit.content}</p>}
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           <p className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-4 py-2.5 text-[11px] text-[var(--cf-ink-mute)] flex items-center gap-1.5">
             <Brain size={12} aria-hidden className="shrink-0" />

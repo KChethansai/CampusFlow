@@ -89,7 +89,7 @@ function Courses() {
               </thead>
               <tbody className="divide-y divide-[var(--cf-line)]">
                 {courses.map((course) => (
-                  <tr key={course._id} className="hover:bg-black/[.02] dark:hover:bg-white/[.04] transition-colors">
+                  <tr key={course._id} className="cf-row-lift">
                     <td className="px-4 py-3 font-medium">{course.name}</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">

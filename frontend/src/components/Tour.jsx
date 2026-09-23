@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { CheckCircle2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from './ui/primitives';
+import { useFocusTrap } from '../system/focusTrap';
 
 function useFirstRender() {
   const ref = useState(() => ({ current: true }))[0];
@@ -76,6 +77,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
     return () => el.classList.remove('tour-target-highlight');
   }, [open, step, reduced]);
 
+  const trapRef = useFocusTrap(open);
   if (!open || !step) return null;
   const last = index === steps.length - 1;
 
@@ -87,6 +89,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
         aria-hidden
       />
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Tour: ${step.title}`}
@@ -95,7 +98,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--cf-line)]">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               Tour
             </span>
             <span className="font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)] tabular-nums">
@@ -119,7 +122,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
         </div>
 
         <div className="pt-3 border-t border-[var(--cf-line)] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5" role="tablist" aria-label="Tour progress">
+          <div className="flex items-center gap-1.5" role="group" aria-label="Tour progress">
             {steps.map((_, i) => (
               <button
                 key={i}
@@ -128,7 +131,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
                 aria-label={`Go to step ${i + 1}`}
                 className={cn(
                   'h-1.5 rounded-full transition-all',
-                  i === index ? 'w-5 bg-[#2563FF]' : 'w-1.5 bg-[var(--cf-ink-mute)]/30 hover:bg-[var(--cf-ink-mute)]/60'
+                  i === index ? 'w-5 bg-[#D86D3E]' : 'w-1.5 bg-[var(--cf-ink-mute)]/30 hover:bg-[var(--cf-ink-mute)]/60'
                 )}
               />
             ))}
@@ -145,7 +148,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
             <button
               type="button"
               onClick={() => (last ? close() : setIndex((i) => Math.min(steps.length - 1, i + 1)))}
-              className="inline-flex items-center gap-1 rounded-full bg-[#2563FF] px-3 py-1 font-display text-xs font-semibold text-white hover:brightness-110 transition"
+              className="inline-flex items-center gap-1 rounded-full bg-[#D86D3E] px-3 py-1 font-display text-xs font-semibold text-white hover:brightness-110 transition"
             >
               {last ? 'Finish' : 'Next'}
               {last ? <CheckCircle2 size={14} /> : <ChevronRight size={14} />}

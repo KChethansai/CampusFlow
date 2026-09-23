@@ -3,12 +3,17 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { jest } from '@jest/globals';
 import app from '../app.js';
 import { UserModel as User } from '../models/UserModel.js';
 import { InstitutionModel as Institution } from '../models/InstitutionModel.js';
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { CourseModel as Course } from '../models/CourseModel.js';
 import { NotificationModel as Notification } from '../models/NotificationModel.js';
+import { institutionAcceptsEmail } from '../models/InstitutionModel.js';
+
+// MongoMemoryServer may need more than Jest's 5s default on cold CI hosts.
+jest.setTimeout(30000);
 
 let mongod;
 let instA;
@@ -35,8 +40,8 @@ beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
 
-  instA = await Institution.create({ name: 'Inst A', code: 'IA', contactEmail: 'a@t.edu' });
-  instB = await Institution.create({ name: 'Inst B', code: 'IB', contactEmail: 'b@t.edu' });
+  instA = await Institution.create({ name: 'Inst A', code: 'IA', contactEmail: 'a@t.edu', emailDomainPattern: 't.edu' });
+  instB = await Institution.create({ name: 'Inst B', code: 'IB', contactEmail: 'b@t.edu', emailDomainPattern: 't.edu' });
 
   const mk = (over) => User.create({ password: 'Password@123', isEmailVerified: true, isActive: true, ...over });
   adminA = await mk({ name: 'Admin A', email: 'a.admin@t.edu', role: 'college_admin', institution: instA._id });
@@ -58,6 +63,16 @@ afterAll(async () => {
 });
 
 describe('privilege escalation', () => {
+  it('matches exact domain suffixes and supports institution regex patterns', async () => {
+    expect(institutionAcceptsEmail(instA, 'person@dept.t.edu')).toBe(true);
+    expect(institutionAcceptsEmail(instA, 'person@not-t.edu')).toBe(false);
+    const patternedInstitution = await Institution.create({
+      name: 'Pattern Institute', code: 'PATTERN', emailDomainPattern: '^[0-9]{6}@t\\.edu$'
+    });
+    expect(institutionAcceptsEmail(patternedInstitution, '123456@t.edu')).toBe(true);
+    expect(institutionAcceptsEmail(patternedInstitution, 'x123456@t.edu')).toBe(false);
+  });
+
   it('college_admin cannot register a super_admin', async () => {
     const res = await request(app).post('/api/v1/auth/register')
       .set('Authorization', `Bearer ${adminAToken}`)
@@ -71,6 +86,8 @@ describe('privilege escalation', () => {
       .send({ name: 'Mini', email: 'mini@t.edu', password: 'Password@123', role: 'super_admin', institution: instA._id });
     expect(res.status).toBe(201);
     expect(res.body.user.password).toBeUndefined();
+    expect(res.body.accessToken).toBeUndefined();
+    expect(res.body.refreshToken).toBeUndefined();
   });
 
   it('college_admin register is forced into their own institution', async () => {
@@ -79,6 +96,60 @@ describe('privilege escalation', () => {
       .send({ name: 'Trap', email: 'trap@t.edu', password: 'Password@123', role: 'faculty', institution: instB._id });
     expect(res.status).toBe(201);
     expect(String(res.body.user.institution)).toBe(String(instA._id));
+  });
+
+  it('rejects a single account when its email does not match the institution pattern', async () => {
+    const res = await request(app).post('/api/v1/auth/register')
+      .set('Authorization', `Bearer ${adminAToken}`)
+      .send({ name: 'Wrong Domain', email: 'wrong@other.edu', password: 'Password@123', role: 'faculty' });
+    expect(res.status).toBe(422);
+    expect(await User.findOne({ email: 'wrong@other.edu' })).toBeNull();
+  });
+
+  it('rejects malformed email even when the institution regex accepts any string', async () => {
+    const wildcardInstitution = await Institution.create({
+      name: 'Wildcard Institute', code: 'WILDCARD', emailDomainPattern: '.*'
+    });
+    const res = await request(app).post('/api/v1/auth/register')
+      .set('Authorization', `Bearer ${superAToken}`)
+      .send({ name: 'Malformed', email: 'not-an-address', password: 'Password@123', role: 'student', institution: wildcardInstitution._id });
+    expect(res.status).toBe(422);
+    expect(await User.findOne({ email: 'not-an-address' })).toBeNull();
+  });
+
+  it('rejects a single account linked to another institution department', async () => {
+    const res = await request(app).post('/api/v1/auth/register')
+      .set('Authorization', `Bearer ${adminAToken}`)
+      .send({ name: 'Foreign Department', email: 'foreign.department@t.edu', password: 'Password@123', role: 'student', department: courseB.department });
+    expect(res.status).toBe(422);
+    expect(await User.findOne({ email: 'foreign.department@t.edu' })).toBeNull();
+  });
+
+  it('bulk creates matching accounts and returns row failures without aborting', async () => {
+    const res = await request(app).post('/api/v1/users/bulk')
+      .set('Authorization', `Bearer ${adminAToken}`)
+      .send({ users: [
+        { name: 'Bulk Student', email: 'bulk.student@t.edu', role: 'student' },
+        { name: 'Wrong Domain', email: 'bulk@other.edu', role: 'student' },
+        { name: 'Escalation', email: 'bulk.super@t.edu', role: 'super_admin' },
+        { name: 'Existing', email: 'a.admin@t.edu', role: 'student' },
+        { name: 'Foreign Department', email: 'foreign.bulk@t.edu', role: 'student', department: courseB.department }
+      ] });
+    expect(res.status).toBe(207);
+    expect(res.body.data.succeeded).toBe(1);
+    expect(res.body.data.failed).toBe(4);
+    expect(res.body.data.results[0].data.password).toBeUndefined();
+    expect(res.body.data.results[0].data.tempPassword).toBeDefined();
+    expect(await User.findOne({ email: 'bulk.student@t.edu' })).not.toBeNull();
+    expect(await User.findOne({ email: 'bulk@other.edu' })).toBeNull();
+    expect(await User.findOne({ email: 'foreign.bulk@t.edu' })).toBeNull();
+  });
+
+  it('does not retain POST /users as an account creation route', async () => {
+    const res = await request(app).post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminAToken}`)
+      .send({ name: 'Legacy', email: 'legacy@t.edu', role: 'student' });
+    expect(res.status).toBe(404);
   });
 
   it('college_admin cannot escalate a user to super_admin via PATCH', async () => {

@@ -5,7 +5,7 @@
 // fill fillOpacity strokeWidth gradientToOpacity/><XAxis/><ChartTooltip/> over
 // visx shape/curve + motion ParentSize. This port keeps that API shape and the
 // Stitch surface (horizontal-only dashed low-opacity gridlines, gradient fills
-// #2563FF .35→0, glass tooltip, 1.2s clip-reveal, reduced-motion off-switch)
+// #D86D3E .35→0, glass tooltip, 1.2s clip-reveal, reduced-motion off-switch)
 // with pure SVG + motion (already installed) so no new peer dep is required.
 // Props: { data, xKey, series:[{key,color,dashed?,label?}], height, title,
 // measure, period, summary, emptyText, loading, filled, className }.
@@ -13,7 +13,7 @@ import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
 // ponytail: fixed 3-stop set, royal first — all three read on paper and coal-dark.
-const DEFAULT_COLORS = ['#2563FF', '#8B5CF6', '#25D890'];
+const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
 const PAD = { top: 10, right: 10, bottom: 24, left: 38 };
 
 function useChartWidth(ref) {
@@ -46,7 +46,7 @@ function smoothPath(pts) {
 export const AreaChart = memo(function AreaChart({
   data = [],
   xKey = 'label',
-  series = [{ key: 'value', color: '#2563FF' }],
+  series = [{ key: 'value', color: '#D86D3E' }],
   height = 260,
   title,
   measure,

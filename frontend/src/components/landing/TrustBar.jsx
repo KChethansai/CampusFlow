@@ -22,7 +22,7 @@ export default function TrustBar() {
           key={m.label}
           className="cf-glass rounded-[24px] border border-black/10 dark:border-white/10 px-5 py-5 sm:px-6 sm:py-6 text-center"
         >
-          <dd className="font-display font-bold tabular-nums text-4xl sm:text-5xl text-[#0A0D12] dark:text-[#F5F7FA]">
+          <dd className="font-display font-bold tabular-nums text-4xl sm:text-5xl text-[#100D0B] dark:text-[#F5F7FA]">
             <AnimatedCounter value={m.value} />
           </dd>
           <dt className="mt-1.5 text-xs sm:text-[13px] font-medium text-[#4B5563] dark:text-[#A7B0BF]">

@@ -11,7 +11,7 @@ export const AttendancePulse = memo(function AttendancePulse({ health, trend = [
     <div className="flex flex-wrap items-start gap-8">
       <div>
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
           Health
         </p>
         <AttendanceRing value={health} label={label} />
@@ -55,7 +55,7 @@ export const CourseBars = memo(function CourseBars({ rows = [] }) {
               className="h-full rounded-full transition-all"
               style={{
                 width: `${c.pct}%`,
-                background: c.pct >= 75 ? '#2563FF' : c.pct >= 60 ? '#FFBD4A' : '#FF5964'
+                background: c.pct >= 75 ? '#D86D3E' : c.pct >= 60 ? '#FFBD4A' : '#FF5964'
               }}
             />
           </div>

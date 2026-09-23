@@ -5,7 +5,7 @@
 // to the glass/royal/violet surface.
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
 import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
@@ -130,15 +130,14 @@ export default function Attendance() {
   const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 
   return (
-    <div>
+    <div className="print-report">
       <PageHeader
         title="Attendance"
         subtitle={health == null ? 'No sessions recorded yet.' : `${recs.length} records · ${missed} missed classes`}
-        actions={isFaculty && (
-          <button onClick={() => setShowMark(true)} className={btnClass('primary', 'medium')}>
-            <Plus size={15} /> Mark attendance
-          </button>
-        )}
+        actions={<div className="flex flex-wrap gap-2 print-hide">
+          <button type="button" onClick={() => window.print()} className={btnClass('outline', 'small')}><Printer size={14} aria-hidden /> Export / print</button>
+          {isFaculty && <button onClick={() => setShowMark(true)} className={btnClass('primary', 'medium')}><Plus size={15} /> Mark attendance</button>}
+        </div>}
       />
 
       {loading ? <LoadingState /> : health == null ? (
@@ -150,7 +149,7 @@ export default function Attendance() {
             <div className="flex flex-wrap items-start gap-8">
               <div>
                 <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
                   Health
                 </p>
                 <AttendanceRing value={health} />
@@ -175,7 +174,7 @@ export default function Attendance() {
                       <span className="text-xs text-[var(--cf-ink-mute)] tabular-nums">{c.pct}% · {c.n} records</span>
                     </div>
                     <div className="h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#2563FF' : c.pct >= 60 ? '#FFBD4A' : '#FF5964' }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#D86D3E' : c.pct >= 60 ? '#FFBD4A' : '#FF5964' }} />
                     </div>
                   </li>
                 ))}
@@ -255,4 +254,4 @@ export default function Attendance() {
 }
 
 const cn2 = (active) =>
-  `rounded-full px-2.5 py-1 text-[11px] font-bold capitalize border transition ${active ? 'bg-[#2563FF] text-white border-transparent' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;
+  `rounded-full px-2.5 py-1 text-[11px] font-bold capitalize border transition ${active ? 'bg-[#A94727] text-white border-transparent' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;

@@ -6,7 +6,21 @@ const subjectSchema = new Schema({
   code: { type: String, required: true, trim: true, uppercase: true },
   name: { type: String, required: true, trim: true },
   semester: { type: Number, required: true, min: 1 },
-  credits: { type: Number, default: 4, min: 1 },
+  credits: { type: Number, default: 4, min: 0 },
+  category: { type: String, trim: true },
+  l: { type: Number, min: 0 },
+  t: { type: Number, min: 0 },
+  p: { type: Number, min: 0 },
+  electiveGroup: {
+    name: { type: String, trim: true },
+    options: [{ code: { type: String, trim: true }, courseName: { type: String, trim: true } }]
+  },
+  syllabus: {
+    outcomes: [{ type: String, trim: true }],
+    units: [{ title: { type: String, trim: true }, content: { type: String, trim: true } }],
+    labExperiments: [{ type: String, trim: true }],
+    references: [{ type: String, trim: true }]
+  },
   faculty: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   syllabusFileUrl: String,
   isActive: { type: Boolean, default: true }

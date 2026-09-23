@@ -36,6 +36,7 @@ beforeAll(async () => {
   institution = await Institution.create({
     name: 'Flow Test Institute',
     code: 'FLOW',
+    emailDomainPattern: 'test.edu',
     address: { city: 'Delhi', state: 'Delhi', country: 'India' },
     contactEmail: 'flow@test.edu'
   });

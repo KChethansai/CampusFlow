@@ -28,7 +28,7 @@ export const PipelineFunnel = memo(function PipelineFunnel({ counts = {}, reject
               <span className="flex-1 min-w-0 h-9 rounded-[10px] bg-black/[.05] dark:bg-white/[.06] overflow-hidden">
                 <motion.span
                   className="flex h-full items-center justify-end rounded-[10px] px-2 text-xs font-bold text-white tabular-nums"
-                  style={{ background: 'linear-gradient(90deg, #2563FF, #8B5CF6)' }}
+                  style={{ background: 'linear-gradient(90deg, #D86D3E, #A77B68)' }}
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.max(n ? 12 : 0, Math.round((n / max) * 100))}%` }}
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -70,7 +70,7 @@ export const DriveCard = memo(function DriveCard({
       className="cf-card-spot cf-glass rounded-[24px] border border-[var(--cf-line)] p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
     >
       <div className="flex items-start gap-3 mb-3">
-        <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+        <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
           <Building2 size={19} />
         </span>
         <div className="min-w-0">

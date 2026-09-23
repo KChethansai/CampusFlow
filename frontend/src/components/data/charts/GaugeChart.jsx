@@ -3,14 +3,14 @@
 // https://ui.bklit.com/r/gauge-chart.json · docs: https://bklit.com/docs
 // Bklit gauge-chart is a notch-based radial gauge (visx responsive/pattern,
 // d3-shape, motion) with center label. This port keeps the radial arc,
-// tick notches, gradient sweep #2563FF .35→0, glass center readout, 1.2s
+// tick notches, gradient sweep #D86D3E .35→0, glass center readout, 1.2s
 // sweep, reduced-motion off-switch — pure SVG + motion, no new peer dep.
 // Props: { value, max=100, label, size=160, title, measure, period, summary,
 // emptyText, loading, className }. value==null renders the empty state.
 import { memo, useId } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
-const ROYAL = '#2563FF';
+const ROYAL = '#D86D3E';
 const OK = '#25D890';
 const WARN = '#FFBD4A';
 const BAD = '#FF5964';

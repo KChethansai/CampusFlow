@@ -87,7 +87,10 @@ export const submitAssignmentFiles = asyncHandler(async (req, res) => {
     status: late ? 'late' : 'submitted',
     attempt: (existing?.attempt || 0) + 1,
   };
-  if (req.file) patch.fileUrl = `/uploads/${req.file.filename}`;
+  if (req.file) {
+    const { resolveFileUrl } = await import('../config/multer.js');
+    patch.fileUrl = await resolveFileUrl(req); // Cloudinary URL or local path
+  }
   const submission = existing
     ? await Submission.findByIdAndUpdate(existing._id, patch, { new: true, runValidators: true })
     : await Submission.create({ assignment: assignment._id, student: req.user._id, ...patch });

@@ -54,9 +54,9 @@ export default function QuickAction({ role }) {
               exit={reduced ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.22, ease: EASE_OUT, delay: i * 0.05 }}
               onClick={() => { setOpen(false); navigate(a.to); }}
-              className="cf-glass pl-4 pr-5 min-h-11 py-2 rounded-full border border-[var(--cf-line)] shadow-[0_12px_32px_-12px_rgba(16,24,40,0.3)] font-display text-sm font-semibold text-[var(--cf-ink)] flex items-center gap-2 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#2563FF]/40 hover:text-[#2563FF] dark:hover:text-[#8db4ff]"
+              className="cf-glass pl-4 pr-5 min-h-11 py-2 rounded-full border border-[var(--cf-line)] shadow-[0_12px_32px_-12px_rgba(16,24,40,0.3)] font-display text-sm font-semibold text-[var(--cf-ink)] flex items-center gap-2 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#D86D3E]/40 hover:text-[#D86D3E] dark:hover:text-[#8db4ff]"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A7D700]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
               {a.label}
             </motion.button>
           ))}
@@ -72,7 +72,7 @@ export default function QuickAction({ role }) {
                 animate={{ opacity: [0, 1, 0], y: -26 - p * 8, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.9, ease: EASE_OUT, delay: p * 0.12, repeat: Infinity, repeatDelay: 0.4 }}
-                className={p === 1 ? 'h-1.5 w-1.5 rounded-full bg-[#A7D700]' : 'h-1 w-1 rounded-full bg-[#2563FF]/70'}
+                className={p === 1 ? 'h-1.5 w-1.5 rounded-full bg-[#E7A66D]' : 'h-1 w-1 rounded-full bg-[#D86D3E]/70'}
               />
             ))}
           </span>
@@ -83,7 +83,7 @@ export default function QuickAction({ role }) {
         aria-label={open ? 'Close quick actions' : 'Open quick actions'}
         aria-expanded={open}
         whileTap={reduced ? undefined : { scale: 0.92 }}
-        className="relative w-14 h-14 grid place-items-center rounded-full bg-[#2563FF] text-white shadow-[0_16px_40px_-8px_rgba(37,99,255,0.65)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 overflow-hidden"
+        className="relative w-14 h-14 grid place-items-center rounded-full bg-[#A94727] text-white shadow-[0_16px_40px_-8px_rgba(216,109,62,0.65)] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 overflow-hidden"
       >
         {/* Shimmer sweep */}
         {!reduced && (

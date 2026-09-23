@@ -27,6 +27,7 @@ const notifyPlacementTeam = async (drive, student) => {
     await createBulkNotifications(
       team.map((member) => ({
         recipient: member._id,
+        category: 'placement',
         title: 'New job application',
         message: `${student.name} applied for ${drive.role}`,
         type: 'info',
@@ -125,6 +126,7 @@ export const updateApplicationStage = asyncHandler(async (req, res) => {
     await createBulkNotifications([
       {
         recipient: application.student._id,
+        category: 'placement',
         title: 'Application status update',
         message: `Your application is now: ${stage.replace('_', ' ')}`,
         type: stage === 'rejected' ? 'error' : 'success',

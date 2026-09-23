@@ -285,8 +285,8 @@ export default function Placement() {
           <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
             className={cn('rounded-full px-4 py-2 text-xs font-bold border transition',
               tab === t.key
-                ? 'bg-[#2563FF] text-white border-transparent'
-                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)] border-[var(--cf-line)] hover:border-[#2563FF]/50')}>
+                ? 'bg-[#A94727] text-white border-transparent'
+                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-soft)] border-[var(--cf-line)] hover:border-[#D86D3E]/50')}>
             {t.label}
           </button>
         ))}
@@ -300,7 +300,7 @@ export default function Placement() {
               <section className={GLASS} aria-label="Pipeline tracker">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <h2 className="font-display font-semibold">Applied → Shortlisted → Assessment → Interview → Offer → Placed</h2>
-                  <span className="rounded-full bg-[#2563FF]/10 text-[#2563FF] px-2.5 py-0.5 text-[11px] font-bold tabular-nums">{applications.length} live</span>
+                  <span className="rounded-full bg-[#D86D3E]/10 text-[#D86D3E] px-2.5 py-0.5 text-[11px] font-bold tabular-nums">{applications.length} live</span>
                 </div>
                 <p className="text-xs text-[var(--cf-ink-mute)] mb-5">{applications.length} applications in motion.</p>
                 <div className="flex items-start" role="img" aria-label={`Pipeline counts: ${PIPELINE_STAGES.map((s) => `${s} ${funnel[s]}`).join(', ')}`}>
@@ -310,7 +310,7 @@ export default function Placement() {
                         <span
                           className="mx-auto grid place-items-center w-11 h-11 rounded-full border text-sm font-bold tabular-nums"
                           style={funnel[s]
-                            ? { background: '#2563FF', color: '#fff', borderColor: 'transparent' }
+                            ? { background: '#D86D3E', color: '#fff', borderColor: 'transparent' }
                             : { background: 'var(--cf-surface-2)', color: 'var(--cf-ink-mute)', borderColor: 'var(--cf-line)' }}
                         >
                           {funnel[s]}
@@ -335,7 +335,7 @@ export default function Placement() {
                     <TrendChart
                       data={conversionRows}
                       xKey="bucket"
-                      lines={[{ key: 'applications', color: '#2563FF' }, { key: 'wins', color: '#8B5CF6' }]}
+                      lines={[{ key: 'applications', color: '#D86D3E' }, { key: 'wins', color: '#A77B68' }]}
                       height={180}
                     />
                   </Suspense>
@@ -366,7 +366,7 @@ export default function Placement() {
                 return (
                   <motion.article key={d._id} variants={staggerChild} className={`${GLASS} ${LIFT}`}>
                     <div className="flex items-start gap-3 mb-3">
-                      <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#2563FF]/10 text-[#2563FF]" aria-hidden>
+                      <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
                         <Building2 size={19} />
                       </span>
                       <div className="min-w-0">

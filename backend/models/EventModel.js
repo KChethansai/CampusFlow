@@ -19,4 +19,5 @@ const eventSchema = new Schema({
   registeredStudents: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
+eventSchema.index({ institution: 1, startAt: 1 });
 export const EventModel = model('Event', eventSchema);

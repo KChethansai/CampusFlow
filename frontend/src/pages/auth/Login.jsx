@@ -46,7 +46,7 @@ function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to your digital campus."
-      footer={<>New here? <Link to="/signup" className="font-semibold text-[#2563FF] underline underline-offset-2 hover:brightness-110">Create account</Link></>}
+      footer={<>Accounts are created by your institution admin — contact them</>}
     >
       <div role="tablist" aria-label="I am signing in as" className="grid grid-cols-4 gap-1 p-1.5 mb-5 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60">
         {ROLE_TABS.map((r) => {
@@ -58,9 +58,9 @@ function Login() {
               aria-selected={active}
               onClick={() => { setRoleTab(r.value); try { localStorage.setItem('cf_login_role', r.value); } catch {} }}
               className={cn('relative px-2 py-1.5 rounded-xl text-xs font-display font-semibold transition',
-                active ? 'bg-[#2563FF] text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
+                active ? 'bg-[#A94727] text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]')}
             >
-              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#2563FF]" aria-hidden />}
+              {active && <motion.span layoutId="cf-role-pill" transition={{ type: 'spring', stiffness: 350, damping: 25 }} className="absolute inset-0 rounded-xl bg-[#D86D3E]" aria-hidden />}
               <span className="relative">{r.label}</span>
             </button>
           );

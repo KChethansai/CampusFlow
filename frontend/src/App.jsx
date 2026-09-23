@@ -1,17 +1,18 @@
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, Link } from 'react-router';
 import { useEffect } from 'react';
 import { useAuth } from './store/useAuth';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
+import AuthLayout from './pages/auth/AuthLayout';
 import Onboarding from './pages/auth/Onboarding';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/admin/Users';
 import AIReports from './pages/admin/AIReports';
 import Departments from './pages/admin/Departments';
+import Institutions from './pages/admin/Institutions';
 import Courses from './pages/admin/Courses';
 import Subjects from './pages/academic/Subjects';
 import Assignments from './pages/academic/Assignments';
@@ -23,6 +24,23 @@ import Profile from './pages/Profile';
 import Directory from './pages/Directory';
 import Events from './pages/Events';
 import Study from './pages/Study';
+import { btnClass, emptyState } from './styles/common';
+import AppErrorBoundary from './components/ui/AppErrorBoundary';
+import NotFound from './pages/NotFound';
+
+// No self-registration — accounts are provisioned by the institution admin.
+function NoSelfSignup() {
+  return (
+    <AuthLayout
+      title="No self-registration"
+      subtitle="Accounts are created by your institution admin — contact them."
+      footer={<Link to="/login" className="font-semibold text-[#D86D3E] underline underline-offset-2 hover:brightness-110">Back to sign in</Link>}
+    >
+      <p className={emptyState}>Ask your admin for an account, then sign in.</p>
+      <Link to="/login" className={btnClass('primary', 'large') + ' w-full mt-4'}>Sign in →</Link>
+    </AuthLayout>
+  );
+}
 
 const adminRoles = ['super_admin', 'college_admin'];
 const learnRoles = [...adminRoles, 'faculty', 'student'];
@@ -55,10 +73,12 @@ function App() {
   }, [loadUserFromStorage]);
 
   return (
+    <AppErrorBoundary>
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Register />} />
+      <Route path="/signup" element={<NoSelfSignup />} />
+      <Route path="/register" element={<Navigate to="/signup" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -97,6 +117,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={adminRoles}>
               <Departments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/institutions"
+          element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <Institutions />
             </ProtectedRoute>
           }
         />
@@ -178,8 +206,9 @@ function App() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
+    </AppErrorBoundary>
   );
 }
 
