@@ -30,21 +30,18 @@
   --color-graphite-800: #1c1c1e;
   --color-graphite-900: #131315;
 
-  --color-accent-cyan: #C87D4B;
-  --color-accent-violet: #A77B68;
-
   --color-obsidian-800: #2d211b;
   --color-obsidian-900: #19130f;
   --color-obsidian-950: #100d0b;
 
-  /* CampusFlow Platform Design System accents */
+  /* CampusFlow Platform Design System accents (Obsidian Ember) */
   --color-volt: #E7A66D;
-  --color-royal: #D86D3E;
+  --color-ember: #D86D3E;
   --color-flag: #FF5964;
   --color-paper: #F4EFE8;
   --color-cream: #FBF8F3;
   --color-coal: #100D0B;
-  --color-violet: #B4806A;
+  --color-terracotta: #B4806A;
   --color-success: #56A879;
   --color-warning: #D9A64F;
   --color-danger: #D96558;
@@ -111,13 +108,12 @@
   --cf-accent: #C85D34;
   --cf-volt: #E7A66D;
   --cf-teal: #79B8A6;
-  --cf-violet: #A77B68;
+  --cf-terracotta: #A77B68;
   --cf-success: #43845E;
   --cf-warning: #A66C1F;
   --cf-danger: #B94C43;
   --cf-frame: #211713;
-  --cf-glow-royal: 0 0 32px rgba(200,93,52,.20);
-  --cf-glow-violet: 0 0 32px rgba(167,123,104,.16);
+  --cf-glow-ember: 0 0 32px rgba(200,93,52,.20);
   --cf-glow-volt: 0 0 20px rgba(231,166,109,.22);
   --duration-hover: 160ms;
   --duration-modal: 280ms;
@@ -139,13 +135,12 @@
   --cf-accent: #F08A52;
   --cf-volt: #E7A66D;
   --cf-teal: #79B8A6;
-  --cf-violet: #C39279;
+  --cf-terracotta: #C39279;
   --cf-success: #75BD8E;
   --cf-warning: #E7B766;
   --cf-danger: #EF8275;
   --cf-frame: rgba(255,238,220,.12);
-  --cf-glow-royal: 0 0 32px rgba(240,138,82,.30);
-  --cf-glow-violet: 0 0 32px rgba(195,146,121,.22);
+  --cf-glow-ember: 0 0 32px rgba(240,138,82,.30);
   --cf-glow-volt: 0 0 20px rgba(231,166,109,.28);
   color-scheme: dark;
 }
@@ -284,7 +279,7 @@ body {
 .cf-depth-1 { background: var(--cf-surface); border: 1px solid var(--cf-line); }
 .cf-depth-2 { background: var(--cf-surface); border: 1px solid var(--cf-line); box-shadow: 0 4px 20px -4px rgba(0,0,0,0.25); }
 .cf-depth-3 { background: var(--cf-surface); border: 1px solid var(--cf-line); box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5); }
-.cf-glow { box-shadow: var(--cf-glow-royal); }
+.cf-glow { box-shadow: var(--cf-glow-ember); }
 .cf-pulse-ring {
   box-shadow: 0 0 0 0 rgba(216,109,62,0.4);
   animation: pulse-ring 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
@@ -404,7 +399,7 @@ body {
   position: relative;
   background:
     linear-gradient(var(--cf-surface), var(--cf-surface)) padding-box,
-    linear-gradient(110deg, var(--cf-accent), var(--cf-violet), var(--cf-success), var(--cf-accent)) border-box;
+    linear-gradient(110deg, var(--cf-accent), var(--cf-volt), var(--cf-success), var(--cf-accent)) border-box;
   background-size: 100% 100%, 200% 100%;
   border: 1.5px solid transparent;
   animation: cf-beam 5s linear infinite;

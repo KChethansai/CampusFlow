@@ -4,6 +4,7 @@ const submissionSchema = new Schema({
   assignment: { type: Schema.Types.ObjectId, ref: 'Assignment', required: true, index: true },
   student: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   fileUrl: String,
+  fileKey: String,
   textNotes: String,
   submittedAt: { type: Date, default: Date.now },
   attempt: { type: Number, default: 1, min: 1 },

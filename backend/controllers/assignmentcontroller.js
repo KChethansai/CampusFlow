@@ -5,6 +5,7 @@ import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pick, scopedOne } from '../utils/scope.js';
+import { getFacultyTaughtSubjectIds, canFacultyAccessAssignment } from '../utils/academicScope.js';
 
 // List all assignments scoped to institution and audience
 export const getAllAssignments = asyncHandler(async (req, res) => {
@@ -24,10 +25,7 @@ export const getAllAssignments = asyncHandler(async (req, res) => {
     filter.subject = { $in: enrolledSubjects };
     filter.status = { $ne: 'draft' };
   } else if (req.user.role === 'faculty') {
-    const taughtSubjects = await Subject.find({
-      faculty: req.user._id,
-      institution: req.user.institution
-    }).distinct('_id');
+    const taughtSubjects = await getFacultyTaughtSubjectIds(req.user);
 
     filter.$or = [
       { createdBy: req.user._id },
@@ -68,13 +66,8 @@ export const getAssignmentById = asyncHandler(async (req, res) => {
       throw new ApiError(404, 'Assignment not found');
     }
   } else if (req.user.role === 'faculty') {
-    const isAuthor = String(assignment.createdBy?._id || assignment.createdBy) === String(req.user._id);
-    const subjectDoc = await Subject.findOne({
-      _id: assignment.subject?._id || assignment.subject,
-      institution: req.user.institution
-    });
-    const teaches = subjectDoc && String(subjectDoc.faculty) === String(req.user._id);
-    if (!isAuthor && !teaches) {
+    const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) {
       throw new ApiError(404, 'Assignment not found');
     }
   }
@@ -115,9 +108,13 @@ export const createAssignment = asyncHandler(async (req, res) => {
 
 // Update assignment — tenant-scoped, ownership-enforced, allowlisted
 export const updateAssignment = asyncHandler(async (req, res) => {
-  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
-    ? { _id: req.params.id, institution: req.user.institution }
-    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
+  const assignment = await Assignment.findOne({ _id: req.params.id, institution: req.user.institution });
+  if (!assignment) throw new ApiError(404, 'Assignment not found');
+
+  if (req.user.role === 'faculty') {
+    const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
 
   if (req.body.subject) {
     if (!mongoose.isValidObjectId(req.body.subject)) throw new ApiError(400, 'Invalid subject ID');
@@ -128,23 +125,23 @@ export const updateAssignment = asyncHandler(async (req, res) => {
     }
   }
 
-  const assignment = await Assignment.findOneAndUpdate(
-    filter,
-    pick(req.body, ['subject', 'title', 'description', 'maxScore', 'dueDate', 'allowResubmission', 'maxResubmissions']),
-    { new: true, runValidators: true },
-  );
-  if (!assignment) throw new ApiError(404, 'Assignment not found');
+  const patch = pick(req.body, ['subject', 'title', 'description', 'maxScore', 'dueDate', 'allowResubmission', 'maxResubmissions']);
+  Object.assign(assignment, patch);
+  await assignment.save();
   res.json({ success: true, data: assignment });
 });
 
 // Delete assignment (tenant-scoped, ownership-enforced)
 export const deleteAssignment = asyncHandler(async (req, res) => {
-  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
-    ? { _id: req.params.id, institution: req.user.institution }
-    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
-
-  const assignment = await Assignment.findOneAndDelete(filter);
+  const assignment = await Assignment.findOne({ _id: req.params.id, institution: req.user.institution });
   if (!assignment) throw new ApiError(404, 'Assignment not found');
+
+  if (req.user.role === 'faculty') {
+    const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
+
+  await Assignment.deleteOne({ _id: assignment._id });
   res.json({ success: true, message: 'Assignment deleted' });
 });
 
@@ -157,11 +154,13 @@ const TRANSITIONS = {
 };
 
 export const updateAssignmentStatus = asyncHandler(async (req, res) => {
-  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
-    ? { _id: req.params.id, institution: req.user.institution }
-    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
-  const assignment = await Assignment.findOne(filter);
+  const assignment = await Assignment.findOne({ _id: req.params.id, institution: req.user.institution });
   if (!assignment) throw new ApiError(404, 'Assignment not found');
+
+  if (req.user.role === 'faculty') {
+    const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
 
   const allowed = TRANSITIONS[assignment.status] || [];
   if (!allowed.includes(req.body.status)) {

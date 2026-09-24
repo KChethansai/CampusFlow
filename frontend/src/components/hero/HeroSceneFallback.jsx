@@ -82,35 +82,30 @@ export default function HeroSceneFallback({ className = '' }) {
         <g transform="translate(105, 145)">
           <circle cx="0" cy="0" r="18" fill="rgba(216, 109, 62, 0.1)" stroke="#D86D3E" strokeWidth="1.5" />
           <circle cx="0" cy="0" r="5" fill="#D86D3E" />
-          <text x="0" y="32" textAnchor="middle" fill="#A7B0BF" fontSize="10" fontFamily="monospace" letterSpacing="0.05em">ACADEMICS</text>
         </g>
 
         {/* Student Flow Node */}
         <g transform="translate(395, 145)">
           <circle cx="0" cy="0" r="18" fill="rgba(37, 216, 144, 0.1)" stroke="#25D890" strokeWidth="1.5" />
           <circle cx="0" cy="0" r="5" fill="#25D890" />
-          <text x="0" y="32" textAnchor="middle" fill="#A7B0BF" fontSize="10" fontFamily="monospace" letterSpacing="0.05em">STUDENT FLOW</text>
         </g>
 
         {/* Placements Node */}
         <g transform="translate(370, 355)">
           <circle cx="0" cy="0" r="18" fill="rgba(231, 166, 109, 0.1)" stroke="#E7A66D" strokeWidth="1.5" />
           <circle cx="0" cy="0" r="5" fill="#E7A66D" />
-          <text x="0" y="32" textAnchor="middle" fill="#A7B0BF" fontSize="10" fontFamily="monospace" letterSpacing="0.05em">PLACEMENTS</text>
         </g>
 
         {/* Faculty Operations Node */}
         <g transform="translate(130, 355)">
           <circle cx="0" cy="0" r="18" fill="rgba(121, 184, 166, 0.1)" stroke="#79B8A6" strokeWidth="1.5" />
           <circle cx="0" cy="0" r="5" fill="#79B8A6" />
-          <text x="0" y="32" textAnchor="middle" fill="#A7B0BF" fontSize="10" fontFamily="monospace" letterSpacing="0.05em">FACULTY</text>
         </g>
 
         {/* Governance Node */}
         <g transform="translate(250, 55)">
           <circle cx="0" cy="0" r="14" fill="rgba(245, 176, 138, 0.1)" stroke="#F5B08A" strokeWidth="1.2" />
           <circle cx="0" cy="0" r="4" fill="#F5B08A" />
-          <text x="0" y="-12" textAnchor="middle" fill="#A7B0BF" fontSize="10" fontFamily="monospace" letterSpacing="0.05em">GOVERNANCE</text>
         </g>
 
         {/* Live Conduit Pulses */}

@@ -11,6 +11,8 @@ import { SubmissionModel as Submission } from '../models/SubmissionModel.js';
 import { LearningResourceModel as LearningResource } from '../models/LearningResourceModel.js';
 import { SubjectModel as Subject } from '../models/SubjectModel.js';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
+import { generateSignedDeliveryUrl } from '../config/multer.js';
+import { canUserAccessSubmission } from '../utils/academicScope.js';
 
 const uploadDir = path.isAbsolute(env.upload.dir)
   ? env.upload.dir
@@ -63,37 +65,24 @@ export const serveProtectedUpload = asyncHandler(async (req, res) => {
 
   const user = await authenticateFileRequest(req);
 
+  const expectedUrl = `/uploads/${filename}`;
   // 1. Check if the file is a submission attachment
   const submission = await Submission.findOne({
-    fileUrl: { $regex: filename }
+    $or: [{ fileUrl: expectedUrl }, { fileKey: filename }]
   }).populate('assignment');
 
-  if (submission) {
-    const assignment = submission.assignment;
-    if (!assignment || String(assignment.institution) !== String(user.institution)) {
-      throw new ApiError(404, 'File not found');
-    }
+  let targetFileUrl = null;
 
-    // Student can only access their own submission file
-    if (user.role === 'student') {
-      if (String(submission.student) !== String(user._id)) {
-        throw new ApiError(403, 'Access denied to submission file');
-      }
-    } else if (user.role === 'faculty') {
-      // Faculty must teach the subject or have created the assignment
-      const subjectDoc = await Subject.findOne({ _id: assignment.subject, institution: user.institution });
-      const teachesSubject = subjectDoc && String(subjectDoc.faculty) === String(user._id);
-      const isCreator = String(assignment.createdBy) === String(user._id);
-      if (!teachesSubject && !isCreator) {
-        throw new ApiError(403, 'Access denied to submission file');
-      }
-    } else if (!['super_admin', 'college_admin'].includes(user.role)) {
+  if (submission) {
+    const allowed = await canUserAccessSubmission(user, submission);
+    if (!allowed) {
       throw new ApiError(403, 'Access denied to submission file');
     }
+    targetFileUrl = submission.fileUrl;
   } else {
     // 2. Check if the file is a learning resource attachment
     const resource = await LearningResource.findOne({
-      fileUrl: { $regex: filename }
+      $or: [{ fileUrl: expectedUrl }, { fileKey: filename }]
     });
 
     if (resource) {
@@ -103,22 +92,28 @@ export const serveProtectedUpload = asyncHandler(async (req, res) => {
 
       if (user.role === 'student') {
         const subjectDoc = await Subject.findOne({ _id: resource.subject, institution: user.institution });
-        if (subjectDoc) {
-          const enrolled = await Enrollment.findOne({
-            institution: user.institution,
-            student: user._id,
-            course: subjectDoc.course,
-            status: 'active'
-          });
-          if (!enrolled) {
-            throw new ApiError(403, 'Access denied to learning resource');
-          }
+        if (!subjectDoc) {
+          throw new ApiError(404, 'Subject not found');
+        }
+        const enrolled = await Enrollment.findOne({
+          institution: user.institution,
+          student: user._id,
+          course: subjectDoc.course,
+          status: 'active'
+        });
+        if (!enrolled) {
+          throw new ApiError(403, 'Access denied to learning resource');
         }
       }
+      targetFileUrl = resource.fileUrl;
     } else {
       // Not a recognized managed upload
       throw new ApiError(404, 'File not found');
     }
+  }
+
+  if (targetFileUrl && /^https?:\/\//.test(targetFileUrl)) {
+    return res.redirect(generateSignedDeliveryUrl(targetFileUrl));
   }
 
   const filePath = path.join(uploadDir, filename);
@@ -138,28 +133,13 @@ export const getSubmissionFile = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Submission or file not found');
   }
 
-  const assignment = submission.assignment;
-  if (!assignment || String(assignment.institution) !== String(user.institution)) {
-    throw new ApiError(404, 'Submission not found');
-  }
-
-  if (user.role === 'student') {
-    if (String(submission.student) !== String(user._id)) {
-      throw new ApiError(403, 'Access denied to submission file');
-    }
-  } else if (user.role === 'faculty') {
-    const subjectDoc = await Subject.findOne({ _id: assignment.subject, institution: user.institution });
-    const teachesSubject = subjectDoc && String(subjectDoc.faculty) === String(user._id);
-    const isCreator = String(assignment.createdBy) === String(user._id);
-    if (!teachesSubject && !isCreator) {
-      throw new ApiError(403, 'Access denied to submission file');
-    }
-  } else if (!['super_admin', 'college_admin'].includes(user.role)) {
+  const allowed = await canUserAccessSubmission(user, submission);
+  if (!allowed) {
     throw new ApiError(403, 'Access denied to submission file');
   }
 
   if (/^https?:\/\//.test(submission.fileUrl)) {
-    return res.redirect(submission.fileUrl);
+    return res.redirect(generateSignedDeliveryUrl(submission.fileUrl));
   }
 
   const filename = path.basename(submission.fileUrl);

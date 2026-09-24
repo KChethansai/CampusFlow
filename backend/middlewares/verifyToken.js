@@ -18,7 +18,7 @@ export const verifyToken = (...allowedRoles) => {
 
       const decoded = jwt.verify(token, env.secretKey)
 
-      const user = await UserModel.findById(decoded.sub).select('-password')
+      const user = await UserModel.findById(decoded.sub).select('+passwordChangedAt')
       if (!user) {
         const err = new Error('User not found')
         err.status = 401

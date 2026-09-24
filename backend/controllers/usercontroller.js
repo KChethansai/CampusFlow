@@ -5,6 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
 import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
+import { sanitizeUser, sanitizeUsers } from '../utils/userDto.js';
 
 const accountRoles = ['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'];
 
@@ -83,9 +84,7 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
         profile: userProfile || (course ? { course } : undefined),
         isEmailVerified: true
       });
-      const created = user.toObject();
-      delete created.password;
-      results.push({ index, success: true, data: { ...created, tempPassword } });
+      results.push({ index, success: true, data: { ...sanitizeUser(user, 'admin'), tempPassword } });
     } catch (error) {
       results.push({ index, success: false, email: row?.email, message: error.statusCode ? error.message : 'Account could not be created' });
     }
@@ -106,7 +105,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find({ institution: req.user.institution })
     .populate('department', 'name code');
 
-  res.json({ success: true, data: users });
+  res.json({ success: true, data: sanitizeUsers(users, 'admin') });
 });
 
 // Get single user by ID (must belong to same institution)
@@ -121,7 +120,7 @@ export const getUserById = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Access denied');
   }
 
-  res.json({ success: true, data: user });
+  res.json({ success: true, data: sanitizeUser(user, 'admin') });
 });
 
 export const completeOnboardingTour = asyncHandler(async (req, res) => {
@@ -130,7 +129,7 @@ export const completeOnboardingTour = asyncHandler(async (req, res) => {
   }
   req.user.onboardingTourCompleted = true;
   await req.user.save();
-  res.json({ success: true, data: req.user });
+  res.json({ success: true, data: sanitizeUser(req.user, 'self') });
 });
 
 // Update user — allowlisted fields, tenant-scoped, password via save() so the
@@ -202,9 +201,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  const out = user.toObject();
-  delete out.password;
-  res.json({ success: true, data: out });
+  res.json({ success: true, data: sanitizeUser(user, 'admin') });
 });
 
 // Soft-delete user (set isActive: false)

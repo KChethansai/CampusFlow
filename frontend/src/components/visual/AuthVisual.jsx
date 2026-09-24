@@ -40,12 +40,11 @@ export default function AuthVisual() {
           </span>
           <div>
             <span className="block font-display font-bold tracking-tight text-lg text-white">CampusFlow</span>
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-[#A7B0BF]">Unified Platform</span>
           </div>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur px-3 py-1 font-mono text-[11px] font-medium text-[#A7B0BF]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D] animate-pulse" aria-hidden />
-          Multi-Role RBAC
+          100% Deterministic RBAC
         </span>
       </div>
 
@@ -105,10 +104,6 @@ export default function AuthVisual() {
             <circle cx="145" cy="190" r="3" fill="#D86D3E" opacity="0.9" />
           </svg>
         </div>
-
-        <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#E7A66D]">
-          Operational Infrastructure
-        </p>
         <h2 className="mt-3 font-display text-4xl sm:text-5xl font-bold tracking-tight text-white leading-[1.08]">
           One campus.<br />
           <span className="bg-gradient-to-r from-[#D86D3E] via-[#F5B08A] to-[#79B8A6] bg-clip-text text-transparent">

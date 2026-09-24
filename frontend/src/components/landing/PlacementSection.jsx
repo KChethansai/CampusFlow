@@ -42,9 +42,6 @@ export default function PlacementSection() {
                         )}
                         style={{ maxWidth: `${100 - i * 9}%` }}
                       >
-                        <span className="font-mono text-[11px] text-[#4B5563] dark:text-[#707A89] mr-2" aria-hidden>
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
                         {roleLabel(s)}
                       </button>
                     </li>

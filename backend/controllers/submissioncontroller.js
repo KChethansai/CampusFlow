@@ -7,17 +7,12 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
 import { pick } from '../utils/scope.js';
+import { getVisibleAssignmentIds, canUserAccessSubmission } from '../utils/academicScope.js';
 
 // Assignments visible to the caller: students see their own submissions only;
-// faculty see submissions for assignments they created; admins see the tenant.
+// faculty see submissions for assignments they created or teach; admins see the tenant.
 const visibleAssignmentIds = async (req) => {
-  if (req.user.role === 'student') return null; // filtered by student instead
-  if (req.user.role === 'faculty') {
-    const mine = await Assignment.find({ createdBy: req.user._id }).select('_id');
-    return mine.map((a) => a._id);
-  }
-  const scoped = await Assignment.find({ institution: req.user.institution }).select('_id');
-  return scoped.map((a) => a._id);
+  return await getVisibleAssignmentIds(req.user);
 };
 
 // List submissions — tenant/ownership scoped (never the whole collection)
@@ -26,7 +21,7 @@ export const getAllSubmissions = asyncHandler(async (req, res) => {
   if (req.user.role === 'student') {
     filter.student = req.user._id;
   } else {
-    filter.assignment = { $in: await visibleAssignmentIds(req) };
+    filter.assignment = { $in: await getVisibleAssignmentIds(req.user) };
   }
   const submissions = await Submission.find(filter)
     .populate('assignment', 'title subject maxScore dueDate status')
@@ -37,18 +32,12 @@ export const getAllSubmissions = asyncHandler(async (req, res) => {
 // Get single submission — same visibility rules as the list
 export const getSubmissionById = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id)
-    .populate('assignment', 'title subject maxScore dueDate status')
+    .populate('assignment', 'title subject maxScore dueDate status createdBy institution')
     .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
   if (!submission) throw new ApiError(404, 'Submission not found');
-  if (req.user.role === 'student') {
-    if (String(submission.student?._id || submission.student) !== String(req.user._id)) {
-      throw new ApiError(404, 'Submission not found');
-    }
-  } else {
-    const allowed = await visibleAssignmentIds(req);
-    if (!allowed.some((id) => String(id) === String(submission.assignment?._id || submission.assignment))) {
-      throw new ApiError(404, 'Submission not found');
-    }
+  const allowed = await canUserAccessSubmission(req.user, submission);
+  if (!allowed) {
+    throw new ApiError(404, 'Submission not found');
   }
   res.json({ success: true, data: submission });
 });
@@ -179,8 +168,8 @@ export const submitAssignmentFiles = asyncHandler(async (req, res) => {
 export const updateSubmission = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id).populate('assignment');
   if (!submission) throw new ApiError(404, 'Submission not found');
-  const allowed = await visibleAssignmentIds(req);
-  if (!allowed.some((id) => String(id) === String(submission.assignment?._id || submission.assignment))) {
+  const allowed = await canUserAccessSubmission(req.user, submission);
+  if (!allowed) {
     throw new ApiError(404, 'Submission not found');
   }
   Object.assign(submission, pick(req.body, ['score', 'feedback', 'status']));

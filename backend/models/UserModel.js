@@ -49,16 +49,46 @@ const userSchema = new Schema({
     qualification: String
   },
   isEmailVerified: { type: Boolean, default: false },
-  emailVerificationToken: String,
-  emailVerificationExpires: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  passwordChangedAt: Date,
+  emailVerificationToken: { type: String, select: false },
+  emailVerificationExpires: { type: Date, select: false },
+  passwordResetToken: { type: String, select: false },
+  passwordResetExpires: { type: Date, select: false },
+  passwordChangedAt: { type: Date, select: false },
   isActive: { type: Boolean, default: true },
   lastLoginAt: Date,
   onboardingTourCompleted: { type: Boolean, default: false },
   notificationPreferences: { type: notificationPreferencesSchema, default: () => ({}) }
-}, { timestamps: true, versionKey: false, strict: 'throw' });
+}, {
+  timestamps: true,
+  versionKey: false,
+  strict: 'throw',
+  toJSON: {
+    transform: (_doc, ret) => {
+      delete ret.password;
+      delete ret.emailVerificationToken;
+      delete ret.emailVerificationExpires;
+      delete ret.passwordResetToken;
+      delete ret.passwordResetExpires;
+      delete ret.passwordChangedAt;
+      delete ret.notificationPreferences;
+      delete ret.__v;
+      return ret;
+    }
+  },
+  toObject: {
+    transform: (_doc, ret) => {
+      delete ret.password;
+      delete ret.emailVerificationToken;
+      delete ret.emailVerificationExpires;
+      delete ret.passwordResetToken;
+      delete ret.passwordResetExpires;
+      delete ret.passwordChangedAt;
+      delete ret.notificationPreferences;
+      delete ret.__v;
+      return ret;
+    }
+  }
+});
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

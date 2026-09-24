@@ -72,21 +72,54 @@ export const uploadBulkFile = multer({
 export const SUBMISSION_ACCEPT = [...SUBMISSION_EXTS].map((e) => `.${e}`).join(',');
 export const RESOURCE_ACCEPT = [...RESOURCE_EXTS].map((e) => `.${e}`).join('');
 
-// Resolve the public URL for an uploaded file: Cloudinary secure_url when
-// configured (upload happens here, post-validation), else the local path.
-export const resolveFileUrl = async (req) => {
+// Resolve the URL for an uploaded file: Cloudinary signed/authenticated asset when
+// configured, else the local path.
+export const resolveFileUrl = async (req, options = {}) => {
   if (!req?.file) return undefined;
   if (!isCloudUpload) return `/uploads/${req.file.filename}`;
   const ext = extOf(req.file.originalname);
   const publicId = `campusflow/${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizeBase(req.file.originalname)}`;
+  const isPrivate = options.isPrivate !== false; // Default private for student submissions/resources
+  const type = isPrivate ? 'authenticated' : 'upload';
   const result = await new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: 'auto', public_id: publicId, format: ext || undefined },
+      { resource_type: 'auto', type, public_id: publicId, format: ext || undefined },
       (err, res) => (err ? reject(err) : resolve(res))
     );
     stream.end(req.file.buffer);
   });
   return result.secure_url;
+};
+
+// Generates a short-lived signed delivery URL for protected Cloudinary assets.
+// Legacy public assets are supported via fallback signing, while new assets use 'authenticated'.
+export const generateSignedDeliveryUrl = (fileUrl, options = {}) => {
+  if (!fileUrl) return fileUrl;
+  if (!fileUrl.includes('cloudinary.com')) return fileUrl;
+  try {
+    const expiresAt = Math.floor(Date.now() / 1000) + (options.expiresInSeconds || 300); // 5 min
+    let resourceType = 'auto';
+    if (fileUrl.includes('/raw/')) resourceType = 'raw';
+    else if (fileUrl.includes('/video/')) resourceType = 'video';
+    else if (fileUrl.includes('/image/')) resourceType = 'image';
+
+    const isLegacyPublic = fileUrl.includes('/upload/') && !fileUrl.includes('/authenticated/');
+    const type = isLegacyPublic ? 'upload' : 'authenticated';
+
+    const match = fileUrl.match(/(?:upload|authenticated)(?:\/v\d+)?\/(.+)$/);
+    if (!match || !match[1]) return fileUrl;
+
+    const publicIdWithExt = match[1];
+    return cloudinary.url(publicIdWithExt, {
+      resource_type: resourceType,
+      type,
+      sign_url: true,
+      expires_at: expiresAt,
+      secure: true
+    });
+  } catch {
+    return fileUrl;
+  }
 };
 
 // Remove an uploaded file when the controller rejects the request after

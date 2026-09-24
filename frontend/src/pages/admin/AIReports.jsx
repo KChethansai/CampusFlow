@@ -15,8 +15,8 @@ import { btnClass, cn, labelClass, selectClass } from '../../system/tokens';
 const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
 // Dark glass intelligence surfaces; Obsidian Ember gradient hairline on top.
-const INTEL = 'rounded-[24px] border border-white/10 bg-[#0B1020]/80 backdrop-blur-xl p-5 relative overflow-hidden text-slate-100';
-const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#A77B68] via-[#B6532B] to-[#D86D3E]';
+const INTEL = 'rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-5 relative overflow-hidden text-[var(--cf-ink)]';
+const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#D86D3E] via-[#F5B08A] to-[#E7A66D]';
 
 // Heuristic signal extraction: structured output wins; free text falls back to summary.
 const signalsOf = (report) => {
@@ -160,8 +160,8 @@ export default function AIReports() {
             <span className={GRADIENT_LINE} aria-hidden />
             <form onSubmit={handleSubmit(onGenerate)} className="space-y-3">
               <div>
-                <label htmlFor="studentId" className={cn(labelClass, '!text-slate-300')}>Analyze student</label>
-                <select id="studentId" className={cn(selectClass, '!bg-white/5 !border-white/10 !text-slate-100')} {...register('studentId')}>
+                <label htmlFor="studentId" className={cn(labelClass, '!text-[var(--cf-ink-soft)]')}>Analyze student</label>
+                <select id="studentId" className={cn(selectClass, '!bg-[var(--cf-surface-2)] !border-[var(--cf-line)] !text-[var(--cf-ink)]')} {...register('studentId')}>
                   <option value="">Select student</option>
                   {students.map((s) => (
                     <option key={s._id} value={s._id}>{s.name}{s.profile?.rollNumber ? ` (${s.profile.rollNumber})` : ''}</option>
@@ -187,7 +187,7 @@ export default function AIReports() {
                       aria-current={selected?._id === r._id}
                       className={cn('w-full text-left px-3 py-2.5 rounded-[14px] border transition',
                         selected?._id === r._id
-                          ? 'border-[#A77B68]/60 bg-[#A77B68]/10'
+                          ? 'border-[#D86D3E]/60 bg-[#D86D3E]/10'
                           : 'border-transparent hover:bg-black/[.03] dark:hover:bg-white/[.05]')}
                     >
                       <span className="flex items-center justify-between gap-2">
@@ -217,16 +217,16 @@ export default function AIReports() {
                     <h2 className="font-display font-semibold flex items-center gap-1.5">
                       <TrendingUp size={16} className="text-[#E7A66D]" aria-hidden /> {selected.student?.name}
                     </h2>
-                    <span className="text-[11px] text-slate-400">{fmt(selected.createdAt)}</span>
+                    <span className="text-[11px] text-[var(--cf-ink-mute)]">{fmt(selected.createdAt)}</span>
                   </div>
                   {selected.dataSnapshotHash && (
-                    <p className="text-[11px] text-slate-400">Grounded snapshot <code className="px-1 rounded bg-white/10">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
+                    <p className="text-[11px] text-[var(--cf-ink-mute)]">Grounded snapshot <code className="px-1 rounded bg-[var(--cf-surface-2)] border border-[var(--cf-line)]">{String(selected.dataSnapshotHash).slice(0, 12)}…</code></p>
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#A77B68] to-[#D86D3E] text-white">
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#D86D3E] to-[#B6532B] text-white">
                       Provider: {selected.provider || 'none'}
                     </span>
-                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest border border-white/15 text-slate-300">
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest border border-[var(--cf-line)] text-[var(--cf-ink-soft)]">
                       {selected.provider === 'none' ? 'Confidence: snapshot' : 'Confidence: ranked per signal'}
                     </span>
                     {previous && (
@@ -241,11 +241,11 @@ export default function AIReports() {
                     )}
                   </div>
                   {showDiff && previous && (
-                    <div className="mt-3 rounded-[14px] bg-white/5 border border-white/10 p-3" aria-label="Previous report comparison">
-                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                        Previous · {fmt(previous.createdAt)} · snapshot <code className="px-1 rounded bg-white/10">{String(previous.dataSnapshotHash || '').slice(0, 12)}…</code>
+                    <div className="mt-3 rounded-[14px] bg-[var(--cf-surface-2)] border border-[var(--cf-line)] p-3" aria-label="Previous report comparison">
+                      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">
+                        Previous · {fmt(previous.createdAt)} · snapshot <code className="px-1 rounded bg-[var(--cf-surface)] border border-[var(--cf-line)]">{String(previous.dataSnapshotHash || '').slice(0, 12)}…</code>
                       </p>
-                      <p className="text-sm text-slate-300 mt-1 whitespace-pre-wrap">{previous.output?.summary || '—'}</p>
+                      <p className="text-sm text-[var(--cf-ink-soft)] mt-1 whitespace-pre-wrap">{previous.output?.summary || '—'}</p>
                     </div>
                   )}
                 </section>
@@ -263,14 +263,14 @@ export default function AIReports() {
                       <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-[#E7A66D]">What changed</p>
                       <p className="font-semibold mt-0.5">{s.what}</p>
                     </div>
-                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-white/15 text-slate-200">
+                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-[var(--cf-line)] text-[var(--cf-ink-soft)]">
                       {confidenceOf(selected, s)}
                     </span>
                   </div>
-                  {s.why && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">Why it matters</p><p className="text-sm text-slate-300 mt-0.5">{s.why}</p></>)}
-                  {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-slate-400">What should happen next</p><p className="text-sm text-slate-300 mt-0.5">{s.next}</p></>)}
+                  {s.why && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">Why it matters</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.why}</p></>)}
+                  {s.next && (<><p className="mt-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)]">What should happen next</p><p className="text-sm text-[var(--cf-ink-soft)] mt-0.5">{s.next}</p></>)}
                   {s.evidence && (
-                    <p className="mt-3 text-xs rounded-[14px] bg-white/5 border border-white/10 p-3 text-slate-200">
+                    <p className="mt-3 text-xs rounded-[14px] bg-[var(--cf-surface-2)] border border-[var(--cf-line)] p-3 text-[var(--cf-ink-soft)]">
                       <span className="font-semibold text-[#E7A66D]">Evidence: </span>{s.evidence}
                     </p>
                   )}

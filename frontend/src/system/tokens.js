@@ -15,7 +15,7 @@ export const colors = {
   terracotta: '#B4806A',
   amberMuted: '#D97706',
   cyan: '#C87D4B',
-  violet: '#B4806A',
+  ember: '#D86D3E',
   success: '#43845E',
   warning: '#A66C1F',
   error: '#B94C43',

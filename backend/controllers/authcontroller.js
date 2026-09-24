@@ -8,6 +8,7 @@ import { createNotification } from '../services/notification.service.js';
 import { logActivity } from '../services/activityLog.service.js';
 import { env } from '../config/env.js';
 import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
+import { sanitizeUser } from '../utils/userDto.js';
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -48,10 +49,7 @@ export const login = asyncHandler(async (req, res) => {
     institution: user.institution
   });
 
-  const userObj = user.toObject();
-  delete userObj.password;
-
-  res.json({ success: true, user: userObj, accessToken, refreshToken });
+  res.json({ success: true, user: sanitizeUser(user, 'self'), accessToken, refreshToken });
 });
 
 export const refresh = asyncHandler(async (req, res) => {
@@ -105,13 +103,17 @@ export const refresh = asyncHandler(async (req, res) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, institution, department, profile } = req.body;
 
-  const { institution: targetInstitution, email: normalizedEmail, department: departmentId } = await provisionInstitutionForAccount({
+  const { institution: targetInstitution, email: normalizedEmail, department: departmentId, course: courseId } = await provisionInstitutionForAccount({
     caller: req.user,
     role,
     email,
     requestedInstitution: institution,
-    department
+    department,
+    course: profile?.course
   });
+
+  const finalProfile = profile ? { ...profile } : undefined;
+  if (courseId && finalProfile) finalProfile.course = courseId;
 
   const user = await User.create({
     name,
@@ -120,7 +122,7 @@ export const register = asyncHandler(async (req, res) => {
     role,
     institution: targetInstitution._id,
     department: departmentId,
-    profile,
+    profile: finalProfile,
     isEmailVerified: true
   });
 
@@ -133,11 +135,7 @@ export const register = asyncHandler(async (req, res) => {
     institution: user.institution
   });
 
-  // Never return the password hash (User.create result includes it).
-  const created = user.toObject();
-  delete created.password;
-
-  res.status(201).json({ success: true, user: created });
+  res.status(201).json({ success: true, user: sanitizeUser(user, 'self') });
 });
 
 export const logout = asyncHandler(async (req, res) => {
@@ -259,5 +257,5 @@ export const changePassword = asyncHandler(async (req, res) => {
 });
 
 export const getMe = asyncHandler(async (req, res) => {
-  res.json({ success: true, user: req.user });
+  res.json({ success: true, user: sanitizeUser(req.user, 'self') });
 });

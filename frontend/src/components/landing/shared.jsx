@@ -4,7 +4,7 @@ import { cn } from '../../system/tokens';
 
 export const kicker = 'font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4B5563] dark:text-[#707A89]';
 export const sub = 'mt-3 text-[15px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF] max-w-xl';
-export const glassCard = 'bg-white/80 dark:bg-[#18130F]/90 backdrop-blur-sm rounded-[24px] border border-black/10 dark:border-white/10 shadow-sm';
+export const glassCard = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-sm';
 
 /* Word-stagger blur reveal */
 export function BlurText({ text, className }) {

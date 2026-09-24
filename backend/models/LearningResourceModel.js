@@ -7,6 +7,7 @@ const learningResourceSchema = new Schema({
   title: { type: String, required: true, trim: true },
   url: String,
   fileUrl: String,
+  fileKey: String,
   fileName: String,
   fileSize: Number,
   type: {

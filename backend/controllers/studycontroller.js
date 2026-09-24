@@ -243,7 +243,8 @@ export const updateLearningResource = asyncHandler(async (req, res) => {
   const patch = pick(req.body, ['topic', 'title', 'url', 'type', 'difficulty']);
   if (patch.url !== undefined) patch.url = cleanUrl(patch.url);
   if (req.file) {
-    patch.fileUrl = `/uploads/${req.file.filename}`;
+    const { resolveFileUrl } = await import('../config/multer.js');
+    patch.fileUrl = await resolveFileUrl(req);
     patch.fileName = req.file.originalname;
     patch.fileSize = req.file.size;
     if (!patch.type) patch.type = 'document';
