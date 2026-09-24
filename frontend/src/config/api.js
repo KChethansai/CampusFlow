@@ -49,7 +49,7 @@ export const assertApiBaseUsable = async () => {
   }
   const origin = baseURL.replace(/\/api\/v1\/?$/i, '');
   try {
-    await axios.get(`${origin}/api/health`, { timeout: 5000, withCredentials: false });
+    await axios.get(`${origin}/api/health`, { timeout: 15000, withCredentials: false });
     return true;
   } catch (err) {
     throw misconfiguredError(baseURL, err?.message || 'Health check unreachable');

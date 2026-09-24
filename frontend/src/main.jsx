@@ -6,12 +6,18 @@ import { ThemeProvider } from './system/theme';
 
 // Fail loud, not blank: dynamic imports so a config-time throw (bad
 // VITE_API_URL, e.g. missing /api/v1) is caught and rendered as an
-// actionable message instead of a black screen.
+// actionable message instead of a black screen. The probe can fail on a
+// transient cold start, so the card offers a retry (re-runs boot).
 const renderConfigError = () => {
   document.getElementById('root').innerHTML =
     '<main style="max-width:32rem;margin:20vh auto;padding:2rem;font-family:system-ui;text-align:center">'
     + '<h1 style="font-size:1.25rem">Service misconfigured</h1>'
-    + '<p style="opacity:.7">The app cannot reach its API. Contact your administrator.</p></main>';
+    + '<p style="opacity:.7">The app cannot reach its API. This is often temporary (server waking up) — retry before contacting your administrator.</p>'
+    + '<button id="cf-retry" style="margin-top:1rem;padding:.6rem 1.2rem;font-size:.9rem;font-weight:600;border-radius:999px;border:0;background:#D86D3E;color:#fff;cursor:pointer">Retry connection</button></main>';
+  document.getElementById('cf-retry').addEventListener('click', () => {
+    document.getElementById('root').innerHTML = '';
+    mount().catch(renderBootError);
+  });
 };
 
 // Stale precached shell + rotated chunk hashes make the boot import() reject.
