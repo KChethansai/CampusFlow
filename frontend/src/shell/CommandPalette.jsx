@@ -11,6 +11,37 @@ import { useTheme } from '../system/theme';
 import api from '../api/axios';
 import { motionVariants, useReducedMotion } from '../system/motion';
 
+// Role truth mirrors the route guards in App.jsx — the palette must never
+// offer a screen the router would 403. Backend remains the final enforcer.
+const ADMIN = ['super_admin', 'college_admin'];
+const SCREEN_ROLES = {
+  '/dashboard': null, // all authenticated roles
+  '/assignments': [...ADMIN, 'hod', 'faculty', 'student'],
+  '/attendance': [...ADMIN, 'hod', 'faculty', 'student'],
+  '/placement': [...ADMIN, 'placement_officer', 'student'],
+  '/requests': [...ADMIN, 'hod', 'faculty', 'student'],
+  '/directory': null, // all authenticated roles
+  '/subjects': [...ADMIN, 'hod', 'faculty'],
+};
+const canSee = (role, link) => {
+  const roles = SCREEN_ROLES[link];
+  return !roles || roles.includes(role);
+};
+// Backend collection endpoints the palette prefetches, with the roles allowed
+// to read them. Skipped endpoints are never fetched (no 403 noise) and never
+// surface as data rows.
+const ENDPOINT_ROLES = {
+  '/courses': ADMIN,
+  '/subjects': [...ADMIN, 'hod', 'faculty'],
+  '/assignments': [...ADMIN, 'hod', 'faculty', 'student'],
+  '/users': ADMIN,
+  '/departments': ADMIN,
+  '/job-drives': [...ADMIN, 'placement_officer', 'student'],
+  '/companies': [...ADMIN, 'placement_officer', 'student'],
+  '/job-applications': [...ADMIN, 'placement_officer', 'student'],
+  '/requests': [...ADMIN, 'hod', 'faculty', 'student'],
+};
+
 const GROUPS = [
   { key: 'academics', label: 'Academics', endpoints: [['Courses', '/courses'], ['Subjects', '/subjects'], ['Assignments', '/assignments']] },
   { key: 'people', label: 'People', endpoints: [['Users', '/users'], ['Departments', '/departments']] },
@@ -21,9 +52,10 @@ const GROUPS = [
 const QUICK_BY_ROLE = {
   student: [['View my assignments', '/assignments'], ['Open placement board', '/placement'], ['Check attendance', '/attendance']],
   faculty: [['Grade assignments', '/assignments'], ['Mark attendance', '/attendance'], ['My subjects', '/subjects']],
+  hod: [['Mark attendance', '/attendance'], ['Review requests', '/requests'], ['My subjects', '/subjects']],
   college_admin: [['Manage users', '/users'], ['View AI reports', '/ai-reports'], ['Manage courses', '/courses']],
   super_admin: [['Manage users', '/users'], ['View AI reports', '/ai-reports'], ['Manage courses', '/courses']],
-  placement_officer: [['Open placement board', '/placement'], ['Manage users', '/users'], ['View events', '/events']]
+  placement_officer: [['Open placement board', '/placement'], ['View events', '/events'], ['Check directory', '/directory']]
 };
 
 // Fuzzy subsequence score with prefix/contiguous bonuses (Raycast-feel, zero deps).
@@ -110,40 +142,52 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
       setQuery('');
       setIndex(0);
       setTimeout(() => inputRef.current?.focus(), 30);
-      // Prefetch searchable collections once per open.
+      // Prefetch searchable collections once per open — only endpoints this
+      // role may read (mirrors ENDPOINT_ROLES; 403s never attempted).
+      const role = user?.role;
       GROUPS.forEach((g) =>
         g.endpoints.forEach(async ([label, ep]) => {
           const key = `${g.key}:${label}`;
           if (cache[key]) return;
+          const allowed = ENDPOINT_ROLES[ep];
+          if (allowed && !allowed.includes(role)) return;
           try {
             const { data } = await api.get(ep);
             const rows = data.data || [];
             setCache((c) => ({ ...c, [key]: rows }));
-          } catch { /* role-gated endpoints 403 — skip silently */ }
+          } catch { /* unreachable endpoint — skip silently */ }
         })
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open ]);
+  }, [open, user?.role]);
 
-  const actions = useMemo(() => [
-    { title: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', sub: 'Action', Icon: theme === 'dark' ? Sun : Moon, run: () => toggle() },
-    { title: 'Print this page', sub: 'Action', Icon: Printer, run: () => window.print() },
-    { title: 'Download CSV', sub: 'Action', Icon: Download, run: () => onDownloadCsv?.() },
-    { title: 'Start guided tour', sub: 'Action', Icon: Flag, run: () => onStartTour?.() },
-    { title: 'Go to Dashboard', sub: 'Go to', link: '/dashboard' },
-    { title: 'Go to Assignments', sub: 'Go to', link: '/assignments' },
-    { title: 'Go to Placement', sub: 'Go to', link: '/placement' },
-    { title: 'Go to Requests', sub: 'Go to', link: '/requests' },
-    { title: 'Go to Directory', sub: 'Go to', link: '/directory' }
-  ], [theme, toggle, onDownloadCsv, onStartTour]);
+  const role = user?.role;
+  const actions = useMemo(() => {
+    // Screens are filtered by role so the palette never offers a route the
+    // router would 403 (mirrors App.jsx guards via SCREEN_ROLES).
+    const screens = [
+      { title: 'Go to Dashboard', sub: 'Go to', link: '/dashboard' },
+      { title: 'Go to Assignments', sub: 'Go to', link: '/assignments' },
+      { title: 'Go to Placement', sub: 'Go to', link: '/placement' },
+      { title: 'Go to Requests', sub: 'Go to', link: '/requests' },
+      { title: 'Go to Directory', sub: 'Go to', link: '/directory' }
+    ].filter((a) => canSee(role, a.link));
+    return [
+      { title: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', sub: 'Action', Icon: theme === 'dark' ? Sun : Moon, run: () => toggle() },
+      { title: 'Print this page', sub: 'Action', Icon: Printer, run: () => window.print() },
+      { title: 'Download CSV', sub: 'Action', Icon: Download, run: () => onDownloadCsv?.() },
+      { title: 'Start guided tour', sub: 'Action', Icon: Flag, run: () => onStartTour?.() },
+      ...screens
+    ];
+  }, [theme, toggle, onDownloadCsv, onStartTour, role]);
 
   const results = useMemo(() => {
     const out = [];
-    const role = user?.role;
     const q = query.trim();
     if (!q) {
-      const quick = (QUICK_BY_ROLE[role] || QUICK_BY_ROLE.student).map(([title, link]) => ({ title, sub: 'Quick action', link, quick: true }));
+      // Unknown roles get no quick actions (never a forbidden shortcut).
+      const quick = (QUICK_BY_ROLE[role] || []).map(([title, link]) => ({ title, sub: 'Quick action', link, quick: true }));
       return [
         ...(quick.length ? [{ group: 'Quick actions', items: quick }] : []),
         { group: 'Actions', items: actions.filter((a) => a.run) },
@@ -165,6 +209,10 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
     const data = [];
     GROUPS.forEach((g) => {
       g.endpoints.forEach(([label, ep]) => {
+        // Belt-and-suspenders: never surface rows from an endpoint this role
+        // may not read, even if a stale cache entry exists.
+        const allowed = ENDPOINT_ROLES[ep];
+        if (allowed && !allowed.includes(role)) return;
         (cache[`${g.key}:${label}`] || []).forEach((row) => {
           const title = row.title || row.name || row.role || row.email || 'Item';
           const s = Math.max(score(query, title), score(query, `${label} ${title}`));
@@ -183,7 +231,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
       });
     }
     return out;
-  }, [query, cache, serverRows, user?.role, actions]);
+  }, [query, cache, serverRows, role, actions]);
 
   const flat = useMemo(() => results.flatMap((r) => r.items), [results]);
 
