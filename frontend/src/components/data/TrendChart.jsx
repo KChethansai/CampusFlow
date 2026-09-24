@@ -3,9 +3,10 @@
 // Callers keep their React.lazy call sites; this module lazy-loads the chart
 // engine internally (same pattern as before, recharts-free). Zero harsh
 // gridlines, gradient fills #D86D3E .35→0, 1.2s draw, glass tooltip.
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
+import { ChunkErrorBoundary, lazyRetry } from './LazyRetry';
 
-const AreaChart = lazy(() => import('./charts/AreaChart'));
+const AreaChart = lazyRetry(() => import('./charts/AreaChart'));
 
 // ponytail: fixed 3-stop set, royal first — all three read on paper and coal-dark.
 const DEFAULT_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
@@ -32,14 +33,16 @@ export function TrendChart({
         </div>
       }
     >
-      <AreaChart
-        data={data}
-        xKey={xKey}
-        series={series}
-        height={height}
-        summary={summary}
-        className={className}
-      />
+      <ChunkErrorBoundary>
+        <AreaChart
+          data={data}
+          xKey={xKey}
+          series={series}
+          height={height}
+          summary={summary}
+          className={className}
+        />
+      </ChunkErrorBoundary>
     </Suspense>
   );
 }

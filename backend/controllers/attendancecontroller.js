@@ -5,7 +5,7 @@ import { UserModel as User } from '../models/UserModel.js';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { scopedOne } from '../utils/scope.js';
+import { scopedOne, pageParams, pagedResponse } from '../utils/scope.js';
 import { getHodDepartmentSubjectIds, canHodAccessSubject } from '../utils/academicScope.js';
 import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
 
@@ -75,6 +75,27 @@ export const markSession = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'One or more students are not actively enrolled in the course for this subject');
   }
 
+  // Duplicate-session prevention: one session per (institution, subject, calendar day, period).
+  if (date) {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new ApiError(400, 'Invalid date');
+    }
+    const dayStart = new Date(parsed);
+    dayStart.setUTCHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+    const existing = await AttendanceSession.findOne({
+      institution: req.user.institution,
+      subject,
+      period: Number(period),
+      date: { $gte: dayStart, $lt: dayEnd },
+    }).select('_id');
+    if (existing) {
+      throw new ApiError(409, 'Attendance session already exists for this subject, date and period');
+    }
+  }
+
   const session = await AttendanceSession.create({
     institution: req.user.institution,
     subject,
@@ -140,18 +161,34 @@ export const getSessions = asyncHandler(async (req, res) => {
     if (filter.subject?.$in) {
       const allowed = filter.subject.$in.map(String);
       if (!allowed.includes(String(req.query.subject))) {
-        return res.json({ success: true, data: [] });
+        const { page, limit } = pageParams(req);
+        return pagedResponse(res, [], 0, { page, limit });
       }
     }
     filter.subject = req.query.subject;
   }
-  if (req.query.date) {
-    filter.date = new Date(req.query.date);
+  if (req.query.date !== undefined) {
+    const parsed = new Date(req.query.date);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new ApiError(400, 'Invalid date filter');
+    }
+    filter.date = parsed;
+  }
+  if (req.query.period !== undefined) {
+    const period = Number(req.query.period);
+    if (!Number.isInteger(period) || period < 1) {
+      throw new ApiError(400, 'Invalid period filter');
+    }
+    filter.period = period;
   }
 
+  const { page, limit, skip } = pageParams(req);
+  const total = await AttendanceSession.countDocuments(filter);
   const sessions = await AttendanceSession.find(filter)
     .populate('subject', 'name code')
-    .populate('markedBy', 'name email role');
+    .populate('markedBy', 'name email role')
+    .skip(skip)
+    .limit(limit);
 
   // Students see only their own rows (peer records stay private).
   if (req.user.role === 'student') {
@@ -162,10 +199,10 @@ export const getSessions = asyncHandler(async (req, res) => {
       );
       return obj;
     });
-    return res.json({ success: true, data: mine });
+    return pagedResponse(res, mine, total, { page, limit });
   }
 
-  res.json({ success: true, data: sessions });
+  return pagedResponse(res, sessions, total, { page, limit });
 });
 
 // Get single session by ID (tenant + audience scoped)

@@ -16,6 +16,7 @@ export default defineConfig({
       manifest: false, // hand-authored public/manifest.webmanifest stays canonical
       workbox: {
         navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,svg,woff2}']
       }
     })

@@ -27,4 +27,5 @@ const requestSchema = new Schema({
   }]
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
+requestSchema.index({ institution: 1, status: 1 });
 export const RequestModel = model('Request', requestSchema);

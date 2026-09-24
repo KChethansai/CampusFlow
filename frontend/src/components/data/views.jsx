@@ -5,12 +5,13 @@
 // heatmap-chart port via React.lazy with the sync grid as fallback.
 // Glass/royal/violet surfaces; status greens #25D890, ambers #FFBD4A, reds
 // #FF5964. Export APIs unchanged.
-import { Suspense, lazy, useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { normalizeStage, PIPELINE_STAGES } from '../../system/tokens';
 import { cn } from '../../system/tokens';
+import { ChunkErrorBoundary, lazyRetry } from './LazyRetry';
 
-const HeatmapChart = lazy(() => import('./charts/HeatmapChart'));
+const HeatmapChart = lazyRetry(() => import('./charts/HeatmapChart'));
 
 const OK = '#25D890';
 const WARN = '#FFBD4A';
@@ -160,7 +161,9 @@ export function Sparkline({ points = [], width = 220, height = 56 }) {
 export function Heatmap({ weeks = [], legend = ['Less', 'More'] }) {
   return (
     <Suspense fallback={<HeatmapGrid weeks={weeks} legend={legend} />}>
-      <HeatmapChart weeks={weeks} legend={legend} />
+      <ChunkErrorBoundary>
+        <HeatmapChart weeks={weeks} legend={legend} />
+      </ChunkErrorBoundary>
     </Suspense>
   );
 }

@@ -7,6 +7,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
 import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
 import { sanitizeUser, sanitizeUsers } from '../utils/userDto.js';
+import { pageParams, pagedResponse } from '../utils/scope.js';
 
 const accountRoles = ['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer'];
 
@@ -101,12 +102,16 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
   });
 });
 
-// List all users scoped to the institution
+// List all users scoped to the institution (paginated)
 export const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({ institution: req.user.institution })
-    .populate('department', 'name code');
+  const { page, limit, skip } = pageParams(req);
+  const filter = { institution: req.user.institution };
+  const [users, total] = await Promise.all([
+    User.find(filter).populate('department', 'name code').skip(skip).limit(limit),
+    User.countDocuments(filter),
+  ]);
 
-  res.json({ success: true, data: sanitizeUsers(users, 'admin') });
+  pagedResponse(res, sanitizeUsers(users, 'admin'), total, { page, limit });
 });
 
 // Get single user by ID — tenant-scoped query, no cross-tenant fetch.

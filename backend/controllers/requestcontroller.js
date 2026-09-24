@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrlArray } from '../utils/sanitize.js';
 import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
+import { pageParams, pagedResponse } from '../utils/scope.js';
 
 // Student submits a new request
 export const createRequest = asyncHandler(async (req, res) => {
@@ -44,22 +45,28 @@ export const createRequest = asyncHandler(async (req, res) => {
 });
 
 // List requests — students see only their own; HOD sees only their own
-// department; others see all within institution
+// department; others see all within institution (paginated)
 export const getAllRequests = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   const filter = { institution: req.user.institution };
 
   if (req.user.role === 'student') {
     filter.student = req.user._id;
   } else if (req.user.role === 'hod') {
-    if (!req.user.department) return res.json({ success: true, data: [] });
+    if (!req.user.department) return pagedResponse(res, [], 0, { page, limit });
     filter.department = req.user.department;
   }
 
-  const requests = await Request.find(filter)
-    .populate('student', 'name email role department')
-    .populate('assignedTo', 'name email role');
+  const [requests, total] = await Promise.all([
+    Request.find(filter)
+      .populate('student', 'name email role department')
+      .populate('assignedTo', 'name email role')
+      .skip(skip)
+      .limit(limit),
+    Request.countDocuments(filter),
+  ]);
 
-  res.json({ success: true, data: requests });
+  pagedResponse(res, requests, total, { page, limit });
 });
 
 // Get single request by ID (tenant-scoped; students see only their own)

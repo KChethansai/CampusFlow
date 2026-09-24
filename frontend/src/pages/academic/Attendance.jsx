@@ -18,15 +18,17 @@ const GLASS = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-lin
 
 export default function Attendance() {
   const { user } = useAuth();
-  const isFaculty = user?.role === 'faculty';
+  const canMark = user?.role === 'faculty' || user?.role === 'hod';
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMark, setShowMark] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
+  const [enrollments, setEnrollments] = useState(null);
   const [subjectId, setSubjectId] = useState('');
   const [period, setPeriod] = useState('1');
   const [marks, setMarks] = useState({});
+  const [studentQuery, setStudentQuery] = useState('');
 
   const fetchSessions = async () => {
     try {
@@ -38,19 +40,56 @@ export default function Attendance() {
 
   useEffect(() => {
     fetchSessions();
-    if (isFaculty) {
+    if (canMark) {
       api.get('/subjects').then(({ data }) => {
         const list = data.data || [];
-        setSubjects(list);
-        if (list[0]) setSubjectId(list[0]._id);
+        // Default to the first accessible subject — taught subjects first for faculty.
+        const sorted = [...list].sort((a, b) =>
+          (isTaughtBy(b, user?._id) ? 1 : 0) - (isTaughtBy(a, user?._id) ? 1 : 0));
+        setSubjects(sorted);
+        if (sorted[0]) setSubjectId(sorted[0]._id);
       }).catch(() => {});
       api.get('/users').then(({ data }) => setStudents((data.data || []).filter((u) => u.role === 'student'))).catch(() => {});
+      api.get('/enrollments').then(({ data }) => setEnrollments(data.data || [])).catch(() => setEnrollments([]));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFaculty]);
+  }, [canMark]);
+
+  const selectedSubject = useMemo(
+    () => subjects.find((s) => String(s._id) === String(subjectId)),
+    [subjects, subjectId]
+  );
+  const selectedCourseId = useMemo(() => {
+    const c = selectedSubject?.course;
+    return c ? String(c._id || c) : null;
+  }, [selectedSubject]);
+
+  // Scope the modal roster to students actively enrolled in the selected
+  // subject's course — the backend 400s unenrolled students. Falls back to
+  // profile.course when enrollment data is unavailable.
+  const markableStudents = useMemo(() => {
+    if (!selectedCourseId) return students;
+    if (Array.isArray(enrollments)) {
+      const enrolledIds = new Set(
+        enrollments
+          .filter((e) => e.status === 'active' && String(e.course?._id || e.course) === selectedCourseId)
+          .map((e) => String(e.student?._id || e.student))
+      );
+      return students.filter((s) => enrolledIds.has(String(s._id)));
+    }
+    return students.filter((s) => String(s.profile?.course?._id || s.profile?.course || '') === selectedCourseId);
+  }, [students, enrollments, selectedCourseId]);
+
+  const visibleStudents = useMemo(() => {
+    const q = studentQuery.trim().toLowerCase();
+    if (!q) return markableStudents;
+    return markableStudents.filter((s) =>
+      [s.name, s.email].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [markableStudents, studentQuery]);
 
   const mine = useMemo(() => {
-    if (!isFaculty && user?._id) {
+    if (!canMark && user?._id) {
       // Sessions carry full records; filter to own rows for the personal view.
       return sessions.map((s) => ({
         ...s,
@@ -58,7 +97,7 @@ export default function Attendance() {
       })).filter((s) => s.records.length);
     }
     return sessions;
-  }, [sessions, isFaculty, user?._id]);
+  }, [sessions, canMark, user?._id]);
 
   const recs = useMemo(() => mine.flatMap((s) => s.records || []), [mine]);
   const health = recs.length
@@ -104,13 +143,13 @@ export default function Attendance() {
 
   const markAll = (status) => {
     const next = {};
-    students.forEach((s) => { next[s._id] = status; });
+    markableStudents.forEach((s) => { next[s._id] = status; });
     setMarks(next);
   };
 
   const saveSession = async () => {
     if (!subjectId) return toast.error('Select a subject');
-    const records = students.map((s) => ({ student: s._id, status: marks[s._id] || 'present' }));
+    const records = markableStudents.map((s) => ({ student: s._id, status: marks[s._id] || 'present' }));
     try {
       await api.post('/attendance', {
         subject: subjectId,
@@ -136,12 +175,12 @@ export default function Attendance() {
         subtitle={health == null ? 'No sessions recorded yet.' : `${recs.length} records · ${missed} missed classes`}
         actions={<div className="flex flex-wrap gap-2 print-hide">
           <button type="button" onClick={() => window.print()} className={btnClass('outline', 'small')}><Printer size={14} aria-hidden /> Export / print</button>
-          {isFaculty && <button onClick={() => setShowMark(true)} className={btnClass('primary', 'medium')}><Plus size={15} /> Mark attendance</button>}
+          {canMark && <button onClick={() => setShowMark(true)} className={btnClass('primary', 'medium')}><Plus size={15} /> Mark attendance</button>}
         </div>}
       />
 
       {loading ? <LoadingState /> : health == null ? (
-        <div className={GLASS}><EmptyState title="No attendance yet" hint={isFaculty ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></div>
+        <div className={GLASS}><EmptyState title="No attendance yet" hint={canMark ? 'Mark your first session to activate this view.' : 'Your attendance will appear here once classes are marked.'} /></div>
       ) : (
         <>
           {/* Hero pulse: health gauge + trajectory + glass heatmap matrix */}
@@ -223,8 +262,19 @@ export default function Attendance() {
             ))}
           </div>
         </div>
+        <div className="mb-3">
+          <label className={labelClass} htmlFor="att-student-search">Find student</label>
+          <input
+            id="att-student-search"
+            className={inputClass}
+            placeholder="Search enrolled students…"
+            aria-label="Search enrolled students"
+            value={studentQuery}
+            onChange={(e) => setStudentQuery(e.target.value)}
+          />
+        </div>
         <ul className="max-h-64 overflow-y-auto divide-y divide-[var(--cf-line)] rounded-[14px] border border-[var(--cf-line)]">
-          {students.map((s) => (
+          {visibleStudents.map((s) => (
             <li key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <span className="flex-1 truncate font-medium">{s.name}</span>
               <div className="flex gap-1" role="radiogroup" aria-label={`Attendance for ${s.name}`}>
@@ -243,15 +293,19 @@ export default function Attendance() {
               </div>
             </li>
           ))}
-          {students.length === 0 && <li className="px-3 py-6 text-center text-sm text-[var(--cf-ink-mute)]">No students found.</li>}
+          {markableStudents.length === 0 && <li className="px-3 py-6 text-center text-sm text-[var(--cf-ink-mute)]">No students enrolled in this subject&apos;s course.</li>}
+          {markableStudents.length > 0 && visibleStudents.length === 0 && <li className="px-3 py-6 text-center text-sm text-[var(--cf-ink-mute)]">No students match this search.</li>}
         </ul>
         <button onClick={saveSession} className={btnClass('success', 'medium') + ' w-full mt-4'}>
-          Save session · {students.length} students
+          Save session · {markableStudents.length} students
         </button>
       </Modal>
     </div>
   );
 }
+
+const isTaughtBy = (subject, userId) =>
+  userId != null && String(subject?.faculty?._id || subject?.faculty || '') === String(userId);
 
 const cn2 = (active) =>
   `rounded-full px-2.5 py-1 text-[11px] font-bold capitalize border transition ${active ? 'bg-[#A94727] text-white border-transparent' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;

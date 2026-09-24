@@ -17,10 +17,11 @@ attendanceApp.use(auditLog);
 // POST — faculty marks attendance session; HOD for own-department subjects
 attendanceApp.post('/', verifyToken('faculty', 'hod'), markSession);
 
-// GET routes — all roles
+// GET routes — all roles (specific-before-generic so /student/:id is never swallowed by /:id)
 attendanceApp.get('/', getSessions);
-attendanceApp.get('/:id', getSessionById);
 
 // GET student-specific attendance
 attendanceApp.get('/student/:studentId', getStudentAttendance);
+
+attendanceApp.get('/:id', getSessionById);
 

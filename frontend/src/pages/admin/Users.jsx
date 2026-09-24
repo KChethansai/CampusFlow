@@ -48,7 +48,7 @@ function csvRowsToUsers(rows) {
   }));
 }
 
-const validRoles = new Set(['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer']);
+const validRoles = new Set(['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer']);
 const rowIssues = (u, requireInstitution) => [
   !u.name && 'Name is required',
   !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u.email) && 'Valid email is required',

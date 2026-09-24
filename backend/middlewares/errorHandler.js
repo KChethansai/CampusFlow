@@ -1,5 +1,5 @@
 // error middleware: final Express error handler + notFound catch-all.
-import { isProduction } from '../config/env.js'
+import { env, isProduction } from '../config/env.js'
 import { logger } from '../utils/logger.js'
 
 export const notFound = (req, _res, next) => {
@@ -41,6 +41,6 @@ export const errorHandler = (err, req, res, _next) => {
     success: false,
     message,
     ...(err.details && { details: err.details }),
-    ...(isProduction === false && { stack: err.stack })
+    ...(env.nodeEnv === 'development' && { stack: err.stack })
   })
 }

@@ -14,4 +14,7 @@ const enrollmentSchema = new Schema({
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
 enrollmentSchema.index({ student: 1, course: 1, academicYear: 1 }, { unique: true });
+// No status in the unique key: reactivation flips the same doc back to active,
+// so a status-scoped unique would allow active+dropped duplicates per triple.
+enrollmentSchema.index({ student: 1, status: 1 });
 export const EnrollmentModel = model('Enrollment', enrollmentSchema);

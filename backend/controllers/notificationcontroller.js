@@ -2,6 +2,7 @@ import { NotificationModel as Notification } from '../models/NotificationModel.j
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { getNotificationPreferences, NOTIFICATION_CATEGORIES } from '../models/UserModel.js';
+import { pageParams, pagedResponse } from '../utils/scope.js';
 
 const channels = ['inApp', 'push', 'email'];
 
@@ -26,12 +27,14 @@ export const updateMyNotificationPreferences = asyncHandler(async (req, res) => 
   res.json({ success: true, data: updated });
 });
 
-// Get current user's notifications
+// Get current user's notifications (paginated; preference-filtered)
 export const getMyNotifications = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   const notifications = await Notification.find({ recipient: req.user._id })
     .sort('-createdAt');
   const prefs = getNotificationPreferences(req.user.notificationPreferences);
-  res.json({ success: true, data: notifications.filter((notification) => prefs[notification.category || 'system'].inApp) });
+  const visible = notifications.filter((notification) => prefs[notification.category || 'system'].inApp);
+  pagedResponse(res, visible.slice(skip, skip + limit), visible.length, { page, limit });
 });
 
 // Mark notification as read — recipient-scoped so IDs can't be enumerated

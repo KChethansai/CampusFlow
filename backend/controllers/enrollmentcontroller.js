@@ -5,6 +5,7 @@ import { CourseModel as Course } from '../models/CourseModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { logActivity } from '../services/activityLog.service.js';
+import { pageParams, pagedResponse } from '../utils/scope.js';
 
 // Create enrollment (admin-managed) — student and course must be in the tenant
 export const createEnrollment = asyncHandler(async (req, res) => {
@@ -47,18 +48,24 @@ export const createEnrollment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: enrollment });
 });
 
-// List enrollments scoped to institution (students see only their own)
+// List enrollments scoped to institution (students see only their own, paginated)
 export const getAllEnrollments = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   const query =
     req.user.role === 'student'
       ? { student: req.user._id, institution: req.user.institution }
       : { institution: req.user.institution };
 
-  const enrollments = await Enrollment.find(query)
-    .populate('student', 'name email rollNumber')
-    .populate('course', 'name code');
+  const [enrollments, total] = await Promise.all([
+    Enrollment.find(query)
+      .populate('student', 'name email rollNumber')
+      .populate('course', 'name code')
+      .skip(skip)
+      .limit(limit),
+    Enrollment.countDocuments(query),
+  ]);
 
-  res.json({ success: true, data: enrollments });
+  pagedResponse(res, enrollments, total, { page, limit });
 });
 
 // Get single enrollment by ID (tenant-scoped; students see only their own)

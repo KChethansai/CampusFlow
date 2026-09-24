@@ -6,7 +6,7 @@ import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
-import { pick } from '../utils/scope.js';
+import { pick, pageParams, pagedResponse } from '../utils/scope.js';
 import { getVisibleAssignmentIds, canUserAccessSubmission } from '../utils/academicScope.js';
 
 // Assignments visible to the caller: students see their own submissions only;
@@ -15,18 +15,24 @@ const visibleAssignmentIds = async (req) => {
   return await getVisibleAssignmentIds(req.user);
 };
 
-// List submissions — tenant/ownership scoped (never the whole collection)
+// List submissions — tenant/ownership scoped, paginated (never the whole collection)
 export const getAllSubmissions = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   const filter = {};
   if (req.user.role === 'student') {
     filter.student = req.user._id;
   } else {
     filter.assignment = { $in: await getVisibleAssignmentIds(req.user) };
   }
-  const submissions = await Submission.find(filter)
-    .populate('assignment', 'title subject maxScore dueDate status')
-    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
-  res.json({ success: true, data: submissions });
+  const [submissions, total] = await Promise.all([
+    Submission.find(filter)
+      .populate('assignment', 'title subject maxScore dueDate status')
+      .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear')
+      .skip(skip)
+      .limit(limit),
+    Submission.countDocuments(filter),
+  ]);
+  pagedResponse(res, submissions, total, { page, limit });
 });
 
 // Get single submission — same visibility rules as the list

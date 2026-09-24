@@ -23,4 +23,5 @@ const assignmentSchema = new Schema({
 }, { timestamps: true, versionKey: false, strict: 'throw' });
 
 assignmentSchema.index({ institution: 1, status: 1, dueDate: 1 });
+assignmentSchema.index({ subject: 1, status: 1 });
 export const AssignmentModel = model('Assignment', assignmentSchema);

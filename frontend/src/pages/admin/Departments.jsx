@@ -7,11 +7,13 @@ import api from '../../api/axios';
 import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { btnClass, inputClass, labelClass } from '../../system/tokens';
+import { usePager, PagerControls } from '../../hooks/usePager';
 
 function Departments() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const { page, pagination, readPage, prev, next } = usePager();
   const {
     register,
     handleSubmit,
@@ -21,12 +23,12 @@ function Departments() {
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [page]);
 
   const fetchDepartments = async () => {
     try {
-      const { data } = await api.get('/departments');
-      setDepartments(data.data || []);
+      const { data } = await api.get('/departments', { params: { page } });
+      setDepartments(readPage(data));
     } catch {
       toast.error('Failed to load departments');
     }
@@ -49,7 +51,7 @@ function Departments() {
     <div>
       <PageHeader
         title="Departments"
-        subtitle={`${departments.length} departments`}
+        subtitle={`${pagination.total || departments.length} departments`}
         actions={
           <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
             + Add Department
@@ -80,6 +82,9 @@ function Departments() {
             </article>
           ))}
         </div>
+      )}
+      {!loading && departments.length > 0 && (
+        <PagerControls pagination={pagination} onPrev={prev} onNext={next} />
       )}
 
       <Modal open={showForm} onClose={() => setShowForm(false)} title="Add department">

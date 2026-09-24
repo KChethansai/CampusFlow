@@ -4,11 +4,12 @@ import { SubjectModel as Subject } from '../models/SubjectModel.js';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { pick, scopedOne } from '../utils/scope.js';
+import { pick, scopedOne, pageParams, pagedResponse } from '../utils/scope.js';
 import { getFacultyTaughtSubjectIds, canFacultyAccessAssignment, getHodDepartmentSubjectIds, canHodAccessAssignment, canHodAccessSubject } from '../utils/academicScope.js';
 
-// List all assignments scoped to institution and audience
+// List all assignments scoped to institution and audience (paginated)
 export const getAllAssignments = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = pageParams(req);
   const filter = { institution: req.user.institution };
 
   if (req.user.role === 'student') {
@@ -35,10 +36,15 @@ export const getAllAssignments = asyncHandler(async (req, res) => {
     ];
   }
 
-  const assignments = await Assignment.find(filter)
-    .populate('subject', 'name code')
-    .populate('createdBy', 'name email role');
-  res.json({ success: true, data: assignments });
+  const [assignments, total] = await Promise.all([
+    Assignment.find(filter)
+      .populate('subject', 'name code')
+      .populate('createdBy', 'name email role')
+      .skip(skip)
+      .limit(limit),
+    Assignment.countDocuments(filter),
+  ]);
+  pagedResponse(res, assignments, total, { page, limit });
 });
 
 // Get single assignment (tenant + audience scoped)

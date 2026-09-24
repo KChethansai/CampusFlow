@@ -7,12 +7,14 @@ import api from '../../api/axios';
 import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { btnClass, inputClass, labelClass, selectClass } from '../../system/tokens';
+import { usePager, PagerControls } from '../../hooks/usePager';
 
 function Courses() {
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const { page, pagination, readPage, prev, next } = usePager();
   const {
     register,
     handleSubmit,
@@ -24,13 +26,16 @@ function Courses() {
 
   useEffect(() => {
     fetchCourses();
+  }, [page]);
+
+  useEffect(() => {
     fetchDepartments();
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const { data } = await api.get('/courses');
-      setCourses(data.data || []);
+      const { data } = await api.get('/courses', { params: { page } });
+      setCourses(readPage(data));
     } catch {
       toast.error('Failed to load courses');
     }
@@ -62,7 +67,7 @@ function Courses() {
     <div>
       <PageHeader
         title="Courses"
-        subtitle={`${courses.length} courses`}
+        subtitle={`${pagination.total || courses.length} courses`}
         actions={
           <button onClick={() => setShowForm(true)} className={btnClass('primary', 'medium')}>
             + Add Course
@@ -107,6 +112,9 @@ function Courses() {
             </table>
           </div>
         </div>
+      )}
+      {!loading && courses.length > 0 && (
+        <PagerControls pagination={pagination} onPrev={prev} onNext={next} />
       )}
 
       <Modal open={showForm} onClose={() => setShowForm(false)} title="Add course">

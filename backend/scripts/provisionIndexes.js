@@ -14,7 +14,8 @@ try {
   await mongoose.connect(env.dbUrl);
   for (const name of mongoose.modelNames()) {
     await mongoose.model(name).createIndexes();
-    console.log(`Indexes ensured: ${name}`);
+    const keys = (await mongoose.model(name).collection.indexes()).map((idx) => idx.name);
+    console.log(`Indexes ensured: ${name} [${keys.join(', ')}]`);
   }
 } catch (error) {
   console.error(`Index provisioning failed: ${error.message}`);
