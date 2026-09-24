@@ -14,6 +14,7 @@ import {
   User,
   FolderSearch,
   CalendarDays,
+  CalendarClock,
   Brain
 } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export const NAV = [
   { label: 'Institutions', to: '/institutions', roles: ['super_admin'], Icon: Building2 },
   { label: 'Courses', to: '/courses', roles: ADMIN, Icon: BookOpen },
   { label: 'Subjects', to: '/subjects', roles: [...ADMIN, 'hod', 'faculty'], Icon: BookMarked },
+  { label: 'Schedule', to: '/schedule', roles: HOD_LEARN, Icon: CalendarClock },
   { label: 'Assignments', to: '/assignments', roles: HOD_LEARN, Icon: ClipboardList },
   { label: 'Attendance', to: '/attendance', roles: HOD_LEARN, Icon: CalendarCheck },
   { label: 'Placement', to: '/placement', roles: [...ADMIN, 'placement_officer', 'student'], Icon: Briefcase },

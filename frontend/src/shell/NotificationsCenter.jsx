@@ -77,7 +77,7 @@ export default function NotificationsCenter() {
   useEffect(() => {
     if (lastEvent?.channel === 'notification:new' && lastEvent.payload?.notification) {
       setItems((prev) => [lastEvent.payload.notification, ...prev]);
-    } else if (lastEvent && ['announcement:posted', 'attendance:marked', 'request:updated'].includes(lastEvent.channel)) {
+    } else if (lastEvent && ['announcement:posted', 'announcement:updated', 'attendance:marked', 'request:updated'].includes(lastEvent.channel)) {
       refresh(); // merged campus feed — refetch on live signal
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

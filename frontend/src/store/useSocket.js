@@ -21,7 +21,11 @@ const readToken = () => {
 
 export const syncSocketToken = (newToken) => {
   if (!socket) return;
-  socket.auth = { token: newToken };
+  // Function form — every (re)handshake reads the freshest token from
+  // storage instead of pinning the refreshed value that will itself expire.
+  socket.auth = (cb) => {
+    cb({ token: readToken() || newToken });
+  };
   if (!socket.connected) {
     socket.connect();
   }
@@ -40,7 +44,9 @@ export const useSocket = create((set, get) => ({
     const token = readToken();
     if (!token) return;
     if (socket) {
-      socket.auth = { token };
+      socket.auth = (cb) => {
+        cb({ token: readToken() || token });
+      };
       socket.connect();
       return;
     }
@@ -56,7 +62,7 @@ export const useSocket = create((set, get) => ({
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
     socket.on('connect_error', () => set({ connected: false }));
-    ['notification:new', 'announcement:posted', 'attendance:marked', 'request:updated'].forEach((channel) => {
+    ['notification:new', 'announcement:posted', 'announcement:updated', 'attendance:marked', 'request:updated'].forEach((channel) => {
       socket.on(channel, (payload) => set({ lastEvent: { channel, payload, at: Date.now() } }));
     });
   },

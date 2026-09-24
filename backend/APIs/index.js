@@ -5,6 +5,8 @@ import { userApp } from './userAPI.js'
 import { departmentApp } from './departmentAPI.js'
 import { courseApp } from './courseAPI.js'
 import { subjectApp } from './subjectAPI.js'
+import { roomApp } from './roomAPI.js'
+import { timetableApp } from './timetableAPI.js'
 import { enrollmentApp } from './enrollmentAPI.js'
 import { assignmentApp } from './assignmentAPI.js'
 import { submissionApp } from './submissionAPI.js'
@@ -29,6 +31,8 @@ router.use('/users', userApp)
 router.use('/departments', departmentApp)
 router.use('/courses', courseApp)
 router.use('/subjects', subjectApp)
+router.use('/rooms', roomApp)
+router.use('/timetable', timetableApp)
 router.use('/enrollments', enrollmentApp)
 router.use('/assignments', assignmentApp)
 router.use('/submissions', submissionApp)

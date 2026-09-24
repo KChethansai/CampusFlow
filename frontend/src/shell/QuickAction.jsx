@@ -33,6 +33,11 @@ const ACTIONS = {
     { label: 'Add company', to: '/placement' },
     { label: 'Post drive', to: '/placement' },
     { label: 'Review applicants', to: '/placement' }
+  ],
+  hod: [
+    { label: 'Take attendance', to: '/attendance' },
+    { label: 'View schedule', to: '/schedule' },
+    { label: 'Review requests', to: '/requests' }
   ]
 };
 

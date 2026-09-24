@@ -70,7 +70,7 @@ export const uploadBulkFile = multer({
   fileFilter: filterFor(new Set(['csv']))
 }).single('file');
 export const SUBMISSION_ACCEPT = [...SUBMISSION_EXTS].map((e) => `.${e}`).join(',');
-export const RESOURCE_ACCEPT = [...RESOURCE_EXTS].map((e) => `.${e}`).join('');
+export const RESOURCE_ACCEPT = [...RESOURCE_EXTS].map((e) => `.${e}`).join(',');
 
 // Resolve the URL for an uploaded file: Cloudinary signed/authenticated asset when
 // configured, else the local path. Returns { fileUrl, fileKey } so callers can

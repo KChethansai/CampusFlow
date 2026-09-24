@@ -198,6 +198,8 @@ export default function AppShell() {
       toast.success(payload.notification.title || 'New notification');
     } else if (channel === 'announcement:posted') {
       toast.success(`New announcement: ${payload?.announcement?.title || ''}`.trim());
+    } else if (channel === 'announcement:updated') {
+      toast.success(`Announcement updated: ${payload?.announcement?.title || ''}`.trim());
     } else if (channel === 'request:updated') {
       toast.success(`Request ${payload?.request?.status || 'updated'}`);
     } else if (channel === 'attendance:marked') {

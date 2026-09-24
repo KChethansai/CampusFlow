@@ -15,6 +15,7 @@ import Departments from './pages/admin/Departments';
 import Institutions from './pages/admin/Institutions';
 import Courses from './pages/admin/Courses';
 import Subjects from './pages/academic/Subjects';
+import Schedule from './pages/academic/Schedule';
 import Assignments from './pages/academic/Assignments';
 import Attendance from './pages/academic/Attendance';
 import MyEnrollments from './pages/academic/MyEnrollments';
@@ -141,6 +142,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty']}>
               <Subjects />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/schedule"
+          element={
+            <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty', 'student']}>
+              <Schedule />
             </ProtectedRoute>
           }
         />
