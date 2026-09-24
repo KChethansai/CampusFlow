@@ -419,7 +419,7 @@ CampusFlow/
 │   ├── utils/                       # scope, sanitize, token, asyncHandler, logger…
 │   ├── seed/                        # seed.js demo data (DROPS data first)
 │   ├── scripts/                     # smoke.mjs, provisionIndexes.js, check-syntax
-│   ├── tests/                       # jest + supertest, 18 suites
+│   ├── tests/                       # jest + supertest, 19 suites
 │   └── uploads/                     # Local upload fallback (gitignored content)
 ├── frontend/                        # React 19 + Vite 8
 │   ├── package.json · vite.config.js · vercel.json · index.html
@@ -486,7 +486,7 @@ CampusFlow/
 | **openai** | ^4.47.0 | AI reports (optional, graceful fallback) |
 | **ics / json2csv / pdf-parse** | misc | Calendar export, CSV export, syllabus ingest |
 | **winston** | ^3.13.0 | Logging |
-| **jest + supertest + mongodb-memory-server** | dev | 18 test suites |
+| **jest + supertest + mongodb-memory-server** | dev | 19 test suites |
 
 ---
 

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { AIReportModel as AIReport } from '../models/AIReportModel.js';
 import { UserModel as User } from '../models/UserModel.js';
 import { AttendanceSessionModel as AttendanceSession } from '../models/AttendanceSessionModel.js';
@@ -114,6 +115,10 @@ export const generateReport = asyncHandler(async (req, res) => {
 // SSE: progressively deliver a stored report's summary (fetch + reader on
 // the client, so Authorization header auth stays intact — no query tokens).
 export const streamReport = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid report ID');
+  }
+
   const report = await AIReport.findById(req.params.id).populate('student', 'institution');
   if (!report || String(report.student?.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'Report not found');
@@ -124,11 +129,20 @@ export const streamReport = asyncHandler(async (req, res) => {
     'Cache-Control': 'no-cache',
     Connection: 'keep-alive'
   });
+
+  let isClosed = false;
+  req.on('close', () => {
+    isClosed = true;
+  });
+
   const CHUNK = 160; // progressive render, not a spinner
   for (let i = 0; i < text.length; i += CHUNK) {
+    if (isClosed) break;
     res.write(`data: ${JSON.stringify({ chunk: text.slice(i, i + CHUNK) })}\n\n`);
     await new Promise((r) => setTimeout(r, 25));
   }
-  res.write(`data: ${JSON.stringify({ done: true, id: report._id })}\n\n`);
-  res.end();
+  if (!isClosed) {
+    res.write(`data: ${JSON.stringify({ done: true, id: report._id })}\n\n`);
+    res.end();
+  }
 });

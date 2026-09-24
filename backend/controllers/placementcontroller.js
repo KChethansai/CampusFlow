@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { checkEligibility } from '../services/eligibility.service.js';
@@ -8,6 +9,9 @@ import { UserModel as User } from '../models/UserModel.js';
 
 export const checkEligibilityForDrive = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
+  if (!mongoose.isValidObjectId(driveId)) {
+    throw new ApiError(400, 'Invalid job drive ID');
+  }
   const student = req.user;
 
   const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
@@ -39,6 +43,9 @@ const notifyPlacementTeam = async (drive, student) => {
 
 export const applyForJob = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
+  if (!mongoose.isValidObjectId(driveId)) {
+    throw new ApiError(400, 'Invalid job drive ID');
+  }
   const student = req.user;
 
   const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
@@ -82,6 +89,9 @@ export const applyForJob = asyncHandler(async (req, res) => {
 
 export const getApplications = asyncHandler(async (req, res) => {
   const { driveId } = req.params;
+  if (!mongoose.isValidObjectId(driveId)) {
+    throw new ApiError(400, 'Invalid job drive ID');
+  }
 
   const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
   if (!drive) throw new ApiError(404, 'Job drive not found');
@@ -95,6 +105,12 @@ export const getApplications = asyncHandler(async (req, res) => {
 export const updateApplicationStage = asyncHandler(async (req, res) => {
   const { stage } = req.body;
   const { driveId, applicationId } = req.params;
+  if (!mongoose.isValidObjectId(driveId)) {
+    throw new ApiError(400, 'Invalid job drive ID');
+  }
+  if (!mongoose.isValidObjectId(applicationId)) {
+    throw new ApiError(400, 'Invalid application ID');
+  }
 
   const validStages = [
     'applied',

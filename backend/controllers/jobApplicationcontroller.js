@@ -37,6 +37,10 @@ export const getAllJobApplications = asyncHandler(async (req, res) => {
 
 // Get single job application (tenant-scoped through the drive)
 export const getJobApplicationById = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid job application ID');
+  }
+
   const jobApplication = await JobApplication.findById(req.params.id)
     .populate('drive', 'role company ctc applicationDeadline status institution')
     .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
@@ -120,6 +124,10 @@ export const createJobApplication = asyncHandler(async (req, res) => {
 // Update job application (placement officer updates stage — tenant-scoped
 // through the drive, allowlisted to stage/outcome fields only)
 export const updateJobApplication = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid job application ID');
+  }
+
   const existing = await JobApplication.findById(req.params.id).populate('drive');
   if (!existing || String(existing.drive?.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'Job application not found');

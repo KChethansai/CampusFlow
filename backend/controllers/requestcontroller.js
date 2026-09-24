@@ -12,6 +12,9 @@ export const createRequest = asyncHandler(async (req, res) => {
   const { department, type, title, description, attachments } = req.body;
 
   if (department) {
+    if (!mongoose.isValidObjectId(department)) {
+      throw new ApiError(400, 'Invalid department ID');
+    }
     const deptDoc = await Department.findOne({ _id: department, institution: req.user.institution });
     if (!deptDoc) {
       throw new ApiError(400, 'Department does not exist in this institution');
@@ -57,6 +60,10 @@ export const getAllRequests = asyncHandler(async (req, res) => {
 
 // Get single request by ID (tenant-scoped; students see only their own)
 export const getRequestById = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid request ID');
+  }
+
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (req.user.role === 'student') filter.student = req.user._id;
   const request = await Request.findOne(filter)
@@ -79,6 +86,10 @@ const REQUEST_TRANSITIONS = {
 
 // Faculty/admin update request status (tenant-scoped, guarded transitions)
 export const updateRequestStatus = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid request ID');
+  }
+
   const { status, remarks, assignedTo, resolution } = req.body;
 
   const request = await Request.findOne({ _id: req.params.id, institution: req.user.institution });

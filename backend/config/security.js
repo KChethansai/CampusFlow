@@ -28,7 +28,7 @@ const hasUnsafeKey = (value) => {
 // prevent Mongo injection through $ / . prefixed keys
 export const rejectUnsafePayload = (req, res, next) => {
   if (hasUnsafeKey(req.body) || hasUnsafeKey(req.params) || hasUnsafeKey(req.query)) {
-    return res.status(400).json({ message: 'Invalid request payload' })
+    return res.status(400).json({ success: false, message: 'Invalid request payload' })
   }
 
   next()

@@ -27,8 +27,29 @@ if (missingVars.length > 0) {
   )
 }
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+const isProd = nodeEnv === 'production';
+
+if (isProd) {
+  if (!process.env.CLIENT_URL || !process.env.CLIENT_URL.trim()) {
+    throw new Error('Missing required env var in production: CLIENT_URL (must specify approved production origin, e.g. https://campusflow.vercel.app)');
+  }
+}
+
+if (process.env.UPLOAD_DRIVER === 'cloudinary') {
+  const hasCloudinaryUrl = Boolean(process.env.CLOUDINARY_URL);
+  const hasCloudinaryKeys = Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  );
+  if (!hasCloudinaryUrl && !hasCloudinaryKeys) {
+    throw new Error('UPLOAD_DRIVER is set to "cloudinary", but required Cloudinary credentials are missing (provide CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET).');
+  }
+}
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   port: Number(process.env.PORT) || 5000,
   dbUrl,
   secretKey,
@@ -40,7 +61,7 @@ export const env = {
     7,
   clientUrls: (process.env.CLIENT_URL || 'http://localhost:5173')
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
   cookieSameSite:
     process.env.COOKIE_SAME_SITE ||
@@ -71,7 +92,15 @@ export const isProduction = env.nodeEnv === 'production'
 
 export const getCookieOptions = () => ({
   httpOnly: true,
+  path: '/',
   sameSite: env.cookieSameSite,
   secure: isProduction || env.cookieSameSite === 'none',
-  maxAge: 20 * 365 * 24 * 60 * 60 * 1000 // 20 years
+  maxAge: env.refreshExpiresDays * 24 * 60 * 60 * 1000
+})
+
+export const getClearCookieOptions = () => ({
+  httpOnly: true,
+  path: '/',
+  sameSite: env.cookieSameSite,
+  secure: isProduction || env.cookieSameSite === 'none'
 })

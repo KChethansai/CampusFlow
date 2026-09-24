@@ -117,7 +117,7 @@ export const getUserById = asyncHandler(async (req, res) => {
   }
 
   if (String(user.institution) !== String(req.user.institution)) {
-    throw new ApiError(403, 'Access denied');
+    throw new ApiError(404, 'User not found');
   }
 
   res.json({ success: true, data: sanitizeUser(user, 'admin') });

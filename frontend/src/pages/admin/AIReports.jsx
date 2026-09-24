@@ -2,7 +2,7 @@
 // Obsidian Ember gradient accent border, confidence + evidence blocks.
 // Endpoints preserved: GET /ai-reports, GET /users,
 // POST /ai-reports/generate. Provider flag drives copy only. Real data only.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { motion } from 'motion/react';
@@ -48,6 +48,7 @@ export default function AIReports() {
   const [generating, setGenerating] = useState(false);
   const [selected, setSelected] = useState(null);
   const { register, handleSubmit } = useForm();
+  const abortControllerRef = useRef(null);
 
   const fetchReports = async () => {
     try {
@@ -62,6 +63,9 @@ export default function AIReports() {
   useEffect(() => {
     fetchReports();
     api.get('/users').then(({ data }) => setStudents((data.data || []).filter((u) => u.role === 'student'))).catch(() => {});
+    return () => {
+      abortControllerRef.current?.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -73,36 +77,68 @@ export default function AIReports() {
   const streamInto = async (report) => {
     setSelected(report);
     setStreaming('');
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const token = JSON.parse(localStorage.getItem('cf_auth') || 'null')?.accessToken;
-      const res = await fetch(`${api.defaults.baseURL}/ai-reports/${report._id}/stream`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      let token = JSON.parse(localStorage.getItem('cf_auth') || 'null')?.accessToken;
+      let res = await fetch(`${api.defaults.baseURL}/ai-reports/${report._id}/stream`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+        signal: controller.signal
       });
+
+      if (res.status === 401) {
+        const auth = JSON.parse(localStorage.getItem('cf_auth') || 'null');
+        if (auth?.refreshToken) {
+          try {
+            const refreshRes = await api.post('/auth/refresh', { refreshToken: auth.refreshToken });
+            token = refreshRes.data.accessToken;
+            res = await fetch(`${api.defaults.baseURL}/ai-reports/${report._id}/stream`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              credentials: 'include',
+              signal: controller.signal
+            });
+          } catch {
+            throw new Error('Unauthorized');
+          }
+        }
+      }
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const reader = res.body?.getReader();
       if (!reader) throw new Error('no stream');
       const decoder = new TextDecoder();
       let buf = '';
       let acc = '';
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const parts = buf.split('\n\n');
-        buf = parts.pop();
-        for (const part of parts) {
-          const line = part.trim().replace(/^data:\s*/, '');
-          if (!line) continue;
-          try {
-            const evt = JSON.parse(line);
-            if (evt.chunk) {
-              acc += evt.chunk;
-              setStreaming(acc); // progressive generation
-            }
-          } catch { /* partial frame — wait for more */ }
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop();
+          for (const part of parts) {
+            const line = part.trim().replace(/^data:\s*/, '');
+            if (!line) continue;
+            try {
+              const evt = JSON.parse(line);
+              if (evt.chunk) {
+                acc += evt.chunk;
+                setStreaming(acc); // progressive generation
+              }
+            } catch { /* partial frame — wait for more */ }
+          }
         }
+      } finally {
+        reader.releaseLock();
       }
-    } catch {
-      setStreaming(''); // fall back to stored full text below
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setStreaming(''); // fall back to stored full text below
+      }
     }
   };
 

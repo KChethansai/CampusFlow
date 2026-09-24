@@ -163,6 +163,10 @@ export const getSessions = asyncHandler(async (req, res) => {
 
 // Get single session by ID (tenant + audience scoped)
 export const getSessionById = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid attendance session ID');
+  }
+
   const session = await AttendanceSession.findOne({
     _id: req.params.id,
     institution: req.user.institution
@@ -211,6 +215,9 @@ export const getSessionById = asyncHandler(async (req, res) => {
 // Aggregate attendance for a single student across subjects
 export const getStudentAttendance = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
+  if (!mongoose.isValidObjectId(studentId)) {
+    throw new ApiError(400, 'Invalid student ID');
+  }
 
   // Students may only query themselves; staff stay within the tenant
   // (the aggregate below is institution-matched).

@@ -7,7 +7,7 @@ import api from '../api/axios';
 let socket = null; // singleton — one connection per tab
 
 const baseUrl = () => {
-  const raw = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+  const raw = api.defaults.baseURL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
   return raw.replace(/\/api\/v1\/?$/, ''); // strip API suffix → socket root
 };
 
@@ -19,13 +19,25 @@ const readToken = () => {
   }
 };
 
+export const syncSocketToken = (newToken) => {
+  if (!socket) return;
+  socket.auth = { token: newToken };
+  if (!socket.connected) {
+    socket.connect();
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.__cf_sync_socket_token = syncSocketToken;
+}
+
 export const useSocket = create((set, get) => ({
   connected: false,
   lastEvent: null, // { channel, payload, at } — consumers toast/bump badges
 
   connect: () => {
     if (socket?.connected) return;
-    const token = readToken(); // get token from cookie-backed auth store
+    const token = readToken();
     if (!token) return;
     if (socket) {
       socket.auth = { token };
@@ -33,7 +45,9 @@ export const useSocket = create((set, get) => ({
       return;
     }
     socket = io(baseUrl(), {
-      auth: { token },
+      auth: (cb) => {
+        cb({ token: readToken() });
+      },
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -41,6 +55,7 @@ export const useSocket = create((set, get) => ({
     });
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
+    socket.on('connect_error', () => set({ connected: false }));
     ['notification:new', 'announcement:posted', 'attendance:marked', 'request:updated'].forEach((channel) => {
       socket.on(channel, (payload) => set({ lastEvent: { channel, payload, at: Date.now() } }));
     });

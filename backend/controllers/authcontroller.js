@@ -6,9 +6,17 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken, sha256, randomTo
 import { sendPasswordResetEmail, isSmtpConfigured } from '../services/email.service.js';
 import { createNotification } from '../services/notification.service.js';
 import { logActivity } from '../services/activityLog.service.js';
-import { env } from '../config/env.js';
+import { env, getCookieOptions, getClearCookieOptions } from '../config/env.js';
 import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
 import { sanitizeUser } from '../utils/userDto.js';
+
+const getCookieToken = (req) => {
+  if (req.cookies?.refreshToken) return req.cookies.refreshToken;
+  const rawCookie = req.headers?.cookie;
+  if (!rawCookie) return null;
+  const match = rawCookie.match(/(?:^|;\s*)refreshToken=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -49,11 +57,12 @@ export const login = asyncHandler(async (req, res) => {
     institution: user.institution
   });
 
+  res.cookie('refreshToken', refreshToken, getCookieOptions());
   res.json({ success: true, user: sanitizeUser(user, 'self'), accessToken, refreshToken });
 });
 
 export const refresh = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.body?.refreshToken || getCookieToken(req);
   if (!refreshToken) {
     throw new ApiError(400, 'Refresh token is required');
   }
@@ -76,6 +85,17 @@ export const refresh = asyncHandler(async (req, res) => {
   });
 
   if (!stored || (stored.expiresAt && stored.expiresAt.getTime() <= Date.now())) {
+    // Check if this token was recently rotated within a short grace period (15s)
+    const recentlyRotated = await RefreshToken.findOne({
+      user: payload.sub,
+      tokenHash: sha256(refreshToken),
+      revokedAt: { $gt: new Date(Date.now() - 15000) }
+    });
+
+    if (recentlyRotated) {
+      throw new ApiError(401, 'Session recently refreshed. Please retry with the latest token.');
+    }
+
     await RefreshToken.updateMany({ user: payload.sub }, { revokedAt: new Date() });
     throw new ApiError(401, 'Token reuse detected. All sessions revoked. Please log in again.');
   }
@@ -97,6 +117,7 @@ export const refresh = asyncHandler(async (req, res) => {
     expiresAt: new Date(Date.now() + env.refreshExpiresDays * 24 * 3600 * 1000)
   });
 
+  res.cookie('refreshToken', newRefreshToken, getCookieOptions());
   res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
 });
 
@@ -139,10 +160,22 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
-  if (refreshToken) {
+  // Logout is intentionally refresh-tolerant: it must still revoke the session
+  // when the short-lived access token already expired (the common deployment
+  // case). Possession of the refresh token authorizes revoking that session.
+  const refreshToken = req.body?.refreshToken || getCookieToken(req);
+  let userId = req.user?._id;
+  if (!userId && refreshToken) {
+    try {
+      const payload = verifyRefreshToken(refreshToken);
+      if (payload?.type === 'refresh') userId = payload.sub;
+    } catch {
+      // Expired/invalid refresh — still clear the cookie below (idempotent).
+    }
+  }
+  if (userId && refreshToken) {
     const stored = await RefreshToken.findOne({
-      user: req.user._id,
+      user: userId,
       tokenHash: sha256(refreshToken),
       revokedAt: { $exists: false }
     });
@@ -152,12 +185,16 @@ export const logout = asyncHandler(async (req, res) => {
     }
   }
 
-  await logActivity({
-    req,
-    action: 'auth.logout',
-    entityType: 'User',
-    entityId: req.user._id
-  });
+  res.clearCookie('refreshToken', getClearCookieOptions());
+
+  if (userId) {
+    await logActivity({
+      req,
+      action: 'auth.logout',
+      entityType: 'User',
+      entityId: userId
+    });
+  }
 
   res.json({ success: true, message: 'Logged out successfully' });
 });

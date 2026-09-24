@@ -21,7 +21,9 @@ authApp.post('/reset-password', resetPassword);
 
 // Protected routes
 authApp.post('/register', verifyToken('super_admin', 'college_admin'), register);
-authApp.post('/logout', verifyToken(), logout);
+// Logout is refresh-tolerant (works with an expired access token) — the
+// controller revokes the presented refresh session and always clears the cookie.
+authApp.post('/logout', logout);
 authApp.patch('/change-password', verifyToken(), changePassword);
 authApp.get('/me', verifyToken(), getMe);
 

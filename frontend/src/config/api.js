@@ -1,7 +1,28 @@
 import axios from 'axios';
 
+const resolveBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL;
+  if (import.meta.env.PROD) {
+    if (!url || !url.trim()) {
+      throw new Error('[CampusFlow Configuration Error] VITE_API_URL is missing in production build. Set VITE_API_URL to the production backend API URL (e.g. https://<backend>/api/v1).');
+    }
+    const trimmed = url.trim();
+    if (!/^https?:\/\//i.test(trimmed)) {
+      throw new Error(`[CampusFlow Configuration Error] VITE_API_URL must be an absolute URL starting with http:// or https:// (received: "${trimmed}")`);
+    }
+    if (/localhost|127\.0\.0\.1/i.test(trimmed)) {
+      throw new Error(`[CampusFlow Configuration Error] VITE_API_URL cannot point to localhost in production (received: "${trimmed}")`);
+    }
+    if (!/\/api\/v1\/?$/i.test(trimmed)) {
+      throw new Error(`[CampusFlow Configuration Error] VITE_API_URL must end in /api/v1 (received: "${trimmed}")`);
+    }
+    return trimmed.replace(/\/$/, '');
+  }
+  return (url?.trim() || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+  baseURL: resolveBaseUrl(),
   withCredentials: true // cookie-backed refresh stays working behind CORS
 });
 
@@ -156,7 +177,8 @@ api.interceptors.response.use(
       try {
         const { data } = await axios.post(
           `${api.defaults.baseURL}/auth/refresh`,
-          { refreshToken: auth.refreshToken }
+          { refreshToken: auth.refreshToken },
+          { withCredentials: true }
         );
 
         const updatedAuth = {
@@ -165,6 +187,10 @@ api.interceptors.response.use(
           refreshToken: data.refreshToken ?? auth.refreshToken
         };
         localStorage.setItem('cf_auth', JSON.stringify(updatedAuth));
+
+        if (typeof window !== 'undefined' && window.__cf_sync_socket_token) {
+          window.__cf_sync_socket_token(data.accessToken);
+        }
 
         processQueue(null, data.accessToken);
 

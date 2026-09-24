@@ -77,9 +77,13 @@ export default function Profile() {
   const onPassword = async ({ currentPassword, newPassword }) => {
     try {
       await changePassword(currentPassword, newPassword);
-      toast.success('Password changed. All other sessions were signed out.');
+      // Server revokes every session on password change, so the current
+      // tokens are dead — sign out locally instead of leaving a stale session.
+      toast.success('Password changed. Please log in again.');
       reset();
       setShowPw(false);
+      await logoutUser();
+      window.location.href = '/login';
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to change password');
     }

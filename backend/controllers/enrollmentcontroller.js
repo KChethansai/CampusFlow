@@ -51,7 +51,7 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 export const getAllEnrollments = asyncHandler(async (req, res) => {
   const query =
     req.user.role === 'student'
-      ? { student: req.user._id }
+      ? { student: req.user._id, institution: req.user.institution }
       : { institution: req.user.institution };
 
   const enrollments = await Enrollment.find(query)
@@ -63,6 +63,10 @@ export const getAllEnrollments = asyncHandler(async (req, res) => {
 
 // Get single enrollment by ID (tenant-scoped; students see only their own)
 export const getEnrollmentById = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid enrollment ID');
+  }
+
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (req.user.role === 'student') filter.student = req.user._id;
   const enrollment = await Enrollment.findOne(filter)
@@ -174,9 +178,14 @@ export const enrollSelf = asyncHandler(async (req, res) => {
 
 // Student drops one of their own enrollments
 export const dropSelfEnrollment = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(400, 'Invalid enrollment ID');
+  }
+
   const enrollment = await Enrollment.findOne({
     _id: req.params.id,
-    student: req.user._id
+    student: req.user._id,
+    institution: req.user.institution
   });
 
   if (!enrollment) {
