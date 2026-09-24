@@ -73,10 +73,13 @@ export const SUBMISSION_ACCEPT = [...SUBMISSION_EXTS].map((e) => `.${e}`).join('
 export const RESOURCE_ACCEPT = [...RESOURCE_EXTS].map((e) => `.${e}`).join('');
 
 // Resolve the URL for an uploaded file: Cloudinary signed/authenticated asset when
-// configured, else the local path.
+// configured, else the local path. Returns { fileUrl, fileKey } so callers can
+// persist both the delivery URL and the storage key for exact-match authorization lookups.
 export const resolveFileUrl = async (req, options = {}) => {
-  if (!req?.file) return undefined;
-  if (!isCloudUpload) return `/uploads/${req.file.filename}`;
+  if (!req?.file) return { fileUrl: undefined, fileKey: undefined };
+  if (!isCloudUpload) {
+    return { fileUrl: `/uploads/${req.file.filename}`, fileKey: req.file.filename };
+  }
   const ext = extOf(req.file.originalname);
   const publicId = `campusflow/${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizeBase(req.file.originalname)}`;
   const isPrivate = options.isPrivate !== false; // Default private for student submissions/resources
@@ -88,7 +91,7 @@ export const resolveFileUrl = async (req, options = {}) => {
     );
     stream.end(req.file.buffer);
   });
-  return result.secure_url;
+  return { fileUrl: result.secure_url, fileKey: publicId };
 };
 
 // Generates a short-lived signed delivery URL for protected Cloudinary assets.

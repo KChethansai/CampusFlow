@@ -255,8 +255,9 @@ describe('Final CampusFlow Closure Matrix (Requirements A-N)', () => {
       // Test resolveFileUrl signature and default options
       expect(typeof resolveFileUrl).toBe('function');
       // When options.isPrivate !== false, default is authenticated mode
-      const localUrl = await resolveFileUrl({ file: { filename: 'test.pdf' } }, { isPrivate: true });
-      expect(localUrl).toBe('/uploads/test.pdf');
+      const result = await resolveFileUrl({ file: { filename: 'test.pdf' } }, { isPrivate: true });
+      // Returns { fileUrl, fileKey } — both should be defined for a local disk upload
+      expect(result).toMatchObject({ fileUrl: '/uploads/test.pdf', fileKey: 'test.pdf' });
     });
 
     it('Category F: Direct unauthenticated request to /uploads/:filename is rejected (401)', async () => {

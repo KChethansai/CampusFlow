@@ -210,6 +210,9 @@ export const createLearningResource = asyncHandler(async (req, res) => {
   }
   const { cleanUrl } = await import('../utils/sanitize.js');
   if (!url && !req.file) throw new ApiError(422, 'Provide an external url or attach a file');
+  const fileUpload = req.file
+    ? await (await import('../config/multer.js')).resolveFileUrl(req)
+    : { fileUrl: undefined, fileKey: undefined };
   const doc = await LearningResource.create({
     institution: req.user.institution,
     subject: subj._id,
@@ -217,7 +220,8 @@ export const createLearningResource = asyncHandler(async (req, res) => {
     title,
     url: cleanUrl(url),
     // server-resolved URL (Cloudinary or local; never client-supplied, so cleanUrl exempt)
-    fileUrl: req.file ? await (await import('../config/multer.js')).resolveFileUrl(req) : undefined,
+    fileUrl: fileUpload.fileUrl,
+    fileKey: fileUpload.fileKey || undefined,
     fileName: req.file?.originalname,
     fileSize: req.file?.size,
     type: type || (req.file ? 'document' : undefined),
@@ -244,7 +248,9 @@ export const updateLearningResource = asyncHandler(async (req, res) => {
   if (patch.url !== undefined) patch.url = cleanUrl(patch.url);
   if (req.file) {
     const { resolveFileUrl } = await import('../config/multer.js');
-    patch.fileUrl = await resolveFileUrl(req);
+    const { fileUrl, fileKey } = await resolveFileUrl(req);
+    patch.fileUrl = fileUrl;
+    if (fileKey) patch.fileKey = fileKey; // storage key for exact-match authorization lookup
     patch.fileName = req.file.originalname;
     patch.fileSize = req.file.size;
     if (!patch.type) patch.type = 'document';

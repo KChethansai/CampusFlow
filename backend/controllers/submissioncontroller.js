@@ -156,7 +156,9 @@ export const submitAssignmentFiles = asyncHandler(async (req, res) => {
   };
   if (req.file) {
     const { resolveFileUrl } = await import('../config/multer.js');
-    patch.fileUrl = await resolveFileUrl(req); // Cloudinary URL or local path
+    const { fileUrl, fileKey } = await resolveFileUrl(req); // Cloudinary URL or local path
+    patch.fileUrl = fileUrl;
+    if (fileKey) patch.fileKey = fileKey; // storage key for exact-match authorization lookup
   }
   const submission = existing
     ? await Submission.findByIdAndUpdate(existing._id, patch, { new: true, runValidators: true })
