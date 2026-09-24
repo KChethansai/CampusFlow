@@ -97,6 +97,16 @@ export const getAnnouncementAudienceFilter = async (user) => {
       institution: user.institution,
       faculty: user._id
     }).distinct('_id');
+  } else if (user.role === 'hod' && user.department) {
+    const { CourseModel: Course } = await import('../models/CourseModel.js');
+    const courseIds = await Course.find({
+      institution: user.institution,
+      department: user.department
+    }).distinct('_id');
+    visibleSubjectIds = await Subject.find({
+      institution: user.institution,
+      course: { $in: courseIds }
+    }).distinct('_id');
   }
 
   const subjectOrConditions = [
@@ -129,7 +139,7 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
     assignedDepartment = department;
   } else {
     if (department && String(department) !== String(req.user.department)) {
-      throw new ApiError(403, 'Faculty can only post announcements for their own department');
+      throw new ApiError(403, 'You can only post announcements for your own department');
     }
     assignedDepartment = req.user.department || department;
   }
@@ -145,7 +155,14 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
     const subjectDoc = await Subject.findOne({ _id: subject, institution: req.user.institution });
     if (!subjectDoc) throw new ApiError(404, 'Subject not found');
     if (!isInstitutionAdmin && String(subjectDoc.faculty) !== String(req.user._id)) {
-      throw new ApiError(403, 'You can only post announcements for subjects you teach');
+      // HOD department-aware variant: may post for any subject in their own
+      // department (via course), not just subjects they personally teach.
+      if (req.user.role !== 'hod') throw new ApiError(403, 'You can only post announcements for subjects you teach');
+      const { getSubjectDepartmentId } = await import('../utils/academicScope.js');
+      const deptId = await getSubjectDepartmentId(subjectDoc);
+      if (!req.user.department || !deptId || String(deptId) !== String(req.user.department)) {
+        throw new ApiError(403, 'You can only post announcements for subjects in your own department');
+      }
     }
   }
 
@@ -198,7 +215,7 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
   if (req.body.department) {
     if (!mongoose.isValidObjectId(req.body.department)) throw new ApiError(400, 'Invalid department ID');
     if (!isInstitutionAdmin && String(req.body.department) !== String(req.user.department)) {
-      throw new ApiError(403, 'Faculty cannot move announcement to another department');
+      throw new ApiError(403, 'You cannot move announcement to another department');
     }
     const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
     if (!deptDoc) throw new ApiError(404, 'Department not found');
@@ -209,7 +226,12 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
     const subjectDoc = await Subject.findOne({ _id: req.body.subject, institution: req.user.institution });
     if (!subjectDoc) throw new ApiError(404, 'Subject not found');
     if (!isInstitutionAdmin && String(subjectDoc.faculty) !== String(req.user._id)) {
-      throw new ApiError(403, 'You can only update announcements for subjects you teach');
+      if (req.user.role !== 'hod') throw new ApiError(403, 'You can only update announcements for subjects you teach');
+      const { getSubjectDepartmentId } = await import('../utils/academicScope.js');
+      const deptId = await getSubjectDepartmentId(subjectDoc);
+      if (!req.user.department || !deptId || String(deptId) !== String(req.user.department)) {
+        throw new ApiError(403, 'You can only update announcements for subjects in your own department');
+      }
     }
   }
 

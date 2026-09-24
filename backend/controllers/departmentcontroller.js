@@ -14,7 +14,7 @@ export const createDepartment = asyncHandler(async (req, res) => {
     const hodUser = await User.findOne({
       _id: hod,
       institution: req.user.institution,
-      role: { $in: ['faculty', 'college_admin', 'super_admin'] }
+      role: { $in: ['hod', 'faculty', 'college_admin', 'super_admin'] }
     });
     if (!hodUser) throw new ApiError(404, 'HOD user not found or unauthorized');
   }
@@ -56,7 +56,7 @@ export const updateDepartment = asyncHandler(async (req, res) => {
     const hodUser = await User.findOne({
       _id: req.body.hod,
       institution: req.user.institution,
-      role: { $in: ['faculty', 'college_admin', 'super_admin'] }
+      role: { $in: ['hod', 'faculty', 'college_admin', 'super_admin'] }
     });
     if (!hodUser) throw new ApiError(404, 'HOD user not found or unauthorized');
   }

@@ -46,6 +46,7 @@ app.use('/api/v1/auth/register', credentialLimiter('Too many requests, please tr
 app.use('/api/v1/auth/refresh', credentialLimiter('Too many requests, please try again later'))
 app.use('/api/v1/auth/forgot-password', credentialLimiter('Too many requests, please try again later'))
 app.use('/api/v1/auth/reset-password', credentialLimiter('Too many requests, please try again later'))
+app.use('/api/v1/auth/change-password', credentialLimiter('Too many requests, please try again later'))
 app.use('/api/v1', routes)
 
 app.use(notFound)

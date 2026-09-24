@@ -43,12 +43,16 @@ export const createRequest = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: request });
 });
 
-// List requests — students see only their own; others see all within institution
+// List requests — students see only their own; HOD sees only their own
+// department; others see all within institution
 export const getAllRequests = asyncHandler(async (req, res) => {
   const filter = { institution: req.user.institution };
 
   if (req.user.role === 'student') {
     filter.student = req.user._id;
+  } else if (req.user.role === 'hod') {
+    if (!req.user.department) return res.json({ success: true, data: [] });
+    filter.department = req.user.department;
   }
 
   const requests = await Request.find(filter)
@@ -66,6 +70,10 @@ export const getRequestById = asyncHandler(async (req, res) => {
 
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (req.user.role === 'student') filter.student = req.user._id;
+  if (req.user.role === 'hod') {
+    if (!req.user.department) throw new ApiError(404, 'Request not found');
+    filter.department = req.user.department;
+  }
   const request = await Request.findOne(filter)
     .populate('student', 'name email role department')
     .populate('assignedTo', 'name email role');
@@ -98,6 +106,13 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Request not found');
   }
 
+  // HOD may review only requests in their own department (no oracle leak).
+  if (req.user.role === 'hod') {
+    if (!req.user.department || String(request.department) !== String(req.user.department)) {
+      throw new ApiError(404, 'Request not found');
+    }
+  }
+
   if (status && status !== request.status) {
     const allowed = REQUEST_TRANSITIONS[request.status] || [];
     if (!allowed.includes(status)) {
@@ -113,7 +128,7 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     if (!staff) {
       throw new ApiError(400, 'Assigned staff does not exist in this institution');
     }
-    if (!['faculty', 'college_admin', 'super_admin'].includes(staff.role)) {
+    if (!['hod', 'faculty', 'college_admin', 'super_admin'].includes(staff.role)) {
       throw new ApiError(400, 'Assigned user must be an authorized staff or faculty member');
     }
     request.assignedTo = assignedTo;

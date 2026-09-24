@@ -20,9 +20,9 @@ assignmentApp.use(auditLog);
 assignmentApp.get('/', getAllAssignments);
 assignmentApp.get('/:id', getAssignmentById);
 
-// Write routes — restricted
-assignmentApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty'), createAssignment);
-assignmentApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), updateAssignment);
-assignmentApp.patch('/:id/status', verifyToken('super_admin', 'college_admin', 'faculty'), updateAssignmentStatus);
-assignmentApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteAssignment);
+// Write routes — restricted (HOD scoped to own department in controller)
+assignmentApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), createAssignment);
+assignmentApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), updateAssignment);
+assignmentApp.patch('/:id/status', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), updateAssignmentStatus);
+assignmentApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), deleteAssignment);
 

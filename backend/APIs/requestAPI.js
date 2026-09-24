@@ -21,6 +21,6 @@ requestApp.get('/:id', getRequestById);
 // POST — students only
 requestApp.post('/', verifyToken('student'), createRequest);
 
-// PATCH status — faculty, college_admin, and super_admin
-requestApp.patch('/:id/status', verifyToken('super_admin', 'college_admin', 'faculty'), updateRequestStatus);
+// PATCH status — faculty, HOD (own department), college_admin, and super_admin
+requestApp.patch('/:id/status', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), updateRequestStatus);
 

@@ -13,7 +13,7 @@ studyApp.use(auditLog);
 // Students see their own plan; faculty/admins may pass ?studentId=
 studyApp.get('/plan', getStudyPlan);
 studyApp.get('/learning-resources', getLearningResources);
-// faculty/admin only — JSON url or multipart file attachment (PDFs, docs)
-studyApp.post('/learning-resources', verifyToken('super_admin', 'college_admin', 'faculty'), uploadResourceFile, createLearningResource);
-studyApp.patch('/learning-resources/:id', verifyToken('super_admin', 'college_admin', 'faculty'), uploadResourceFile, updateLearningResource);
-studyApp.delete('/learning-resources/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteLearningResource);
+// faculty/HOD/admin only — JSON url or multipart file attachment (PDFs, docs)
+studyApp.post('/learning-resources', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), uploadResourceFile, createLearningResource);
+studyApp.patch('/learning-resources/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), uploadResourceFile, updateLearningResource);
+studyApp.delete('/learning-resources/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), deleteLearningResource);

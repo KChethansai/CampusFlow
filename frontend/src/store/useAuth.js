@@ -105,6 +105,17 @@ export const useAuth = create((set) => ({
       currentPassword,
       newPassword
     });
+    localStorage.removeItem('cf_auth');
+    clearAllOfflineCache();
+    useSocket.getState().disconnect();
+    set({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      loading: false,
+      error: null
+    });
     return data;
   },
 

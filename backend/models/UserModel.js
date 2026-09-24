@@ -29,7 +29,7 @@ const userSchema = new Schema({
   password: { type: String, required: true, minlength: 8, select: false },
   role: {
     type: String,
-    enum: ['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'],
+    enum: ['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer'],
     required: true,
     index: true
   },

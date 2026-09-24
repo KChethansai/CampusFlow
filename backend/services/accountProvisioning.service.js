@@ -4,7 +4,7 @@ import { CourseModel as Course } from '../models/CourseModel.js';
 import { UserModel as User } from '../models/UserModel.js';
 import { ApiError } from '../utils/ApiError.js';
 
-const allowedRoles = ['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'];
+const allowedRoles = ['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer'];
 
 export const provisionInstitutionForAccount = async ({ caller, role, email, requestedInstitution, department, course }) => {
   if (!allowedRoles.includes(role)) throw new ApiError(400, 'Invalid role');

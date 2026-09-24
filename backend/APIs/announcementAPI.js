@@ -19,8 +19,8 @@ announcementApp.use(auditLog);
 announcementApp.get('/', getAllAnnouncements);
 announcementApp.get('/:id', getAnnouncementById);
 
-// Write routes — restricted
-announcementApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty'), createAnnouncement);
-announcementApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), updateAnnouncement);
-announcementApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteAnnouncement);
+// Write routes — restricted (faculty/HOD forced to own department in controller)
+announcementApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), createAnnouncement);
+announcementApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), updateAnnouncement);
+announcementApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty', 'hod'), deleteAnnouncement);
 

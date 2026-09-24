@@ -65,10 +65,10 @@ export const createEvent = asyncHandler(async (req, res) => {
     assignedDepartment = department;
   } else {
     if (!req.user.department) {
-      throw new ApiError(403, 'Faculty must belong to a department to manage events');
+      throw new ApiError(403, 'Faculty/HOD must belong to a department to manage events');
     }
     if (department && String(department) !== String(req.user.department)) {
-      throw new ApiError(403, 'Faculty can only create events for their own department');
+      throw new ApiError(403, 'You can only create events for your own department');
     }
     assignedDepartment = req.user.department;
   }
@@ -122,10 +122,10 @@ export const updateEvent = asyncHandler(async (req, res) => {
 
   if (!isSuperOrCollegeAdmin) {
     if (!req.user.department) {
-      throw new ApiError(403, 'Faculty must belong to a department to manage events');
+      throw new ApiError(403, 'Faculty/HOD must belong to a department to manage events');
     }
     if (req.body.department && String(req.body.department) !== String(req.user.department)) {
-      throw new ApiError(403, 'Faculty cannot move event to another department');
+      throw new ApiError(403, 'You cannot move event to another department');
     }
   }
 
@@ -162,7 +162,7 @@ export const deleteEvent = asyncHandler(async (req, res) => {
   const isSuperOrCollegeAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
 
   if (!isSuperOrCollegeAdmin && !req.user.department) {
-    throw new ApiError(403, 'Faculty must belong to a department to manage events');
+    throw new ApiError(403, 'Faculty/HOD must belong to a department to manage events');
   }
 
   const filter = { _id: req.params.id, institution: req.user.institution };

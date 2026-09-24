@@ -11,6 +11,19 @@ import PasswordInput from '../../components/visual/PasswordInput';
 import MagneticButton from '../../components/visual/MagneticButton';
 import AuthLayout from './AuthLayout';
 
+const MISCONFIGURED_TEXT = 'Service misconfigured — contact your administrator.';
+
+const isMisconfiguredFailure = (err) => {
+  if (err?.isApiBaseMisconfigured === true) return true;
+  const msg = err?.response?.data?.message;
+  return (
+    err?.response?.status === 404 &&
+    typeof msg === 'string' &&
+    msg.includes('Route not found') &&
+    msg.includes('/auth/login')
+  );
+};
+
 const ROLE_TABS = [
   { value: 'student', label: 'Student', hint: 'student@institution.edu' },
   { value: 'faculty', label: 'Faculty', hint: 'faculty@institution.edu' },
@@ -39,6 +52,13 @@ function Login() {
 
   useEffect(() => () => clearError(), [clearError]);
 
+  // The store keeps the raw backend message; map a misconfigured-base 404 to
+  // the friendly text so the alert never shows "Route not found: /auth/login".
+  const displayError =
+    error && /route not found/i.test(error) && error.includes('/auth/login')
+      ? MISCONFIGURED_TEXT
+      : error;
+
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -58,12 +78,16 @@ function Login() {
       toast.success('Welcome back!');
       navigate(location.state?.from || '/dashboard', { replace: true });
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed';
-      toast.error(
-        /verif/i.test(msg)
-          ? 'Account not verified yet. Contact your administrator.'
-          : msg
-      );
+      if (isMisconfiguredFailure(err)) {
+        toast.error(MISCONFIGURED_TEXT);
+      } else {
+        const msg = err.response?.data?.message || 'Login failed';
+        toast.error(
+          /verif/i.test(msg)
+            ? 'Account not verified yet. Contact your administrator.'
+            : msg
+        );
+      }
     }
   };
 
@@ -145,7 +169,7 @@ function Login() {
         />
 
         <AnimatePresence initial={false}>
-          {error && (
+          {displayError && (
             <motion.div
               role="alert"
               initial={{ opacity: 0, height: 0 }}
@@ -155,7 +179,7 @@ function Login() {
               className="overflow-hidden"
             >
               <p className="rounded-[14px] border border-red-500/30 bg-red-500/[.06] px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">
-                {error}
+                {displayError}
               </p>
             </motion.div>
           )}
@@ -176,30 +200,6 @@ function Login() {
               </>
             )}
           </MagneticButton>
-        </div>
-
-        {/* SSO Divider */}
-        <div
-          className="flex items-center gap-3 pt-2 text-[11px] font-mono uppercase tracking-widest text-[var(--cf-ink-mute)]"
-          aria-hidden
-        >
-          <span className="h-px flex-1 bg-[var(--cf-line)]" />
-          <span>Institution SSO</span>
-          <span className="h-px flex-1 bg-[var(--cf-line)]" />
-        </div>
-
-        {/* Single Sign-On Options */}
-        <div className="grid grid-cols-2 gap-2.5">
-          {['Google Workspace', 'Microsoft 365'].map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              onClick={() => toast('SSO federation is managed by your campus administrator.')}
-              className="rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 px-3 py-2.5 text-xs font-display font-semibold text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] hover:border-black/20 dark:hover:border-white/20 transition-all duration-200"
-            >
-              {provider}
-            </button>
-          ))}
         </div>
 
         <div className="pt-1 text-center">

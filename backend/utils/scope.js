@@ -5,6 +5,16 @@ import { ApiError } from './ApiError.js';
 
 export const tenantFilter = (req) => ({ institution: req.user.institution });
 
+/** HOD department guard: the caller's department comes from user.department.
+ *  Throws 403 when the caller has no department assigned (fail-closed). */
+export const requireDepartment = (req) => {
+  if (!req.user.department) throw new ApiError(403, 'Access denied: no department assigned');
+  return req.user.department;
+};
+
+/** Loose ObjectId equality (handles populated docs and raw ids). */
+export const sameId = (a, b) => String(a?._id || a) === String(b?._id || b);
+
 /** Find one doc by id within the caller's institution. Throws 404 otherwise
  *  (deliberately indistinguishable from not-found to avoid oracle leaks). */
 export const scopedOne = async (model, req, id, populate) => {

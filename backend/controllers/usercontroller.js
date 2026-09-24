@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { UserModel as User } from '../models/UserModel.js';
+import { RefreshTokenModel as RefreshToken } from '../models/RefreshTokenModel.js';
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -7,7 +8,7 @@ import { cleanUrl } from '../utils/sanitize.js';
 import { provisionInstitutionForAccount } from '../services/accountProvisioning.service.js';
 import { sanitizeUser, sanitizeUsers } from '../utils/userDto.js';
 
-const accountRoles = ['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'];
+const accountRoles = ['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer'];
 
 // Minimal CSV parser (expects a name,email,role,department,institution header);
 // quote-aware, no new dependency.
@@ -108,15 +109,11 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.json({ success: true, data: sanitizeUsers(users, 'admin') });
 });
 
-// Get single user by ID (must belong to same institution)
+// Get single user by ID — tenant-scoped query, no cross-tenant fetch.
 export const getUserById = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findOne({ _id: req.params.id, institution: req.user.institution });
 
   if (!user) {
-    throw new ApiError(404, 'User not found');
-  }
-
-  if (String(user.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'User not found');
   }
 
@@ -150,7 +147,7 @@ export const updateUser = asyncHandler(async (req, res) => {
     if (String(user._id) === String(req.user._id)) {
       throw new ApiError(403, 'You cannot change your own role');
     }
-    if (!['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'].includes(role)) {
+    if (!['super_admin', 'college_admin', 'hod', 'faculty', 'student', 'placement_officer'].includes(role)) {
       throw new ApiError(400, 'Invalid role');
     }
     user.role = role;
@@ -192,11 +189,14 @@ export const updateUser = asyncHandler(async (req, res) => {
     user.isActive = Boolean(isActive);
   }
   // Passwords go through save() so hashing + passwordChangedAt apply.
+  // An admin-forced password change must also kill existing sessions,
+  // mirroring change-password/reset-password revocation.
   if (password !== undefined && password !== '') {
     if (typeof password !== 'string' || password.length < 8) {
       throw new ApiError(422, 'Password must be at least 8 characters');
     }
     user.password = password;
+    await RefreshToken.updateMany({ user: user._id }, { revokedAt: new Date() });
   }
 
   await user.save();

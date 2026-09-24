@@ -19,8 +19,8 @@ subjectApp.use(auditLog);
 subjectApp.get('/', getAllSubjects);
 subjectApp.get('/:id', getSubjectById);
 
-// Write routes — restricted
-subjectApp.post('/', verifyToken('super_admin', 'college_admin'), createSubject);
-subjectApp.patch('/:id', verifyToken('super_admin', 'college_admin'), updateSubject);
-subjectApp.delete('/:id', verifyToken('super_admin', 'college_admin'), deleteSubject);
+// Write routes — restricted (HOD scoped to own department in controller)
+subjectApp.post('/', verifyToken('super_admin', 'college_admin', 'hod'), createSubject);
+subjectApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'hod'), updateSubject);
+subjectApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'hod'), deleteSubject);
 

@@ -19,6 +19,11 @@ function Dashboard() {
       home = <StudentHome />;
       break;
     case 'faculty':
+    case 'hod':
+      // HOD gets the FacultyHome command center (teaching/management view:
+      // subjects, assignments, grading queue, attendance, requests). HOD is a
+      // department-scoped leader, not an institution admin, so AdminHome
+      // (institutions, AI reports, bulk import) stays out of reach.
       home = <FacultyHome />;
       break;
     case 'placement_officer':

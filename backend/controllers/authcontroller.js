@@ -101,9 +101,15 @@ export const refresh = asyncHandler(async (req, res) => {
   }
 
   stored.revokedAt = new Date();
-  const user = await User.findById(payload.sub);
+  const user = await User.findById(payload.sub).select('+passwordChangedAt');
   if (!user || !user.isActive) {
     throw new ApiError(401, 'Invalid or expired refresh token');
+  }
+  // A password change (self, reset, or admin-forced) invalidate the refresh
+  // family: the presented token predates it, so reject instead of rotating.
+  if (typeof user.changedPasswordAfter === 'function' && user.changedPasswordAfter(payload.iat)) {
+    await RefreshToken.updateMany({ user: user._id }, { revokedAt: new Date() });
+    throw new ApiError(401, 'Session expired after password change, please log in again');
   }
   const newAccessToken = signAccessToken(user);
   const newRefreshToken = signRefreshToken(user);

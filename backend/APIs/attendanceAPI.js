@@ -14,8 +14,8 @@ export const attendanceApp = Router();
 attendanceApp.use(verifyToken());
 attendanceApp.use(auditLog);
 
-// POST — faculty marks attendance session
-attendanceApp.post('/', verifyToken('faculty'), markSession);
+// POST — faculty marks attendance session; HOD for own-department subjects
+attendanceApp.post('/', verifyToken('faculty', 'hod'), markSession);
 
 // GET routes — all roles
 attendanceApp.get('/', getSessions);

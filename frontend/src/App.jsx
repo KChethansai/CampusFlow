@@ -139,7 +139,7 @@ function App() {
         <Route
           path="/subjects"
           element={
-            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty']}>
+            <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty']}>
               <Subjects />
             </ProtectedRoute>
           }
@@ -147,7 +147,7 @@ function App() {
         <Route
           path="/assignments"
           element={
-            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
+            <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty', 'student']}>
               <Assignments />
             </ProtectedRoute>
           }
@@ -155,7 +155,7 @@ function App() {
         <Route
           path="/attendance"
           element={
-            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
+            <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty', 'student']}>
               <Attendance />
             </ProtectedRoute>
           }
@@ -189,7 +189,7 @@ function App() {
         <Route
           path="/requests"
           element={
-            <ProtectedRoute allowedRoles={[...adminRoles, 'faculty', 'student']}>
+            <ProtectedRoute allowedRoles={[...adminRoles, 'hod', 'faculty', 'student']}>
               <Requests />
             </ProtectedRoute>
           }

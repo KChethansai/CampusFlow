@@ -1,5 +1,6 @@
 import { AssignmentModel as Assignment } from '../models/AssignmentModel.js';
 import { SubjectModel as Subject } from '../models/SubjectModel.js';
+import { CourseModel as Course } from '../models/CourseModel.js';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 
 /**
@@ -13,8 +14,57 @@ export const getFacultyTaughtSubjectIds = async (user) => {
 };
 
 /**
+ * Returns the Subject IDs in the HOD's own department (via Course.department).
+ * Empty when the HOD has no department assigned (fail-closed: sees nothing).
+ */
+export const getHodDepartmentSubjectIds = async (user) => {
+  if (!user.department) return [];
+  const courseIds = await Course.find({
+    department: user.department,
+    institution: user.institution
+  }).distinct('_id');
+  if (!courseIds.length) return [];
+  return await Subject.find({
+    course: { $in: courseIds },
+    institution: user.institution
+  }).distinct('_id');
+};
+
+/** Resolve a subject's department via its course (handles populated course). */
+export const getSubjectDepartmentId = async (subjectDoc) => {
+  const course = subjectDoc?.course;
+  if (!course) return null;
+  if (course.department) return course.department;
+  const courseDoc = await Course.findById(course).select('department');
+  return courseDoc?.department || null;
+};
+
+/** HOD may access a subject only when it sits in their own department. */
+export const canHodAccessSubject = async (hodUser, subjectDoc) => {
+  if (!hodUser.department || !subjectDoc) return false;
+  const deptId = await getSubjectDepartmentId(subjectDoc);
+  return Boolean(deptId && String(deptId) === String(hodUser.department));
+};
+
+/**
+ * HOD may access an assignment only when its subject sits in their
+ * own department (department-aware variant of canFacultyAccessAssignment).
+ */
+export const canHodAccessAssignment = async (hodUser, assignment, subjectDoc = null) => {
+  const subjectId = assignment.subject?._id || assignment.subject;
+  if (!subjectId) return false;
+  const subject = subjectDoc || await Subject.findOne({
+    _id: subjectId,
+    institution: hodUser.institution
+  });
+  if (!subject) return false;
+  return await canHodAccessSubject(hodUser, subject);
+};
+
+/**
  * Returns all Assignment IDs visible to the given user based on their role and tenant.
  * - super_admin / college_admin: all assignments in institution
+ * - hod: assignments for subjects in the HOD's own department
  * - faculty: assignments created by faculty OR for subjects taught by faculty
  * - student: assignments for subjects in courses student is actively enrolled in, non-draft
  */
@@ -33,6 +83,15 @@ export const getVisibleAssignmentIds = async (user) => {
       institution: user.institution,
       subject: { $in: enrolledSubjects },
       status: { $ne: 'draft' }
+    }).select('_id');
+    return assignments.map((a) => a._id);
+  }
+
+  if (user.role === 'hod') {
+    const deptSubjects = await getHodDepartmentSubjectIds(user);
+    const assignments = await Assignment.find({
+      institution: user.institution,
+      subject: { $in: deptSubjects }
     }).select('_id');
     return assignments.map((a) => a._id);
   }
@@ -102,6 +161,11 @@ export const canUserAccessSubmission = async (user, submission, assignmentDoc = 
   // Faculty: must be creator or teach the subject
   if (user.role === 'faculty') {
     return await canFacultyAccessAssignment(user, assignment);
+  }
+
+  // HOD: assignment's subject must sit in the HOD's own department
+  if (user.role === 'hod') {
+    return await canHodAccessAssignment(user, assignment);
   }
 
   return false;

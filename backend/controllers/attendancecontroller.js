@@ -6,6 +6,7 @@ import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { scopedOne } from '../utils/scope.js';
+import { getHodDepartmentSubjectIds, canHodAccessSubject } from '../utils/academicScope.js';
 import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
 
 // Mark (create) an attendance session
@@ -22,9 +23,13 @@ export const markSession = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Subject not found');
   }
 
-  // Faculty may mark attendance ONLY for subjects they teach
+  // Faculty may mark attendance ONLY for subjects they teach;
+  // HOD may mark for any subject in their own department.
   if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
     throw new ApiError(403, 'You can only mark attendance for subjects you teach');
+  }
+  if (req.user.role === 'hod' && !(await canHodAccessSubject(req.user, subjectDoc))) {
+    throw new ApiError(403, 'You can only mark attendance for subjects in your own department');
   }
 
   if (!Array.isArray(records) || records.length === 0) {
@@ -120,6 +125,8 @@ export const getSessions = asyncHandler(async (req, res) => {
 
     filter.subject = { $in: enrolledSubjects };
     filter['records.student'] = req.user._id;
+  } else if (req.user.role === 'hod') {
+    filter.subject = { $in: await getHodDepartmentSubjectIds(req.user) };
   } else if (req.user.role === 'faculty') {
     const taughtSubjects = await Subject.find({
       faculty: req.user._id,
@@ -205,6 +212,16 @@ export const getSessionById = asyncHandler(async (req, res) => {
       institution: req.user.institution
     });
     if (!subjectDoc || String(subjectDoc.faculty) !== String(req.user._id)) {
+      throw new ApiError(404, 'Attendance session not found');
+    }
+  }
+
+  if (req.user.role === 'hod') {
+    const subjectDoc = await Subject.findOne({
+      _id: session.subject?._id || session.subject,
+      institution: req.user.institution
+    });
+    if (!subjectDoc || !(await canHodAccessSubject(req.user, subjectDoc))) {
       throw new ApiError(404, 'Attendance session not found');
     }
   }

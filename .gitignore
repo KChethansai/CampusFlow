@@ -7,8 +7,9 @@ frontend/node_modules/
 backend/.env
 frontend/.env
 
-# Uploads
-backend/uploads/
+# Uploads (content only, keep directory placeholder)
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Builds
 frontend/dist/

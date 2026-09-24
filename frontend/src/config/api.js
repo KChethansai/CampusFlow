@@ -26,6 +26,32 @@ export const api = axios.create({
   withCredentials: true // cookie-backed refresh stays working behind CORS
 });
 
+const misconfiguredError = (baseURL, detail) => {
+  const err = new Error('Service misconfigured — contact your administrator.');
+  err.code = 'API_BASE_MISCONFIGURED';
+  err.isApiBaseMisconfigured = true;
+  err.baseURL = baseURL;
+  if (detail) err.detail = detail;
+  return err;
+};
+
+// Boot-time probe: catches a VITE_API_URL missing the /api/v1 suffix (which
+// surfaces in prod as 404 `Route not found: /auth/login`) before any login
+// attempt, and verifies the backend is reachable via /api/health.
+export const assertApiBaseUsable = async () => {
+  const baseURL = api.defaults.baseURL;
+  if (!/\/api\/v1\/?$/i.test(baseURL || '')) {
+    throw misconfiguredError(baseURL, 'VITE_API_URL must end in /api/v1');
+  }
+  const origin = baseURL.replace(/\/api\/v1\/?$/i, '');
+  try {
+    await axios.get(`${origin}/api/health`, { timeout: 5000, withCredentials: false });
+    return true;
+  } catch (err) {
+    throw misconfiguredError(baseURL, err?.message || 'Health check unreachable');
+  }
+};
+
 const OFFLINE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const OFFLINE_CACHE_PREFIX = 'cf_offline_api_v1:';
 const DASHBOARD_READ_PATHS = new Set([
@@ -220,6 +246,18 @@ api.interceptors.response.use(
           statusText: 'OK'
         };
       }
+    }
+
+    // A 404 straight from the backend's notFound handler ("Route not found: …")
+    // usually means the API base lost its /api/v1 suffix, not a bad route —
+    // flag it so the UI can show a config message instead of raw text.
+    const notFoundMessage = error.response?.data?.message;
+    if (
+      error.response?.status === 404 &&
+      typeof notFoundMessage === 'string' &&
+      notFoundMessage.startsWith('Route not found')
+    ) {
+      error.isApiBaseMisconfigured = true;
     }
 
     return Promise.reject(error);

@@ -5,7 +5,7 @@ import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pick, scopedOne } from '../utils/scope.js';
-import { getFacultyTaughtSubjectIds, canFacultyAccessAssignment } from '../utils/academicScope.js';
+import { getFacultyTaughtSubjectIds, canFacultyAccessAssignment, getHodDepartmentSubjectIds, canHodAccessAssignment, canHodAccessSubject } from '../utils/academicScope.js';
 
 // List all assignments scoped to institution and audience
 export const getAllAssignments = asyncHandler(async (req, res) => {
@@ -24,6 +24,8 @@ export const getAllAssignments = asyncHandler(async (req, res) => {
 
     filter.subject = { $in: enrolledSubjects };
     filter.status = { $ne: 'draft' };
+  } else if (req.user.role === 'hod') {
+    filter.subject = { $in: await getHodDepartmentSubjectIds(req.user) };
   } else if (req.user.role === 'faculty') {
     const taughtSubjects = await getFacultyTaughtSubjectIds(req.user);
 
@@ -70,6 +72,11 @@ export const getAssignmentById = asyncHandler(async (req, res) => {
     if (!isAllowed) {
       throw new ApiError(404, 'Assignment not found');
     }
+  } else if (req.user.role === 'hod') {
+    const isAllowed = await canHodAccessAssignment(req.user, assignment);
+    if (!isAllowed) {
+      throw new ApiError(404, 'Assignment not found');
+    }
   }
 
   res.json({ success: true, data: assignment });
@@ -90,6 +97,10 @@ export const createAssignment = asyncHandler(async (req, res) => {
 
   if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
     throw new ApiError(403, 'You can only create assignments for subjects you teach');
+  }
+
+  if (req.user.role === 'hod' && !(await canHodAccessSubject(req.user, subjectDoc))) {
+    throw new ApiError(403, 'You can only manage assignments in your own department');
   }
 
   const assignment = await Assignment.create({
@@ -116,12 +127,20 @@ export const updateAssignment = asyncHandler(async (req, res) => {
     if (!isAllowed) throw new ApiError(404, 'Assignment not found');
   }
 
+  if (req.user.role === 'hod') {
+    const isAllowed = await canHodAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
+
   if (req.body.subject) {
     if (!mongoose.isValidObjectId(req.body.subject)) throw new ApiError(400, 'Invalid subject ID');
     const subjectDoc = await Subject.findOne({ _id: req.body.subject, institution: req.user.institution });
     if (!subjectDoc) throw new ApiError(404, 'Subject not found');
     if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
       throw new ApiError(403, 'You can only assign subjects you teach');
+    }
+    if (req.user.role === 'hod' && !(await canHodAccessSubject(req.user, subjectDoc))) {
+      throw new ApiError(403, 'You can only manage assignments in your own department');
     }
   }
 
@@ -138,6 +157,11 @@ export const deleteAssignment = asyncHandler(async (req, res) => {
 
   if (req.user.role === 'faculty') {
     const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
+
+  if (req.user.role === 'hod') {
+    const isAllowed = await canHodAccessAssignment(req.user, assignment);
     if (!isAllowed) throw new ApiError(404, 'Assignment not found');
   }
 
@@ -159,6 +183,11 @@ export const updateAssignmentStatus = asyncHandler(async (req, res) => {
 
   if (req.user.role === 'faculty') {
     const isAllowed = await canFacultyAccessAssignment(req.user, assignment);
+    if (!isAllowed) throw new ApiError(404, 'Assignment not found');
+  }
+
+  if (req.user.role === 'hod') {
+    const isAllowed = await canHodAccessAssignment(req.user, assignment);
     if (!isAllowed) throw new ApiError(404, 'Assignment not found');
   }
 

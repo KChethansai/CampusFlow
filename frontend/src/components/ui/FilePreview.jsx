@@ -6,6 +6,34 @@ import { Download, Eye, EyeOff, FileText, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
 import { cn } from '../../system/tokens';
 
+// Backend serves protected uploads at the server ROOT (/uploads/:filename),
+// outside the /api/v1 prefix that the axios client carries. Resolve local
+// /uploads/* paths against the backend origin so previews/downloads don't
+// 404 on /api/v1/uploads/*, and keep the Authorization header on them.
+const backendOrigin = () =>
+  String(api.defaults.baseURL || '').replace(/\/api\/v1\/?$/, '');
+
+const resolveFileRequest = (fileUrl = '') => {
+  const raw = String(fileUrl);
+  if (/^https?:\/\//i.test(raw)) {
+    // Absolute URL (e.g. Cloudinary CDN): public/signed delivery, no backend
+    // auth header. Fetch without credentials.
+    return { url: raw, external: true };
+  }
+  return { url: `${backendOrigin()}${raw.startsWith('/') ? raw : `/${raw}`}`, external: false };
+};
+
+const fetchFileBlob = (fileUrl) => {
+  const { url, external } = resolveFileRequest(fileUrl);
+  if (external) {
+    return fetch(url).then((res) => {
+      if (!res.ok) throw new Error(`Preview fetch failed: ${res.status}`);
+      return res.blob();
+    });
+  }
+  return api.get(url, { responseType: 'blob' }).then((res) => res.data);
+};
+
 const kindOf = (fileUrl = '') => {
   const ext = String(fileUrl).split('?')[0].split('.').pop().toLowerCase();
   if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'image';
@@ -30,10 +58,10 @@ export function FilePreview({ fileUrl, fileName }) {
       setLoading(true);
       setError(null);
 
-      api.get(fileUrl, { responseType: 'blob' })
-        .then((res) => {
+      fetchFileBlob(fileUrl)
+        .then((blob) => {
           if (!active) return;
-          objectUrl = URL.createObjectURL(res.data);
+          objectUrl = URL.createObjectURL(blob);
           setBlobUrl(objectUrl);
         })
         .catch(() => {
@@ -59,8 +87,8 @@ export function FilePreview({ fileUrl, fileName }) {
     if (blobUrl) return; // Native link download handles it
     e.preventDefault();
     try {
-      const res = await api.get(fileUrl, { responseType: 'blob' });
-      const tempUrl = URL.createObjectURL(res.data);
+      const blob = await fetchFileBlob(fileUrl);
+      const tempUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = tempUrl;
       a.download = displayName;
@@ -90,7 +118,7 @@ export function FilePreview({ fileUrl, fileName }) {
           </button>
         )}
         <a
-          href={blobUrl || fileUrl}
+          href={blobUrl || undefined}
           download={displayName}
           onClick={handleDownload}
           className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]"

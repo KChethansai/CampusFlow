@@ -165,6 +165,24 @@ export const getLearningResources = asyncHandler(async (req, res) => {
     } else {
       filter.subject = { $in: allowedSubjectIds };
     }
+  } else if (req.user.role === 'hod') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const { CourseModel: Course } = await import('../models/CourseModel.js');
+    const courseIds = req.user.department
+      ? await Course.find({ institution: req.user.institution, department: req.user.department }).distinct('_id')
+      : [];
+    const subjects = await Subject.find({ institution: req.user.institution, course: { $in: courseIds } }).select('_id');
+    const allowedSubjectIds = subjects.map((s) => s._id);
+
+    if (req.query.subject) {
+      const isAllowed = allowedSubjectIds.some((id) => id.toString() === req.query.subject.toString());
+      if (!isAllowed) {
+        return pagedResponse(res, [], 0, { page, limit });
+      }
+      filter.subject = req.query.subject;
+    } else {
+      filter.subject = { $in: allowedSubjectIds };
+    }
   } else if (req.user.role === 'faculty') {
     const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
     const subjects = await Subject.find({ institution: req.user.institution, faculty: req.user._id }).select('_id');
@@ -208,6 +226,15 @@ export const createLearningResource = asyncHandler(async (req, res) => {
     discardUploadedFile(req);
     throw new ApiError(403, 'Forbidden: You can only create learning resources for your assigned subjects');
   }
+  if (req.user.role === 'hod') {
+    const { getSubjectDepartmentId } = await import('../utils/academicScope.js');
+    const deptId = await getSubjectDepartmentId(subj);
+    if (!req.user.department || !deptId || deptId.toString() !== req.user.department.toString()) {
+      const { discardUploadedFile } = await import('../config/multer.js');
+      discardUploadedFile(req);
+      throw new ApiError(403, 'Forbidden: You can only create learning resources for subjects in your own department');
+    }
+  }
   const { cleanUrl } = await import('../utils/sanitize.js');
   if (!url && !req.file) throw new ApiError(422, 'Provide an external url or attach a file');
   const fileUpload = req.file
@@ -241,6 +268,15 @@ export const updateLearningResource = asyncHandler(async (req, res) => {
       throw new ApiError(403, 'Forbidden: You can only update learning resources for your assigned subjects');
     }
   }
+  if (req.user.role === 'hod') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const { getSubjectDepartmentId } = await import('../utils/academicScope.js');
+    const subj = await Subject.findOne({ _id: existing.subject, institution: req.user.institution });
+    const deptId = subj && await getSubjectDepartmentId(subj);
+    if (!subj || !req.user.department || !deptId || deptId.toString() !== req.user.department.toString()) {
+      throw new ApiError(403, 'Forbidden: You can only update learning resources for subjects in your own department');
+    }
+  }
 
   const { pick } = await import('../utils/scope.js');
   const { cleanUrl } = await import('../utils/sanitize.js');
@@ -272,6 +308,15 @@ export const deleteLearningResource = asyncHandler(async (req, res) => {
     const subj = await Subject.findOne({ _id: existing.subject, institution: req.user.institution });
     if (!subj || subj.faculty?.toString() !== req.user._id.toString()) {
       throw new ApiError(403, 'Forbidden: You can only delete learning resources for your assigned subjects');
+    }
+  }
+  if (req.user.role === 'hod') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const { getSubjectDepartmentId } = await import('../utils/academicScope.js');
+    const subj = await Subject.findOne({ _id: existing.subject, institution: req.user.institution });
+    const deptId = subj && await getSubjectDepartmentId(subj);
+    if (!subj || !req.user.department || !deptId || deptId.toString() !== req.user.department.toString()) {
+      throw new ApiError(403, 'Forbidden: You can only delete learning resources for subjects in your own department');
     }
   }
 

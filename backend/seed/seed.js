@@ -9,6 +9,11 @@
  * WARNING: Drops ALL existing data before seeding.
  */
 
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to run seed script in production (NODE_ENV=production). This script drops collections.');
+  process.exit(1);
+}
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -211,6 +216,23 @@ async function seed() {
       isActive: true,
     };
 
+    // --- HOD (Head of Department, CSE) ---
+    const hodDoc = {
+      name: 'Dr. Priya Nair',
+      email: 'hod.cse@anurag.edu.in',
+      password: hashedFaculty,
+      role: 'hod',
+      institution: institution._id,
+      department: deptMap['CSE']._id,
+      profile: {
+        designation: 'Professor & Head',
+        qualification: 'Ph.D. in Computer Science',
+        phone: `98${randInt(10000000, 99999999)}`,
+      },
+      isEmailVerified: true,
+      isActive: true,
+    };
+
     // --- Faculty (5) ---
     const facultyDetails = [
       { name: 'Dr. Anil Sharma',    dept: 'CSE',  designation: 'Professor',           qualification: 'Ph.D. in Computer Science' },
@@ -275,9 +297,9 @@ async function seed() {
       };
     });
 
-    const allUserDocs = [superAdminDoc, collegeAdminDoc, placementOfficerDoc, ...facultyDocs, ...studentDocs];
+    const allUserDocs = [superAdminDoc, collegeAdminDoc, placementOfficerDoc, hodDoc, ...facultyDocs, ...studentDocs];
     const users = await User.insertMany(allUserDocs);
-    console.log(`✓ Seeded ${users.length} Users (1 super admin, 1 college admin, 1 placement officer, 5 faculty, 30 students)`);
+    console.log(`✓ Seeded ${users.length} Users (1 super admin, 1 college admin, 1 placement officer, 1 hod, 5 faculty, 30 students)`);
 
     // Quick lookup helpers
     const userByEmail = {};
@@ -312,7 +334,7 @@ async function seed() {
     console.log('  → Assigned faculty to subjects');
 
     // Assign HODs
-    await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['faculty1@anurag.edu.in']._id });
+    await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['hod.cse@anurag.edu.in']._id });
     await Department.updateOne({ _id: deptMap['ECE']._id },  { hod: userByEmail['faculty3@anurag.edu.in']._id });
     await Department.updateOne({ _id: deptMap['MECH']._id }, { hod: userByEmail['faculty5@anurag.edu.in']._id });
     console.log('  → Assigned HODs to departments');
