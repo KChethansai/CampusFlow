@@ -31,8 +31,12 @@ const validateDriveReferences = async (institutionId, { company, eligibility }) 
 export const getAllJobDrives = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = tenantFilter(req);
+  const companySelect = req.user.role === 'student'
+    ? 'name website industry isActive'
+    : 'name website industry hrContact notes isActive';
+
   const [jobDrives, total] = await Promise.all([
-    JobDrive.find(filter).populate('company').skip(skip).limit(limit),
+    JobDrive.find(filter).populate('company', companySelect).skip(skip).limit(limit),
     JobDrive.countDocuments(filter),
   ]);
   pagedResponse(res, jobDrives, total, { page, limit });
@@ -40,7 +44,10 @@ export const getAllJobDrives = asyncHandler(async (req, res) => {
 
 // Get single job drive (tenant-scoped)
 export const getJobDriveById = asyncHandler(async (req, res) => {
-  const jobDrive = await scopedOne(JobDrive, req, req.params.id, 'company');
+  const companySelect = req.user.role === 'student'
+    ? 'name website industry isActive'
+    : 'name website industry hrContact notes isActive';
+  const jobDrive = await scopedOne(JobDrive, req, req.params.id, { path: 'company', select: companySelect });
   res.json({ success: true, data: jobDrive });
 });
 

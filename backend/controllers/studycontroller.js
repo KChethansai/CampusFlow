@@ -83,7 +83,13 @@ export const getStudyPlan = asyncHandler(async (req, res) => {
 
   // --- revision plan: overdue + upcoming assignments, then weak-subject blocks ---
   const now = new Date();
-  const assignments = await Assignment.find({ institution })
+  const { EnrollmentModel: Enrollment } = await import('../models/EnrollmentModel.js');
+  const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+  const enrollments = await Enrollment.find({ student: studentId, institution, status: 'active' }).select('course');
+  const courseIds = enrollments.map((e) => e.course);
+  const enrolledSubjects = (await Subject.find({ institution, course: { $in: courseIds } }).select('_id')).map((s) => s._id);
+
+  const assignments = await Assignment.find({ institution, subject: { $in: enrolledSubjects } })
     .select('title subject dueDate status maxScore')
     .sort({ dueDate: 1 });
   const submittedIds = new Set(
@@ -137,11 +143,46 @@ export const getStudyPlan = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /learning-resources[?subject=] — tenant-scoped resource library
+// GET /learning-resources[?subject=] — role & tenant-scoped resource library
 export const getLearningResources = asyncHandler(async (req, res) => {
   const filter = { institution: req.user.institution };
-  if (req.query.subject) filter.subject = req.query.subject;
   const { page, limit, skip } = pageParams(req);
+
+  if (req.user.role === 'student') {
+    const { EnrollmentModel: Enrollment } = await import('../models/EnrollmentModel.js');
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const enrollments = await Enrollment.find({ student: req.user._id, institution: req.user.institution, status: 'active' }).select('course');
+    const courseIds = enrollments.map((e) => e.course);
+    const subjects = await Subject.find({ institution: req.user.institution, course: { $in: courseIds } }).select('_id');
+    const allowedSubjectIds = subjects.map((s) => s._id);
+
+    if (req.query.subject) {
+      const isAllowed = allowedSubjectIds.some((id) => id.toString() === req.query.subject.toString());
+      if (!isAllowed) {
+        return pagedResponse(res, [], 0, { page, limit });
+      }
+      filter.subject = req.query.subject;
+    } else {
+      filter.subject = { $in: allowedSubjectIds };
+    }
+  } else if (req.user.role === 'faculty') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const subjects = await Subject.find({ institution: req.user.institution, faculty: req.user._id }).select('_id');
+    const allowedSubjectIds = subjects.map((s) => s._id);
+
+    if (req.query.subject) {
+      const isAllowed = allowedSubjectIds.some((id) => id.toString() === req.query.subject.toString());
+      if (!isAllowed) {
+        return pagedResponse(res, [], 0, { page, limit });
+      }
+      filter.subject = req.query.subject;
+    } else {
+      filter.subject = { $in: allowedSubjectIds };
+    }
+  } else if (req.query.subject) {
+    filter.subject = req.query.subject;
+  }
+
   const [total, resources] = await Promise.all([
     LearningResource.countDocuments(filter),
     LearningResource.find(filter).populate('subject', 'name').sort('-createdAt').skip(skip).limit(limit)
@@ -161,6 +202,11 @@ export const createLearningResource = asyncHandler(async (req, res) => {
     const { discardUploadedFile } = await import('../config/multer.js');
     discardUploadedFile(req);
     throw new ApiError(404, 'Subject not found');
+  }
+  if (req.user.role === 'faculty' && subj.faculty?.toString() !== req.user._id.toString()) {
+    const { discardUploadedFile } = await import('../config/multer.js');
+    discardUploadedFile(req);
+    throw new ApiError(403, 'Forbidden: You can only create learning resources for your assigned subjects');
   }
   const { cleanUrl } = await import('../utils/sanitize.js');
   if (!url && !req.file) throw new ApiError(422, 'Provide an external url or attach a file');
@@ -182,6 +228,16 @@ export const createLearningResource = asyncHandler(async (req, res) => {
 
 // PATCH /learning-resources/:id — tenant-scoped, allowlisted (+ file swap)
 export const updateLearningResource = asyncHandler(async (req, res) => {
+  const existing = await LearningResource.findOne({ _id: req.params.id, institution: req.user.institution });
+  if (!existing) throw new ApiError(404, 'LearningResource not found');
+  if (req.user.role === 'faculty') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const subj = await Subject.findOne({ _id: existing.subject, institution: req.user.institution });
+    if (!subj || subj.faculty?.toString() !== req.user._id.toString()) {
+      throw new ApiError(403, 'Forbidden: You can only update learning resources for your assigned subjects');
+    }
+  }
+
   const { pick } = await import('../utils/scope.js');
   const { cleanUrl } = await import('../utils/sanitize.js');
   const patch = pick(req.body, ['topic', 'title', 'url', 'type', 'difficulty']);
@@ -197,16 +253,24 @@ export const updateLearningResource = asyncHandler(async (req, res) => {
     patch,
     { new: true, runValidators: true }
   );
-  if (!doc) throw new ApiError(404, 'LearningResource not found');
   res.json({ success: true, data: doc });
 });
 
 // DELETE /learning-resources/:id — tenant-scoped
 export const deleteLearningResource = asyncHandler(async (req, res) => {
-  const doc = await LearningResource.findOneAndDelete({
+  const existing = await LearningResource.findOne({ _id: req.params.id, institution: req.user.institution });
+  if (!existing) throw new ApiError(404, 'LearningResource not found');
+  if (req.user.role === 'faculty') {
+    const { SubjectModel: Subject } = await import('../models/SubjectModel.js');
+    const subj = await Subject.findOne({ _id: existing.subject, institution: req.user.institution });
+    if (!subj || subj.faculty?.toString() !== req.user._id.toString()) {
+      throw new ApiError(403, 'Forbidden: You can only delete learning resources for your assigned subjects');
+    }
+  }
+
+  await LearningResource.findOneAndDelete({
     _id: req.params.id,
     institution: req.user.institution,
   });
-  if (!doc) throw new ApiError(404, 'LearningResource not found');
   res.json({ success: true, message: 'Learning resource deleted' });
 });

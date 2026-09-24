@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { UserModel as User } from '../models/UserModel.js';
 import { CourseModel as Course } from '../models/CourseModel.js';
@@ -9,12 +10,22 @@ import { logActivity } from '../services/activityLog.service.js';
 export const createEnrollment = asyncHandler(async (req, res) => {
   const { student, course, academicYear, semester, status } = req.body;
 
+  if (!student || !mongoose.isValidObjectId(student)) {
+    throw new ApiError(400, 'Invalid student ID');
+  }
+  if (!course || !mongoose.isValidObjectId(course)) {
+    throw new ApiError(400, 'Invalid course ID');
+  }
+
   const [studentDoc, courseDoc] = await Promise.all([
     User.findOne({ _id: student, institution: req.user.institution }),
     Course.findOne({ _id: course, institution: req.user.institution })
   ]);
   if (!studentDoc || !courseDoc) {
     throw new ApiError(404, 'Student or course not found');
+  }
+  if (studentDoc.role !== 'student') {
+    throw new ApiError(400, 'Target user must be a student');
   }
 
   const enrollment = await Enrollment.create({
@@ -44,8 +55,8 @@ export const getAllEnrollments = asyncHandler(async (req, res) => {
       : { institution: req.user.institution };
 
   const enrollments = await Enrollment.find(query)
-    .populate('student')
-    .populate('course');
+    .populate('student', 'name email rollNumber')
+    .populate('course', 'name code');
 
   res.json({ success: true, data: enrollments });
 });
@@ -55,8 +66,8 @@ export const getEnrollmentById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (req.user.role === 'student') filter.student = req.user._id;
   const enrollment = await Enrollment.findOne(filter)
-    .populate('student')
-    .populate('course');
+    .populate('student', 'name email rollNumber')
+    .populate('course', 'name code');
 
   if (!enrollment) {
     throw new ApiError(404, 'Enrollment not found');

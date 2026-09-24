@@ -290,7 +290,7 @@ export function TiltCard({ className, children, max = 7, ...props }) {
 export function BentoGrid({ className, children }) {
   return <div className={cn('grid gap-4 md:grid-cols-6', className)}>{children}</div>;
 }
-export function BentoCell({ span = 'md:col-span-2', className, children, spot = true }) {
+export function BentoCell({ span = 'md:col-span-2', className, children }) {
   return (
     <SpotCard className={cn('bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal', span, className)}>
       {children}
@@ -305,8 +305,8 @@ export function HeroBackdrop({ meteors = 3, className }) {
     <div aria-hidden className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}>
       <div className="absolute inset-0 bg-grid-black/[0.04] dark:bg-grid-white/[0.02]" />
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-[420px] w-[720px] rounded-full bg-primary-500/15 dark:bg-primary-500/25 blur-[110px]" />
-      <div className="absolute top-20 -left-24 h-72 w-72 rounded-full bg-accent-violet/15 blur-[100px]" />
-      <div className="absolute bottom-0 right-0 h-72 w-96 rounded-full bg-accent-cyan/10 blur-[100px]" />
+      <div className="absolute top-20 -left-24 h-72 w-72 rounded-full bg-primary-600/10 blur-[100px]" />
+      <div className="absolute bottom-0 right-0 h-72 w-96 rounded-full bg-primary-700/10 blur-[100px]" />
       {!reduced && Array.from({ length: meteors }).map((_, i) => (
         <span
           key={i}

@@ -135,7 +135,7 @@ export default function AdminHome() {
         </motion.div>
 
         {/* REGION 3 — request queue stream */}
-        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
+        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-semibold text-sm">Request queue</h2>
             <Link to="/requests" className="text-xs font-medium text-[#D86D3E] hover:underline">Review</Link>

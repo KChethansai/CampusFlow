@@ -32,7 +32,7 @@ export const getAllCourses = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = tenantFilter(req);
   const [courses, total] = await Promise.all([
-    Course.find(filter).populate('department').skip(skip).limit(limit),
+    Course.find(filter).populate('department', 'name code').skip(skip).limit(limit),
     Course.countDocuments(filter),
   ]);
 
@@ -41,7 +41,7 @@ export const getAllCourses = asyncHandler(async (req, res) => {
 
 // Get single course by ID (tenant-scoped)
 export const getCourseById = asyncHandler(async (req, res) => {
-  const course = await scopedOne(Course, req, req.params.id, 'department');
+  const course = await scopedOne(Course, req, req.params.id, { path: 'department', select: 'name code' });
 
   res.json({ success: true, data: course });
 });

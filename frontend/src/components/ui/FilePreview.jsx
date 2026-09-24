@@ -10,7 +10,14 @@ const fullUrl = (fileUrl) => {
   if (!fileUrl) return '';
   if (/^https?:\/\//.test(fileUrl)) return fileUrl; // Cloudinary/CDN URL
   const base = (api.defaults.baseURL || '').replace(/\/api\/v1\/?$/, '');
-  return `${base}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+  let token = null;
+  try {
+    const auth = JSON.parse(localStorage.getItem('cf_auth') || '{}');
+    token = auth?.accessToken;
+  } catch { /* ignore */ }
+  const separator = fileUrl.includes('?') ? '&' : '?';
+  const withAuth = token ? `${fileUrl}${separator}token=${encodeURIComponent(token)}` : fileUrl;
+  return `${base}${withAuth.startsWith('/') ? '' : '/'}${withAuth}`;
 };
 
 const kindOf = (fileUrl = '') => {

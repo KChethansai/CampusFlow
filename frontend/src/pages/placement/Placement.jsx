@@ -28,7 +28,7 @@ void TrendChart;
 const JOB_TYPES = ['full-time', 'part-time', 'internship', 'contract'];
 const STAGES = [...PIPELINE_STAGES.flatMap((s) => (s === 'interview' ? ['interview_1', 'interview_2', 'hr_round'] : [s])), 'rejected'];
 
-const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const GLASS = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5';
 const LIFT = 'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';

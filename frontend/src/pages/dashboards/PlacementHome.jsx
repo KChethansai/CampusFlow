@@ -1,5 +1,5 @@
 // PlacementHome: Mission Control — Bklit Funnel + conversion + drives.
-// Regions on campus shells (placement violet+blue).
+// Regions on campus shells (Obsidian Ember palette).
 // Endpoints preserved: GET /job-drives, /job-applications, /companies.
 // PIPELINE_STAGES / normalizeStage untouched. Real data only.
 import { useEffect, useMemo, useState } from 'react';
@@ -144,7 +144,7 @@ export default function PlacementHome() {
         </motion.div>
 
         {/* REGION 3 — open drives stream */}
-        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
+        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-base font-semibold">Open drives</h2>
             <Link to="/placement" className="text-xs font-medium text-[#D86D3E] hover:underline">All</Link>

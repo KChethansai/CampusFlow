@@ -68,17 +68,6 @@ export function SectionHead({ title, body, kickerText }) {
   );
 }
 
-export function ScrollCue() {
-  const reduced = useReducedMotion();
-  return (
-    <div className="mt-10 flex justify-center" aria-hidden>
-      <span className={cn('inline-flex flex-col items-center gap-1 text-[#707A89]', !reduced && 'animate-bounce')}>
-        <span className="font-mono text-[10px] uppercase tracking-[0.25em]">Scroll</span>
-        <ChevronDown size={16} />
-      </span>
-    </div>
-  );
-}
 
 export function SectionConnector() {
   return (

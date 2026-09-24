@@ -8,8 +8,12 @@ import { cleanUrl } from '../utils/sanitize.js';
 export const getAllCompanies = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = tenantFilter(req);
+  let query = Company.find(filter).skip(skip).limit(limit);
+  if (req.user.role === 'student') {
+    query = query.select('-hrContact -notes');
+  }
   const [companies, total] = await Promise.all([
-    Company.find(filter).skip(skip).limit(limit),
+    query,
     Company.countDocuments(filter),
   ]);
   pagedResponse(res, companies, total, { page, limit });
@@ -17,7 +21,13 @@ export const getAllCompanies = asyncHandler(async (req, res) => {
 
 // Get single company (tenant-scoped)
 export const getCompanyById = asyncHandler(async (req, res) => {
-  const company = await scopedOne(Company, req, req.params.id);
+  const filter = { _id: req.params.id, institution: req.user.institution };
+  let query = Company.findOne(filter);
+  if (req.user.role === 'student') {
+    query = query.select('-hrContact -notes');
+  }
+  const company = await query;
+  if (!company) throw new ApiError(404, 'Company not found');
   res.json({ success: true, data: company });
 });
 

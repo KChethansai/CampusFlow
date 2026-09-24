@@ -9,6 +9,7 @@ import {
   submitAssignmentFiles,
   updateSubmission,
 } from '../controllers/submissioncontroller.js';
+import { getSubmissionFile } from '../controllers/filecontroller.js';
 
 export const submissionApp = Router();
 
@@ -24,6 +25,7 @@ submissionApp.get('/', verifyToken('faculty', 'student', 'college_admin', 'super
 submissionApp.post('/assignments/:assignmentId', verifyToken('student'), uploadSubmissionFile, submitAssignmentFiles);
 
 submissionApp.get('/:id', verifyToken('faculty', 'student', 'college_admin', 'super_admin'), getSubmissionById);
+submissionApp.get('/:id/file', verifyToken('faculty', 'student', 'college_admin', 'super_admin'), getSubmissionFile);
 
 // POST — students only
 submissionApp.post('/', verifyToken('student'), createSubmission);

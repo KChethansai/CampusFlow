@@ -22,7 +22,7 @@ const SUBMISSION_ACCEPT = '.pdf,.doc,.docx,.txt,.md,.csv,.zip,.png,.jpg,.jpeg';
 import { staggerChild, staggerParent } from '../../system/motion';
 import { btnClass, cn, inputClass, labelClass, selectClass } from '../../system/tokens';
 
-const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const GLASS = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5';
 const LIFT = 'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg';
 
 const classify = (a, submissions) => {

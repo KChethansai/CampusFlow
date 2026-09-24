@@ -27,6 +27,7 @@ export const useAuth = create((set) => ({
     set({ loading: true, error: null });
     try {
       const { data } = await api.post('/auth/login', { email, password });
+      clearAllOfflineCache();
       const payload = {
         user: data.user,
         accessToken: data.accessToken,

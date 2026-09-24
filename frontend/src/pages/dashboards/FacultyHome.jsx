@@ -128,7 +128,7 @@ export default function FacultyHome() {
         </motion.div>
 
         {/* REGION 3 — subjects + requests stream */}
-        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5 space-y-4" aria-label="Subjects and requests">
+        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 space-y-4" aria-label="Subjects and requests">
           <div>
             <h2 className="font-display text-base font-semibold mb-2">My subjects</h2>
             <div className="flex flex-wrap gap-1.5">

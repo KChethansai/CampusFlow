@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { serveProtectedUpload } from './controllers/filecontroller.js'
 import routes from './APIs/index.js'
 import { env } from './config/env.js'
 import { securityMiddleware, rejectUnsafePayload } from './config/security.js'
@@ -38,7 +39,7 @@ const credentialLimiter = (message) => rateLimit({
   message: { message }
 })
 
-app.use('/uploads', express.static(path.join(__dirname, env.upload.dir)))
+app.get('/uploads/:filename', serveProtectedUpload)
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }))
 app.use('/api/v1/auth/login', credentialLimiter('Too many login attempts, please try again later'))
 app.use('/api/v1/auth/register', credentialLimiter('Too many requests, please try again later'))

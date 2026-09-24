@@ -1,21 +1,84 @@
 import mongoose from 'mongoose';
 import { AssignmentModel as Assignment } from '../models/AssignmentModel.js';
 import { SubjectModel as Subject } from '../models/SubjectModel.js';
+import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pick, scopedOne } from '../utils/scope.js';
 
-// List all assignments scoped to institution
+// List all assignments scoped to institution and audience
 export const getAllAssignments = asyncHandler(async (req, res) => {
-  const assignments = await Assignment.find({ institution: req.user.institution })
-    .populate('subject')
-    .populate('createdBy');
+  const filter = { institution: req.user.institution };
+
+  if (req.user.role === 'student') {
+    const activeCourses = await Enrollment.find({
+      student: req.user._id,
+      institution: req.user.institution,
+      status: 'active'
+    }).distinct('course');
+    const enrolledSubjects = await Subject.find({
+      course: { $in: activeCourses },
+      institution: req.user.institution
+    }).distinct('_id');
+
+    filter.subject = { $in: enrolledSubjects };
+    filter.status = { $ne: 'draft' };
+  } else if (req.user.role === 'faculty') {
+    const taughtSubjects = await Subject.find({
+      faculty: req.user._id,
+      institution: req.user.institution
+    }).distinct('_id');
+
+    filter.$or = [
+      { createdBy: req.user._id },
+      { subject: { $in: taughtSubjects } }
+    ];
+  }
+
+  const assignments = await Assignment.find(filter)
+    .populate('subject', 'name code')
+    .populate('createdBy', 'name email role');
   res.json({ success: true, data: assignments });
 });
 
-// Get single assignment (tenant-scoped)
+// Get single assignment (tenant + audience scoped)
 export const getAssignmentById = asyncHandler(async (req, res) => {
-  const assignment = await scopedOne(Assignment, req, req.params.id, ['subject', 'createdBy']);
+  const assignment = await Assignment.findOne({
+    _id: req.params.id,
+    institution: req.user.institution
+  })
+    .populate('subject', 'name code course')
+    .populate('createdBy', 'name email role');
+
+  if (!assignment) {
+    throw new ApiError(404, 'Assignment not found');
+  }
+
+  if (req.user.role === 'student') {
+    if (assignment.status === 'draft') {
+      throw new ApiError(404, 'Assignment not found');
+    }
+    const isEnrolled = await Enrollment.findOne({
+      student: req.user._id,
+      course: assignment.subject?.course,
+      institution: req.user.institution,
+      status: 'active'
+    });
+    if (!isEnrolled) {
+      throw new ApiError(404, 'Assignment not found');
+    }
+  } else if (req.user.role === 'faculty') {
+    const isAuthor = String(assignment.createdBy?._id || assignment.createdBy) === String(req.user._id);
+    const subjectDoc = await Subject.findOne({
+      _id: assignment.subject?._id || assignment.subject,
+      institution: req.user.institution
+    });
+    const teaches = subjectDoc && String(subjectDoc.faculty) === String(req.user._id);
+    if (!isAuthor && !teaches) {
+      throw new ApiError(404, 'Assignment not found');
+    }
+  }
+
   res.json({ success: true, data: assignment });
 });
 

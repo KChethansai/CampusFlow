@@ -29,16 +29,16 @@ export const getAllSubmissions = asyncHandler(async (req, res) => {
     filter.assignment = { $in: await visibleAssignmentIds(req) };
   }
   const submissions = await Submission.find(filter)
-    .populate('assignment')
-    .populate('student');
+    .populate('assignment', 'title subject maxScore dueDate status')
+    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
   res.json({ success: true, data: submissions });
 });
 
 // Get single submission — same visibility rules as the list
 export const getSubmissionById = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id)
-    .populate('assignment')
-    .populate('student');
+    .populate('assignment', 'title subject maxScore dueDate status')
+    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
   if (!submission) throw new ApiError(404, 'Submission not found');
   if (req.user.role === 'student') {
     if (String(submission.student?._id || submission.student) !== String(req.user._id)) {
@@ -68,25 +68,21 @@ const validateAssignmentForSubmission = async (assignmentId, user) => {
     throw new ApiError(400, 'Assignment is not open for submissions');
   }
 
-  // Active course enrollment check
-  const subjectDoc = await Subject.findById(assignment.subject);
-  if (subjectDoc) {
-    const totalEnrollments = await Enrollment.countDocuments({
-      institution: user.institution,
-      course: subjectDoc.course,
-      status: 'active'
-    });
-    if (totalEnrollments > 0) {
-      const enrolled = await Enrollment.findOne({
-        institution: user.institution,
-        student: user._id,
-        course: subjectDoc.course,
-        status: 'active'
-      });
-      if (!enrolled) {
-        throw new ApiError(403, 'You are not enrolled in the course for this assignment');
-      }
-    }
+  // Validate subject exists in same institution
+  const subjectDoc = await Subject.findOne({ _id: assignment.subject, institution: user.institution });
+  if (!subjectDoc) {
+    throw new ApiError(404, 'Subject not found');
+  }
+
+  // Active course enrollment check: student must be actively enrolled in the course
+  const enrolled = await Enrollment.findOne({
+    institution: user.institution,
+    student: user._id,
+    course: subjectDoc.course,
+    status: 'active'
+  });
+  if (!enrolled) {
+    throw new ApiError(403, 'You are not enrolled in the course for this assignment');
   }
 
   return assignment;
@@ -105,10 +101,10 @@ export const createSubmission = asyncHandler(async (req, res) => {
 
   const existing = await Submission.findOne({ assignment: assignment._id, student: req.user._id });
   if (existing) {
-    if (assignment.allowResubmission === false && assignment.maxResubmissions === 0) {
+    if (!assignment.allowResubmission) {
       throw new ApiError(400, 'Resubmission is not allowed for this assignment');
     }
-    if (assignment.allowResubmission && assignment.maxResubmissions > 0 && existing.attempt > assignment.maxResubmissions) {
+    if (assignment.maxResubmissions === 0 || existing.attempt > assignment.maxResubmissions) {
       throw new ApiError(400, 'Maximum resubmission attempts reached');
     }
   }
@@ -150,12 +146,12 @@ export const submitAssignmentFiles = asyncHandler(async (req, res) => {
 
   const existing = await Submission.findOne({ assignment: assignment._id, student: req.user._id });
   if (existing) {
-    if (assignment.allowResubmission === false && assignment.maxResubmissions === 0) {
+    if (!assignment.allowResubmission) {
       const { discardUploadedFile } = await import('../config/multer.js');
       discardUploadedFile(req);
       throw new ApiError(400, 'Resubmission is not allowed for this assignment');
     }
-    if (assignment.allowResubmission && assignment.maxResubmissions > 0 && existing.attempt > assignment.maxResubmissions) {
+    if (assignment.maxResubmissions === 0 || existing.attempt > assignment.maxResubmissions) {
       const { discardUploadedFile } = await import('../config/multer.js');
       discardUploadedFile(req);
       throw new ApiError(400, 'Maximum resubmission attempts reached');

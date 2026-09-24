@@ -35,7 +35,7 @@ export const getAllDepartments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = tenantFilter(req);
   const [departments, total] = await Promise.all([
-    Department.find(filter).populate('hod').skip(skip).limit(limit),
+    Department.find(filter).populate('hod', 'name email role').skip(skip).limit(limit),
     Department.countDocuments(filter),
   ]);
 
@@ -44,7 +44,7 @@ export const getAllDepartments = asyncHandler(async (req, res) => {
 
 // Get single department by ID (tenant-scoped)
 export const getDepartmentById = asyncHandler(async (req, res) => {
-  const department = await scopedOne(Department, req, req.params.id, 'hod');
+  const department = await scopedOne(Department, req, req.params.id, { path: 'hod', select: 'name email role' });
 
   res.json({ success: true, data: department });
 });

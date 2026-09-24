@@ -1,11 +1,12 @@
 import { InstitutionModel as Institution, institutionAcceptsEmail } from '../models/InstitutionModel.js';
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
+import { CourseModel as Course } from '../models/CourseModel.js';
 import { UserModel as User } from '../models/UserModel.js';
 import { ApiError } from '../utils/ApiError.js';
 
 const allowedRoles = ['super_admin', 'college_admin', 'faculty', 'student', 'placement_officer'];
 
-export const provisionInstitutionForAccount = async ({ caller, role, email, requestedInstitution, department }) => {
+export const provisionInstitutionForAccount = async ({ caller, role, email, requestedInstitution, department, course }) => {
   if (!allowedRoles.includes(role)) throw new ApiError(400, 'Invalid role');
   if (role === 'super_admin' && caller.role !== 'super_admin') {
     throw new ApiError(403, 'Only super_admin can create super_admin users');
@@ -31,7 +32,8 @@ export const provisionInstitutionForAccount = async ({ caller, role, email, requ
   if (await User.findOne({ email: normalizedEmail })) throw new ApiError(409, 'Email already registered');
 
   const departmentId = await validateProvisioningDepartment(institution, department);
-  return { institution, email: normalizedEmail, department: departmentId };
+  const courseId = await validateProvisioningCourse(institution, course);
+  return { institution, email: normalizedEmail, department: departmentId, course: courseId };
 };
 
 export const validateProvisioningDepartment = async (institution, department) => {
@@ -40,5 +42,14 @@ export const validateProvisioningDepartment = async (institution, department) =>
   if (!/^[a-f\d]{24}$/i.test(departmentId)) throw new ApiError(422, 'Invalid department');
   const doc = await Department.findOne({ _id: departmentId, institution: institution._id }).select('_id');
   if (!doc) throw new ApiError(422, 'Department does not belong to the institution');
+  return doc._id;
+};
+
+export const validateProvisioningCourse = async (institution, course) => {
+  if (course === undefined || course === null || course === '') return undefined;
+  const courseId = String(course);
+  if (!/^[a-f\d]{24}$/i.test(courseId)) throw new ApiError(422, 'Invalid course');
+  const doc = await Course.findOne({ _id: courseId, institution: institution._id }).select('_id');
+  if (!doc) throw new ApiError(422, 'Course does not belong to the institution');
   return doc._id;
 };

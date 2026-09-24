@@ -107,7 +107,35 @@ export const markSession = asyncHandler(async (req, res) => {
 export const getSessions = asyncHandler(async (req, res) => {
   const filter = { institution: req.user.institution };
 
+  if (req.user.role === 'student') {
+    const activeCourses = await Enrollment.find({
+      student: req.user._id,
+      institution: req.user.institution,
+      status: 'active'
+    }).distinct('course');
+    const enrolledSubjects = await Subject.find({
+      course: { $in: activeCourses },
+      institution: req.user.institution
+    }).distinct('_id');
+
+    filter.subject = { $in: enrolledSubjects };
+    filter['records.student'] = req.user._id;
+  } else if (req.user.role === 'faculty') {
+    const taughtSubjects = await Subject.find({
+      faculty: req.user._id,
+      institution: req.user.institution
+    }).distinct('_id');
+
+    filter.subject = { $in: taughtSubjects };
+  }
+
   if (req.query.subject) {
+    if (filter.subject?.$in) {
+      const allowed = filter.subject.$in.map(String);
+      if (!allowed.includes(String(req.query.subject))) {
+        return res.json({ success: true, data: [] });
+      }
+    }
     filter.subject = req.query.subject;
   }
   if (req.query.date) {
@@ -115,8 +143,8 @@ export const getSessions = asyncHandler(async (req, res) => {
   }
 
   const sessions = await AttendanceSession.find(filter)
-    .populate('subject')
-    .populate('markedBy');
+    .populate('subject', 'name code')
+    .populate('markedBy', 'name email role');
 
   // Students see only their own rows (peer records stay private).
   if (req.user.role === 'student') {
@@ -133,17 +161,48 @@ export const getSessions = asyncHandler(async (req, res) => {
   res.json({ success: true, data: sessions });
 });
 
-// Get single session by ID (tenant-scoped)
+// Get single session by ID (tenant + audience scoped)
 export const getSessionById = asyncHandler(async (req, res) => {
-  const session = await scopedOne(AttendanceSession, req, req.params.id, ['subject', 'markedBy']);
+  const session = await AttendanceSession.findOne({
+    _id: req.params.id,
+    institution: req.user.institution
+  })
+    .populate('subject', 'name code course faculty')
+    .populate('markedBy', 'name email role');
 
-  // If caller is student, return only that student's attendance row
+  if (!session) {
+    throw new ApiError(404, 'Attendance session not found');
+  }
+
   if (req.user.role === 'student') {
+    const activeEnrollment = await Enrollment.findOne({
+      student: req.user._id,
+      course: session.subject?.course,
+      institution: req.user.institution,
+      status: 'active'
+    });
+    const hasRecord = (session.records || []).some(
+      (r) => String(r.student?._id || r.student) === String(req.user._id)
+    );
+    if (!activeEnrollment || !hasRecord) {
+      throw new ApiError(404, 'Attendance session not found');
+    }
+
     const obj = session.toObject();
     obj.records = (obj.records || []).filter(
       (r) => String(r.student?._id || r.student) === String(req.user._id)
     );
     return res.json({ success: true, data: obj });
+  }
+
+  if (req.user.role === 'faculty') {
+    const subjectDoc = await Subject.findOne({
+      _id: session.subject?._id || session.subject,
+      institution: req.user.institution
+    });
+    if (!subjectDoc || String(subjectDoc.faculty) !== String(req.user._id)) {
+      throw new ApiError(404, 'Attendance session not found');
+    }
   }
 
   res.json({ success: true, data: session });

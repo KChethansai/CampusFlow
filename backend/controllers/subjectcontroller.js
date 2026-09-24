@@ -48,7 +48,11 @@ export const getAllSubjects = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = tenantFilter(req);
   const [subjects, total] = await Promise.all([
-    Subject.find(filter).populate('course').populate('faculty').skip(skip).limit(limit),
+    Subject.find(filter)
+      .populate('course', 'name code')
+      .populate('faculty', 'name email role')
+      .skip(skip)
+      .limit(limit),
     Subject.countDocuments(filter),
   ]);
 
@@ -57,7 +61,10 @@ export const getAllSubjects = asyncHandler(async (req, res) => {
 
 // Get single subject by ID (tenant-scoped)
 export const getSubjectById = asyncHandler(async (req, res) => {
-  const subject = await scopedOne(Subject, req, req.params.id, ['course', 'faculty']);
+  const subject = await scopedOne(Subject, req, req.params.id, [
+    { path: 'course', select: 'name code' },
+    { path: 'faculty', select: 'name email role' }
+  ]);
 
   res.json({ success: true, data: subject });
 });

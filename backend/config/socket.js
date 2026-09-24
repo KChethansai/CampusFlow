@@ -13,8 +13,11 @@ export const authenticateSocket = async (socket, next) => {
     const token = socket.handshake?.auth?.token;
     if (!token) return next(new Error('Not authorized, no token provided'));
     const decoded = jwt.verify(token, env.secretKey);
-    const user = await UserModel.findById(decoded.sub).select('_id institution role isActive');
+    const user = await UserModel.findById(decoded.sub).select('_id institution role isActive passwordChangedAt');
     if (!user || !user.isActive) return next(new Error('Not authorized'));
+    if (typeof user.changedPasswordAfter === 'function' && user.changedPasswordAfter(decoded.iat)) {
+      return next(new Error('Session expired after password change, please log in again'));
+    }
     socket.data = socket.data || {};
     socket.data.user = { id: String(user._id), institution: String(user.institution), role: user.role };
     next();

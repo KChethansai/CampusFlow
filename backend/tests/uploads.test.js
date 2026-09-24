@@ -44,26 +44,39 @@ beforeAll(async () => {
   });
   subjectId = subj._id;
 
-  await User.create({
+  const student = await User.create({
     name: 'Upload Student', email: 'upstudent@test.edu', password: 'Student@123',
     role: 'student', institution: institution._id, isEmailVerified: true, isActive: true
   });
-  await User.create({
+  const faculty = await User.create({
     name: 'Upload Faculty', email: 'upfaculty@test.edu', password: 'Faculty@123',
     role: 'faculty', institution: institution._id, isEmailVerified: true, isActive: true
   });
+  subj.faculty = faculty._id;
+  await subj.save();
+
+  const { EnrollmentModel: Enrollment } = await import('../models/EnrollmentModel.js');
+  await Enrollment.create({
+    institution: institution._id,
+    student: student._id,
+    course: course._id,
+    academicYear: '2025-2026',
+    semester: 1,
+    status: 'active'
+  });
 
   const { AssignmentModel: Assignment } = await import('../models/AssignmentModel.js');
-  const faculty = await User.findOne({ email: 'upfaculty@test.edu' });
   const due = new Date(Date.now() + 86400000);
   const a = await Assignment.create({
     institution: institution._id, subject: subjectId, title: 'File Assignment',
-    description: 'd', maxScore: 100, dueDate: due, status: 'published', createdBy: faculty._id
+    description: 'd', maxScore: 100, dueDate: due, status: 'published', createdBy: faculty._id,
+    allowResubmission: true, maxResubmissions: 3
   });
   assignmentId = a._id;
   const other = await Assignment.create({
     institution: otherInstitution._id, subject: subjectId, title: 'Foreign Assignment',
-    description: 'd', maxScore: 100, dueDate: due, status: 'published', createdBy: faculty._id
+    description: 'd', maxScore: 100, dueDate: due, status: 'published', createdBy: faculty._id,
+    allowResubmission: true, maxResubmissions: 3
   });
   otherAssignmentId = other._id;
 

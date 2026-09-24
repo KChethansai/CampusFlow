@@ -9,11 +9,11 @@ import { ApiError } from '../utils/ApiError.js';
 import { pageParams, pagedResponse, pick } from '../utils/scope.js';
 import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
 
-export const dispatchAnnouncementRealtime = async (announcement, institutionId) => {
+export const dispatchAnnouncementRealtime = async (announcement, institutionId, eventName = 'announcement:posted') => {
   const isRestricted = Boolean(announcement.department || announcement.subject);
   if (!isRestricted) {
     // Public institution-wide announcement
-    publishRealtimeToInstitution(institutionId, 'announcement:posted', { announcement });
+    publishRealtimeToInstitution(institutionId, eventName, { announcement });
     return;
   }
 
@@ -64,7 +64,7 @@ export const dispatchAnnouncementRealtime = async (announcement, institutionId) 
 
   // Deliver to authorized recipient sockets
   for (const uid of recipientIds) {
-    publishRealtimeToUser(uid, 'announcement:posted', { announcement });
+    publishRealtimeToUser(uid, eventName, { announcement });
   }
 };
 
@@ -124,9 +124,15 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
   const { department, subject, title, body, pinned } = req.body;
   const isInstitutionAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
 
-  const assignedDepartment = isInstitutionAdmin
-    ? department
-    : (req.user.department || department);
+  let assignedDepartment;
+  if (isInstitutionAdmin) {
+    assignedDepartment = department;
+  } else {
+    if (department && String(department) !== String(req.user.department)) {
+      throw new ApiError(403, 'Faculty can only post announcements for their own department');
+    }
+    assignedDepartment = req.user.department || department;
+  }
 
   if (assignedDepartment) {
     if (!mongoose.isValidObjectId(assignedDepartment)) throw new ApiError(400, 'Invalid department ID');
@@ -162,7 +168,7 @@ export const getAllAnnouncements = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = await getAnnouncementAudienceFilter(req.user);
   const [announcements, total] = await Promise.all([
-    Announcement.find(filter).populate('createdBy').skip(skip).limit(limit),
+    Announcement.find(filter).populate('createdBy', 'name email role').skip(skip).limit(limit),
     Announcement.countDocuments(filter),
   ]);
 
@@ -172,7 +178,7 @@ export const getAllAnnouncements = asyncHandler(async (req, res) => {
 // Get single announcement by ID (tenant + audience scoped)
 export const getAnnouncementById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id, ...(await getAnnouncementAudienceFilter(req.user)) };
-  const announcement = await Announcement.findOne(filter).populate('createdBy');
+  const announcement = await Announcement.findOne(filter).populate('createdBy', 'name email role');
 
   if (!announcement) {
     throw new ApiError(404, 'Announcement not found');
@@ -191,6 +197,9 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
 
   if (req.body.department) {
     if (!mongoose.isValidObjectId(req.body.department)) throw new ApiError(400, 'Invalid department ID');
+    if (!isInstitutionAdmin && String(req.body.department) !== String(req.user.department)) {
+      throw new ApiError(403, 'Faculty cannot move announcement to another department');
+    }
     const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
     if (!deptDoc) throw new ApiError(404, 'Department not found');
   }
@@ -217,6 +226,7 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Announcement not found');
   }
 
+  await dispatchAnnouncementRealtime(announcement, req.user.institution, 'announcement:updated');
   res.json({ success: true, data: announcement });
 });
 

@@ -1,5 +1,5 @@
 // StudentHome: energetic/progress — pulse + trajectory + assignments +
-// study + placement strip. Regions on campus shells (student blue+violet).
+// study + placement strip. Regions on campus shells (Obsidian Ember palette).
 // Endpoints preserved: GET /assignments, /attendance/student/:id,
 // /job-applications, /notifications. Real data only.
 import { useEffect, useMemo, useState } from 'react';
@@ -186,7 +186,7 @@ export default function StudentHome() {
         </motion.div>
 
         {/* REGION 3 — activity stream: due timeline */}
-        <motion.section variants={staggerChild} className="cf-glass rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Due timeline">
+        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Due timeline">
           <h2 className="font-display text-base font-semibold mb-3">Due timeline</h2>
           {upcoming.length === 0 ? (
             <EmptyState title="Clear skies" hint="Check the placement board?" />

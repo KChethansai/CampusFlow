@@ -25,8 +25,8 @@ export const getAllJobApplications = asyncHandler(async (req, res) => {
 
   const [jobApplications, total] = await Promise.all([
     JobApplication.find(query)
-      .populate('drive')
-      .populate('student')
+      .populate('drive', 'role company ctc applicationDeadline status institution')
+      .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear')
       .sort('-createdAt')
       .skip(skip)
       .limit(limit),
@@ -38,8 +38,8 @@ export const getAllJobApplications = asyncHandler(async (req, res) => {
 // Get single job application (tenant-scoped through the drive)
 export const getJobApplicationById = asyncHandler(async (req, res) => {
   const jobApplication = await JobApplication.findById(req.params.id)
-    .populate('drive')
-    .populate('student');
+    .populate('drive', 'role company ctc applicationDeadline status institution')
+    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear');
   if (!jobApplication || String(jobApplication.drive?.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'Job application not found');
   }

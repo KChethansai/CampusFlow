@@ -59,13 +59,18 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
     try {
       if (!row || typeof row !== 'object' || Array.isArray(row)) throw new ApiError(400, 'Invalid account row');
       if (!accountRoles.includes(row.role)) throw new ApiError(400, 'Invalid role');
-      const { institution, email, department } = await provisionInstitutionForAccount({
+      const rawCourse = row.course || row.profile?.course;
+      const { institution, email, department, course } = await provisionInstitutionForAccount({
         caller: req.user,
         role: row.role,
         email: row.email,
         requestedInstitution: row.institution ?? req.query.institution, // super_admin per-row or query
-        department: row.department
+        department: row.department,
+        course: rawCourse
       });
+
+      const userProfile = row.profile ? { ...row.profile } : undefined;
+      if (course && userProfile) userProfile.course = course;
 
       const tempPassword = crypto.randomBytes(12).toString('hex');
       const user = await User.create({
@@ -75,7 +80,7 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
         role: row.role,
         institution: institution._id,
         department,
-        profile: row.profile,
+        profile: userProfile || (course ? { course } : undefined),
         isEmailVerified: true
       });
       const created = user.toObject();
@@ -99,7 +104,7 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
 // List all users scoped to the institution
 export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find({ institution: req.user.institution })
-    .populate('department');
+    .populate('department', 'name code');
 
   res.json({ success: true, data: users });
 });
@@ -165,6 +170,16 @@ export const updateUser = asyncHandler(async (req, res) => {
     }
   }
   if (profile !== undefined) {
+    if (profile.course) {
+      const { CourseModel: Course } = await import('../models/CourseModel.js');
+      if (!/^[a-f\d]{24}$/i.test(String(profile.course))) {
+        throw new ApiError(400, 'Invalid course ID');
+      }
+      const courseDoc = await Course.findOne({ _id: profile.course, institution: user.institution });
+      if (!courseDoc) {
+        throw new ApiError(400, 'Course does not exist in this institution');
+      }
+    }
     user.profile = {
       ...user.profile?.toObject?.(),
       ...profile,

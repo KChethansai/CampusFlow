@@ -30,8 +30,7 @@ import {
 const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
 const SOFT = 'shadow-[0_16px_48px_-20px_rgba(16,24,40,0.3)]';
 
-// Subtle per-role accent pairs: student blue+violet, faculty blue+cyan,
-// placement violet+blue, admin blue+neutral. Applied as soft gradient washes only.
+// Subtle per-role Obsidian Ember accent pairs. Applied as soft gradient washes only.
 const ROLE_ACCENT = {
   student: ['#D86D3E', '#B4806A'],
   faculty: ['#D86D3E', '#C87D4B'],

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { RequestModel as Request } from '../models/RequestModel.js';
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { UserModel as User } from '../models/UserModel.js';
@@ -48,8 +49,8 @@ export const getAllRequests = asyncHandler(async (req, res) => {
   }
 
   const requests = await Request.find(filter)
-    .populate('student')
-    .populate('assignedTo');
+    .populate('student', 'name email role department')
+    .populate('assignedTo', 'name email role');
 
   res.json({ success: true, data: requests });
 });
@@ -59,8 +60,8 @@ export const getRequestById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (req.user.role === 'student') filter.student = req.user._id;
   const request = await Request.findOne(filter)
-    .populate('student')
-    .populate('assignedTo');
+    .populate('student', 'name email role department')
+    .populate('assignedTo', 'name email role');
 
   if (!request) {
     throw new ApiError(404, 'Request not found');
@@ -94,9 +95,15 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     request.status = status;
   }
   if (assignedTo) {
+    if (!mongoose.isValidObjectId(assignedTo)) {
+      throw new ApiError(400, 'Invalid assignedTo ID');
+    }
     const staff = await User.findOne({ _id: assignedTo, institution: req.user.institution });
     if (!staff) {
       throw new ApiError(400, 'Assigned staff does not exist in this institution');
+    }
+    if (!['faculty', 'college_admin', 'super_admin'].includes(staff.role)) {
+      throw new ApiError(400, 'Assigned user must be an authorized staff or faculty member');
     }
     request.assignedTo = assignedTo;
   }

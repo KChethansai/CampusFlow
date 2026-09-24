@@ -148,6 +148,7 @@ api.interceptors.response.use(
 
       const auth = safeReadAuth();
       if (!auth?.refreshToken) {
+        clearAllOfflineCache();
         return Promise.reject(error);
       }
 
@@ -172,6 +173,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         localStorage.removeItem('cf_auth');
+        clearAllOfflineCache();
         window.location.href = '/login';
         return Promise.reject(err);
       } finally {

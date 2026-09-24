@@ -5,7 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 import HeroScene from '../hero/HeroScene';
 import LiquidGlassButton from '../visual/LiquidGlassButton';
 import ContainerScroll from '../visual/ContainerScroll';
-import { BlurText, ScrollCue } from './shared';
+import { BlurText } from './shared';
 
 export default function HeroSection() {
   const reduced = useReducedMotion();
@@ -65,7 +65,6 @@ export default function HeroSection() {
             Sign In <ArrowUpRight size={17} aria-hidden />
           </Link>
         </motion.div>
-        <ScrollCue />
       </div>
 
       {/* 21st.dev Container Scroll 3D Perspective Tilt Showcase */}

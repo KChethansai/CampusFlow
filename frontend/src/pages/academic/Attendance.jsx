@@ -2,7 +2,7 @@
 // Faculty: mark attendance (POST /attendance).
 // Endpoints preserved: GET /attendance, POST /attendance, GET /subjects,
 // GET /users. Role gates + marking logic unchanged. Heatmap matrix restyled
-// to the glass/royal/violet surface.
+// to the Obsidian Ember surface.
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Printer } from 'lucide-react';
@@ -14,7 +14,7 @@ import { AttendanceRing, Heatmap, Sparkline } from '../../components/data/views'
 import { btnClass, inputClass, labelClass, selectClass, statusBadge } from '../../system/tokens';
 
 const STATUSES = ['present', 'absent', 'late', 'od'];
-const GLASS = 'cf-glass rounded-[24px] border border-[var(--cf-line)] p-5';
+const GLASS = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5';
 
 export default function Attendance() {
   const { user } = useAuth();

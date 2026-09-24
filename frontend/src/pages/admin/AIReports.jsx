@@ -1,5 +1,5 @@
 // Campus Intelligence Center — Intelligence Mode: dark glass cards,
-// violet→blue gradient accent border, confidence + evidence blocks.
+// Obsidian Ember gradient accent border, confidence + evidence blocks.
 // Endpoints preserved: GET /ai-reports, GET /users,
 // POST /ai-reports/generate. Provider flag drives copy only. Real data only.
 import { useEffect, useMemo, useState } from 'react';
@@ -14,9 +14,9 @@ import { btnClass, cn, labelClass, selectClass } from '../../system/tokens';
 
 const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
-// Dark glass intelligence surfaces; violet→blue gradient hairline on top.
+// Dark glass intelligence surfaces; Obsidian Ember gradient hairline on top.
 const INTEL = 'rounded-[24px] border border-white/10 bg-[#0B1020]/80 backdrop-blur-xl p-5 relative overflow-hidden text-slate-100';
-const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#A77B68] via-[#6366F1] to-[#D86D3E]';
+const GRADIENT_LINE = 'pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#A77B68] via-[#B6532B] to-[#D86D3E]';
 
 // Heuristic signal extraction: structured output wins; free text falls back to summary.
 const signalsOf = (report) => {

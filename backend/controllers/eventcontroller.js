@@ -43,11 +43,35 @@ export const exportEventIcs = asyncHandler(async (req, res) => {
   res.send(value);
 });
 
+const sanitizeEventResponse = (event, user) => {
+  if (!event) return event;
+  const obj = typeof event.toObject === 'function' ? event.toObject() : { ...event };
+  const isAdmin = ['super_admin', 'college_admin'].includes(user.role);
+  obj.registrationCount = obj.registeredStudents?.length || 0;
+  obj.isRegistered = Boolean(obj.registeredStudents?.some((id) => String(id) === String(user._id)));
+  if (!isAdmin) {
+    delete obj.registeredStudents;
+  }
+  return obj;
+};
+
 // Create event
 export const createEvent = asyncHandler(async (req, res) => {
   const { department, title, description, type, startAt, endAt, visibility } = req.body;
   const isSuperOrCollegeAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
-  const assignedDepartment = isSuperOrCollegeAdmin ? department : (req.user.department || department);
+
+  let assignedDepartment;
+  if (isSuperOrCollegeAdmin) {
+    assignedDepartment = department;
+  } else {
+    if (!req.user.department) {
+      throw new ApiError(403, 'Faculty must belong to a department to manage events');
+    }
+    if (department && String(department) !== String(req.user.department)) {
+      throw new ApiError(403, 'Faculty can only create events for their own department');
+    }
+    assignedDepartment = req.user.department;
+  }
 
   if (assignedDepartment) {
     const deptDoc = await Department.findOne({ _id: assignedDepartment, institution: req.user.institution });
@@ -67,7 +91,7 @@ export const createEvent = asyncHandler(async (req, res) => {
     visibility: visibility || 'public',
   });
 
-  res.status(201).json({ success: true, data: event });
+  res.status(201).json({ success: true, data: sanitizeEventResponse(event, req.user) });
 });
 
 // List all events scoped to institution and audience (paginated)
@@ -79,7 +103,8 @@ export const getAllEvents = asyncHandler(async (req, res) => {
     Event.countDocuments(filter),
   ]);
 
-  pagedResponse(res, events, total, { page, limit });
+  const sanitized = events.map((e) => sanitizeEventResponse(e, req.user));
+  pagedResponse(res, sanitized, total, { page, limit });
 });
 
 // Get single event by ID (tenant + audience scoped)
@@ -88,21 +113,34 @@ export const getEventById = asyncHandler(async (req, res) => {
   const event = await Event.findOne(filter);
   if (!event) throw new ApiError(404, 'Event not found');
 
-  res.json({ success: true, data: event });
+  res.json({ success: true, data: sanitizeEventResponse(event, req.user) });
 });
 
 // Update event (tenant-scoped, allowlisted)
 export const updateEvent = asyncHandler(async (req, res) => {
+  const isSuperOrCollegeAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
+
+  if (!isSuperOrCollegeAdmin) {
+    if (!req.user.department) {
+      throw new ApiError(403, 'Faculty must belong to a department to manage events');
+    }
+    if (req.body.department && String(req.body.department) !== String(req.user.department)) {
+      throw new ApiError(403, 'Faculty cannot move event to another department');
+    }
+  }
+
   const filter = { _id: req.params.id, institution: req.user.institution };
-  if (!['super_admin', 'college_admin'].includes(req.user.role) && req.user.department) {
+  if (!isSuperOrCollegeAdmin) {
     filter.department = req.user.department;
   }
-  if (req.body.department) {
+
+  if (req.body.department && isSuperOrCollegeAdmin) {
     const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
     if (!deptDoc) {
       throw new ApiError(400, 'Department does not exist in this institution');
     }
   }
+
   const event = await Event.findOneAndUpdate(
     filter,
     pick(req.body, ['department', 'title', 'description', 'type', 'startAt', 'endAt', 'visibility']),
@@ -116,13 +154,19 @@ export const updateEvent = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Event not found');
   }
 
-  res.json({ success: true, data: event });
+  res.json({ success: true, data: sanitizeEventResponse(event, req.user) });
 });
 
 // Delete event (tenant-scoped)
 export const deleteEvent = asyncHandler(async (req, res) => {
+  const isSuperOrCollegeAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
+
+  if (!isSuperOrCollegeAdmin && !req.user.department) {
+    throw new ApiError(403, 'Faculty must belong to a department to manage events');
+  }
+
   const filter = { _id: req.params.id, institution: req.user.institution };
-  if (!['super_admin', 'college_admin'].includes(req.user.role) && req.user.department) {
+  if (!isSuperOrCollegeAdmin) {
     filter.department = req.user.department;
   }
   const event = await Event.findOneAndDelete(filter);
@@ -144,12 +188,12 @@ export const registerForEvent = asyncHandler(async (req, res) => {
   }
 
   // Avoid duplicate registration
-  if (event.registeredStudents.includes(req.user._id)) {
+  if (event.registeredStudents.some((id) => String(id) === String(req.user._id))) {
     throw new ApiError(400, 'Already registered for this event');
   }
 
   event.registeredStudents.push(req.user._id);
   await event.save();
 
-  res.json({ success: true, data: event });
+  res.json({ success: true, data: sanitizeEventResponse(event, req.user) });
 });

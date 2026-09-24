@@ -87,8 +87,8 @@ export const getApplications = asyncHandler(async (req, res) => {
   if (!drive) throw new ApiError(404, 'Job drive not found');
 
   const applications = await JobApplication.find({ drive: driveId })
-    .populate('student')
-    .populate('drive');
+    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear')
+    .populate('drive', 'role company ctc status institution');
   res.json({ success: true, data: applications });
 });
 
@@ -114,7 +114,9 @@ export const updateApplicationStage = asyncHandler(async (req, res) => {
   const application = await JobApplication.findOne({
     _id: applicationId,
     drive: driveId
-  }).populate('student').populate('drive');
+  })
+    .populate('student', 'name email rollNumber department profile.cgpa profile.batchYear')
+    .populate('drive', 'role company ctc status institution');
   if (!application) throw new ApiError(404, 'Application not found');
   if (String(application.drive?.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'Application not found');
