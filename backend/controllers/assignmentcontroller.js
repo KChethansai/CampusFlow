@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import { AssignmentModel as Assignment } from '../models/AssignmentModel.js';
+import { SubjectModel as Subject } from '../models/SubjectModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pick, scopedOne } from '../utils/scope.js';
@@ -20,6 +22,20 @@ export const getAssignmentById = asyncHandler(async (req, res) => {
 // Create assignment
 export const createAssignment = asyncHandler(async (req, res) => {
   const { subject, title, description, maxScore, dueDate, allowResubmission, maxResubmissions } = req.body;
+
+  if (!subject || !mongoose.isValidObjectId(subject)) {
+    throw new ApiError(400, 'Invalid subject ID');
+  }
+
+  const subjectDoc = await Subject.findOne({ _id: subject, institution: req.user.institution });
+  if (!subjectDoc) {
+    throw new ApiError(404, 'Subject not found');
+  }
+
+  if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
+    throw new ApiError(403, 'You can only create assignments for subjects you teach');
+  }
+
   const assignment = await Assignment.create({
     subject,
     title,
@@ -34,10 +50,23 @@ export const createAssignment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: assignment });
 });
 
-// Update assignment — tenant-scoped, allowlisted (no institution/createdBy/status override)
+// Update assignment — tenant-scoped, ownership-enforced, allowlisted
 export const updateAssignment = asyncHandler(async (req, res) => {
+  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
+    ? { _id: req.params.id, institution: req.user.institution }
+    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
+
+  if (req.body.subject) {
+    if (!mongoose.isValidObjectId(req.body.subject)) throw new ApiError(400, 'Invalid subject ID');
+    const subjectDoc = await Subject.findOne({ _id: req.body.subject, institution: req.user.institution });
+    if (!subjectDoc) throw new ApiError(404, 'Subject not found');
+    if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
+      throw new ApiError(403, 'You can only assign subjects you teach');
+    }
+  }
+
   const assignment = await Assignment.findOneAndUpdate(
-    { _id: req.params.id, institution: req.user.institution },
+    filter,
     pick(req.body, ['subject', 'title', 'description', 'maxScore', 'dueDate', 'allowResubmission', 'maxResubmissions']),
     { new: true, runValidators: true },
   );
@@ -45,9 +74,13 @@ export const updateAssignment = asyncHandler(async (req, res) => {
   res.json({ success: true, data: assignment });
 });
 
-// Delete assignment (tenant-scoped)
+// Delete assignment (tenant-scoped, ownership-enforced)
 export const deleteAssignment = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findOneAndDelete({ _id: req.params.id, institution: req.user.institution });
+  const filter = ['super_admin', 'college_admin'].includes(req.user.role)
+    ? { _id: req.params.id, institution: req.user.institution }
+    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
+
+  const assignment = await Assignment.findOneAndDelete(filter);
   if (!assignment) throw new ApiError(404, 'Assignment not found');
   res.json({ success: true, message: 'Assignment deleted' });
 });
@@ -63,7 +96,7 @@ const TRANSITIONS = {
 export const updateAssignmentStatus = asyncHandler(async (req, res) => {
   const filter = ['super_admin', 'college_admin'].includes(req.user.role)
     ? { _id: req.params.id, institution: req.user.institution }
-    : { _id: req.params.id, createdBy: req.user._id };
+    : { _id: req.params.id, institution: req.user.institution, createdBy: req.user._id };
   const assignment = await Assignment.findOne(filter);
   if (!assignment) throw new ApiError(404, 'Assignment not found');
 

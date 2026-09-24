@@ -292,7 +292,7 @@ export function BentoGrid({ className, children }) {
 }
 export function BentoCell({ span = 'md:col-span-2', className, children, spot = true }) {
   return (
-    <SpotCard className={cn('glass-card bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal', span, className)}>
+    <SpotCard className={cn('bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 sm:p-6 shadow-brutal', span, className)}>
       {children}
     </SpotCard>
   );

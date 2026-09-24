@@ -102,8 +102,8 @@ export default function Profile() {
 
   const stats = [
     { Icon: GraduationCap, label: 'Assignments', v: activity?.assignments, tint: 'bg-[#D86D3E]/10 text-[#D86D3E]' },
-    { Icon: Briefcase, label: 'Applications', v: activity?.applications, tint: 'bg-violet-500/10 text-violet-500' },
-    { Icon: Inbox, label: 'Requests', v: activity?.requests, tint: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-300' }
+    { Icon: Briefcase, label: 'Applications', v: activity?.applications, tint: 'bg-[#C87D4B]/12 text-[#9E4B29] dark:text-[#E7A66D]' },
+    { Icon: Inbox, label: 'Requests', v: activity?.requests, tint: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]' }
   ];
 
   return (

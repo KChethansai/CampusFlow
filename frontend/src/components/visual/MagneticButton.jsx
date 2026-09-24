@@ -48,7 +48,7 @@ export default function MagneticButton({
   };
 
   const baseStyles =
-    'relative inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-display font-semibold text-sm transition-colors duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    'group relative inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-display font-semibold text-sm transition-colors duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none overflow-hidden';
 
   const variantStyles = {
     primary:

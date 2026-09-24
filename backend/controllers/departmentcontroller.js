@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import { DepartmentModel as Department } from '../models/DepartmentModel.js';
+import { UserModel as User } from '../models/UserModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../utils/scope.js';
@@ -6,6 +8,16 @@ import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../uti
 // Create department
 export const createDepartment = asyncHandler(async (req, res) => {
   const { name, code, hod, description } = req.body;
+
+  if (hod) {
+    if (!mongoose.isValidObjectId(hod)) throw new ApiError(400, 'Invalid HOD ID');
+    const hodUser = await User.findOne({
+      _id: hod,
+      institution: req.user.institution,
+      role: { $in: ['faculty', 'college_admin', 'super_admin'] }
+    });
+    if (!hodUser) throw new ApiError(404, 'HOD user not found or unauthorized');
+  }
 
   const department = await Department.create({
     name,
@@ -39,6 +51,16 @@ export const getDepartmentById = asyncHandler(async (req, res) => {
 
 // Update department (tenant-scoped, allowlisted)
 export const updateDepartment = asyncHandler(async (req, res) => {
+  if (req.body.hod) {
+    if (!mongoose.isValidObjectId(req.body.hod)) throw new ApiError(400, 'Invalid HOD ID');
+    const hodUser = await User.findOne({
+      _id: req.body.hod,
+      institution: req.user.institution,
+      role: { $in: ['faculty', 'college_admin', 'super_admin'] }
+    });
+    if (!hodUser) throw new ApiError(404, 'HOD user not found or unauthorized');
+  }
+
   const department = await Department.findOneAndUpdate(
     { _id: req.params.id, institution: req.user.institution },
     pick(req.body, ['name', 'code', 'hod', 'description', 'isActive']),

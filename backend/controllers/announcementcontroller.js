@@ -1,10 +1,72 @@
+import mongoose from 'mongoose';
 import { AnnouncementModel as Announcement } from '../models/AnnouncementModel.js';
 import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { SubjectModel as Subject } from '../models/SubjectModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
+import { UserModel as User } from '../models/UserModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pageParams, pagedResponse, pick } from '../utils/scope.js';
-import { publishRealtimeToInstitution } from '../services/notification.service.js';
+import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
+
+export const dispatchAnnouncementRealtime = async (announcement, institutionId) => {
+  const isRestricted = Boolean(announcement.department || announcement.subject);
+  if (!isRestricted) {
+    // Public institution-wide announcement
+    publishRealtimeToInstitution(institutionId, 'announcement:posted', { announcement });
+    return;
+  }
+
+  // Restricted announcement: deliver only to authorized recipients
+  const recipientIds = new Set();
+
+  // 1. Institution admins
+  const admins = await User.find({
+    institution: institutionId,
+    role: { $in: ['super_admin', 'college_admin'] }
+  }).distinct('_id');
+  admins.forEach((id) => recipientIds.add(String(id)));
+
+  // 2. The author
+  if (announcement.createdBy) recipientIds.add(String(announcement.createdBy));
+
+  // 3. If subject-specific:
+  if (announcement.subject) {
+    const subjectDoc = await Subject.findOne({ _id: announcement.subject, institution: institutionId });
+    if (subjectDoc) {
+      if (subjectDoc.faculty) recipientIds.add(String(subjectDoc.faculty));
+      const enrolledStudentIds = await Enrollment.find({
+        institution: institutionId,
+        course: subjectDoc.course,
+        status: 'active'
+      }).distinct('student');
+
+      if (announcement.department) {
+        // Must also belong to target department
+        const deptStudents = await User.find({
+          _id: { $in: enrolledStudentIds },
+          department: announcement.department
+        }).distinct('_id');
+        deptStudents.forEach((id) => recipientIds.add(String(id)));
+      } else {
+        enrolledStudentIds.forEach((id) => recipientIds.add(String(id)));
+      }
+    }
+  } else if (announcement.department) {
+    // 4. Department-only restriction: all active users in that department
+    const deptUsers = await User.find({
+      institution: institutionId,
+      department: announcement.department,
+      isActive: true
+    }).distinct('_id');
+    deptUsers.forEach((id) => recipientIds.add(String(id)));
+  }
+
+  // Deliver to authorized recipient sockets
+  for (const uid of recipientIds) {
+    publishRealtimeToUser(uid, 'announcement:posted', { announcement });
+  }
+};
 
 export const getAnnouncementAudienceFilter = async (user) => {
   const isInstitutionAdmin = ['super_admin', 'college_admin'].includes(user.role);
@@ -66,13 +128,19 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
     ? department
     : (req.user.department || department);
 
-  if (!isInstitutionAdmin && subject) {
-    const teaches = await Subject.findOne({
-      _id: subject,
-      institution: req.user.institution,
-      faculty: req.user._id
-    });
-    if (!teaches) throw new ApiError(403, 'You can only post announcements for subjects you teach');
+  if (assignedDepartment) {
+    if (!mongoose.isValidObjectId(assignedDepartment)) throw new ApiError(400, 'Invalid department ID');
+    const deptDoc = await Department.findOne({ _id: assignedDepartment, institution: req.user.institution });
+    if (!deptDoc) throw new ApiError(404, 'Department not found');
+  }
+
+  if (subject) {
+    if (!mongoose.isValidObjectId(subject)) throw new ApiError(400, 'Invalid subject ID');
+    const subjectDoc = await Subject.findOne({ _id: subject, institution: req.user.institution });
+    if (!subjectDoc) throw new ApiError(404, 'Subject not found');
+    if (!isInstitutionAdmin && String(subjectDoc.faculty) !== String(req.user._id)) {
+      throw new ApiError(403, 'You can only post announcements for subjects you teach');
+    }
   }
 
   const announcement = await Announcement.create({
@@ -85,7 +153,7 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   });
 
-  publishRealtimeToInstitution(req.user.institution, 'announcement:posted', { announcement }); // live feed
+  await dispatchAnnouncementRealtime(announcement, req.user.institution);
   res.status(201).json({ success: true, data: announcement });
 });
 
@@ -120,6 +188,22 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
   if (!isInstitutionAdmin) {
     filter.createdBy = req.user._id;
   }
+
+  if (req.body.department) {
+    if (!mongoose.isValidObjectId(req.body.department)) throw new ApiError(400, 'Invalid department ID');
+    const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
+    if (!deptDoc) throw new ApiError(404, 'Department not found');
+  }
+
+  if (req.body.subject) {
+    if (!mongoose.isValidObjectId(req.body.subject)) throw new ApiError(400, 'Invalid subject ID');
+    const subjectDoc = await Subject.findOne({ _id: req.body.subject, institution: req.user.institution });
+    if (!subjectDoc) throw new ApiError(404, 'Subject not found');
+    if (!isInstitutionAdmin && String(subjectDoc.faculty) !== String(req.user._id)) {
+      throw new ApiError(403, 'You can only update announcements for subjects you teach');
+    }
+  }
+
   const announcement = await Announcement.findOneAndUpdate(
     filter,
     pick(req.body, ['department', 'subject', 'title', 'body', 'pinned']),

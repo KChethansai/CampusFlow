@@ -1,5 +1,8 @@
+import mongoose from 'mongoose';
 import { SubmissionModel as Submission } from '../models/SubmissionModel.js';
 import { AssignmentModel as Assignment } from '../models/AssignmentModel.js';
+import { SubjectModel as Subject } from '../models/SubjectModel.js';
+import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
@@ -50,17 +53,79 @@ export const getSubmissionById = asyncHandler(async (req, res) => {
   res.json({ success: true, data: submission });
 });
 
-// Create submission (student submits) — student forced from session
+// Helper to validate student assignment submission requirements
+const validateAssignmentForSubmission = async (assignmentId, user) => {
+  if (!assignmentId || !mongoose.isValidObjectId(assignmentId)) {
+    throw new ApiError(400, 'Invalid assignment ID');
+  }
+
+  const assignment = await Assignment.findById(assignmentId);
+  if (!assignment || String(assignment.institution) !== String(user.institution)) {
+    throw new ApiError(404, 'Assignment not found');
+  }
+
+  if (assignment.status === 'draft' || assignment.status === 'archived') {
+    throw new ApiError(400, 'Assignment is not open for submissions');
+  }
+
+  // Active course enrollment check
+  const subjectDoc = await Subject.findById(assignment.subject);
+  if (subjectDoc) {
+    const totalEnrollments = await Enrollment.countDocuments({
+      institution: user.institution,
+      course: subjectDoc.course,
+      status: 'active'
+    });
+    if (totalEnrollments > 0) {
+      const enrolled = await Enrollment.findOne({
+        institution: user.institution,
+        student: user._id,
+        course: subjectDoc.course,
+        status: 'active'
+      });
+      if (!enrolled) {
+        throw new ApiError(403, 'You are not enrolled in the course for this assignment');
+      }
+    }
+  }
+
+  return assignment;
+};
+
+// Create submission (student submits) — student forced from session, full validation
 export const createSubmission = asyncHandler(async (req, res) => {
-  const { assignment, fileUrl, textNotes } = req.body;
-  const submission = await Submission.create({
-    assignment,
-    student: req.user._id,
-    fileUrl: cleanUrl(fileUrl, 'fileUrl'),
-    textNotes,
+  const { assignment: assignmentId, fileUrl, textNotes } = req.body;
+  const assignment = await validateAssignmentForSubmission(assignmentId, req.user);
+
+  const comments = (textNotes || '').toString().slice(0, 5000);
+  const cleanedUrl = cleanUrl(fileUrl, 'fileUrl');
+  if (!cleanedUrl && !comments.trim()) {
+    throw new ApiError(422, 'Attach a file or add comments to submit');
+  }
+
+  const existing = await Submission.findOne({ assignment: assignment._id, student: req.user._id });
+  if (existing) {
+    if (assignment.allowResubmission === false && assignment.maxResubmissions === 0) {
+      throw new ApiError(400, 'Resubmission is not allowed for this assignment');
+    }
+    if (assignment.allowResubmission && assignment.maxResubmissions > 0 && existing.attempt > assignment.maxResubmissions) {
+      throw new ApiError(400, 'Maximum resubmission attempts reached');
+    }
+  }
+
+  const late = assignment.dueDate && new Date(assignment.dueDate).getTime() < Date.now();
+  const patch = {
+    fileUrl: cleanedUrl || existing?.fileUrl,
+    textNotes: comments || existing?.textNotes,
     submittedAt: new Date(),
-    status: 'submitted',
-  });
+    status: late ? 'late' : 'submitted',
+    attempt: (existing?.attempt || 0) + 1,
+  };
+
+  const submission = existing
+    ? await Submission.findByIdAndUpdate(existing._id, patch, { new: true, runValidators: true })
+    : await Submission.create({ assignment: assignment._id, student: req.user._id, ...patch });
+
   res.status(201).json({ success: true, data: submission });
 });
 
@@ -69,18 +134,35 @@ export const createSubmission = asyncHandler(async (req, res) => {
 // accepted but ignored: identity always comes from the session. `comments`
 // maps to textNotes. Status is `late` when past the due date.
 export const submitAssignmentFiles = asyncHandler(async (req, res) => {
-  const assignment = await Assignment.findById(req.params.assignmentId);
-  if (!assignment || String(assignment.institution) !== String(req.user.institution)) {
+  let assignment;
+  try {
+    assignment = await validateAssignmentForSubmission(req.params.assignmentId, req.user);
+  } catch (err) {
     const { discardUploadedFile } = await import('../config/multer.js');
     discardUploadedFile(req);
-    throw new ApiError(404, 'Assignment not found');
+    throw err;
   }
+
   const comments = (req.body.comments ?? req.body.textNotes ?? '').toString().slice(0, 5000);
   if (!req.file && !comments.trim()) {
     throw new ApiError(422, 'Attach a file or add comments to submit');
   }
-  const late = assignment.dueDate && new Date(assignment.dueDate).getTime() < Date.now();
+
   const existing = await Submission.findOne({ assignment: assignment._id, student: req.user._id });
+  if (existing) {
+    if (assignment.allowResubmission === false && assignment.maxResubmissions === 0) {
+      const { discardUploadedFile } = await import('../config/multer.js');
+      discardUploadedFile(req);
+      throw new ApiError(400, 'Resubmission is not allowed for this assignment');
+    }
+    if (assignment.allowResubmission && assignment.maxResubmissions > 0 && existing.attempt > assignment.maxResubmissions) {
+      const { discardUploadedFile } = await import('../config/multer.js');
+      discardUploadedFile(req);
+      throw new ApiError(400, 'Maximum resubmission attempts reached');
+    }
+  }
+
+  const late = assignment.dueDate && new Date(assignment.dueDate).getTime() < Date.now();
   const patch = {
     textNotes: comments || existing?.textNotes,
     submittedAt: new Date(),

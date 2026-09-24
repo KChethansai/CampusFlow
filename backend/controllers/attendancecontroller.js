@@ -1,19 +1,73 @@
 import mongoose from 'mongoose';
 import { AttendanceSessionModel as AttendanceSession } from '../models/AttendanceSessionModel.js';
 import { SubjectModel as Subject } from '../models/SubjectModel.js';
+import { UserModel as User } from '../models/UserModel.js';
+import { EnrollmentModel as Enrollment } from '../models/EnrollmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { scopedOne } from '../utils/scope.js';
-import { publishRealtimeToInstitution } from '../services/notification.service.js';
+import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services/notification.service.js';
 
 // Mark (create) an attendance session
 export const markSession = asyncHandler(async (req, res) => {
   const { subject, date, period, records } = req.body;
 
+  if (!subject || !mongoose.isValidObjectId(subject)) {
+    throw new ApiError(400, 'Invalid subject ID');
+  }
+
   // Subject must belong to the caller's institution.
   const subjectDoc = await Subject.findOne({ _id: subject, institution: req.user.institution });
   if (!subjectDoc) {
     throw new ApiError(404, 'Subject not found');
+  }
+
+  // Faculty may mark attendance ONLY for subjects they teach
+  if (req.user.role === 'faculty' && String(subjectDoc.faculty) !== String(req.user._id)) {
+    throw new ApiError(403, 'You can only mark attendance for subjects you teach');
+  }
+
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new ApiError(400, 'records must be a non-empty array');
+  }
+
+  const validStatuses = ['present', 'absent', 'late', 'od'];
+  const studentIds = [];
+  for (const record of records) {
+    if (!record || !record.student || !mongoose.isValidObjectId(record.student)) {
+      throw new ApiError(400, 'Invalid student ID in attendance records');
+    }
+    if (record.status && !validStatuses.includes(record.status)) {
+      throw new ApiError(400, `Invalid attendance status: ${record.status}`);
+    }
+    studentIds.push(String(record.student));
+  }
+
+  if (new Set(studentIds).size !== studentIds.length) {
+    throw new ApiError(400, 'Duplicate student record in attendance session');
+  }
+
+  // Validate student existence and tenant membership
+  const verifiedStudents = await User.find({
+    _id: { $in: studentIds },
+    institution: req.user.institution,
+    role: 'student'
+  }).select('_id');
+
+  if (verifiedStudents.length !== studentIds.length) {
+    throw new ApiError(400, 'One or more students do not exist or belong to another institution');
+  }
+
+  // Validate students are actively enrolled in the subject's course
+  const activeEnrollments = await Enrollment.find({
+    institution: req.user.institution,
+    course: subjectDoc.course,
+    student: { $in: studentIds },
+    status: 'active'
+  }).distinct('student');
+
+  if (activeEnrollments.length !== studentIds.length) {
+    throw new ApiError(400, 'One or more students are not actively enrolled in the course for this subject');
   }
 
   const session = await AttendanceSession.create({
@@ -25,7 +79,27 @@ export const markSession = asyncHandler(async (req, res) => {
     records,
   });
 
-  publishRealtimeToInstitution(req.user.institution, 'attendance:marked', { session }); // live grid
+  // Socket privacy: NEVER broadcast full session.records to institution room.
+  // Send minimal metadata to institution room for realtime refresh signals.
+  publishRealtimeToInstitution(req.user.institution, 'attendance:marked', {
+    sessionId: session._id,
+    subject: session.subject,
+    date: session.date,
+    period: session.period
+  });
+
+  // Send scoped payload to each individual student for their own record only
+  for (const r of records) {
+    publishRealtimeToUser(r.student, 'attendance:marked', {
+      sessionId: session._id,
+      subject: session.subject,
+      date: session.date,
+      period: session.period,
+      status: r.status,
+      remark: r.remark
+    });
+  }
+
   res.status(201).json({ success: true, data: session });
 });
 
@@ -49,7 +123,7 @@ export const getSessions = asyncHandler(async (req, res) => {
     const mine = sessions.map((s) => {
       const obj = s.toObject();
       obj.records = (obj.records || []).filter(
-        (r) => String(r.student) === String(req.user._id)
+        (r) => String(r.student?._id || r.student) === String(req.user._id)
       );
       return obj;
     });
@@ -62,6 +136,15 @@ export const getSessions = asyncHandler(async (req, res) => {
 // Get single session by ID (tenant-scoped)
 export const getSessionById = asyncHandler(async (req, res) => {
   const session = await scopedOne(AttendanceSession, req, req.params.id, ['subject', 'markedBy']);
+
+  // If caller is student, return only that student's attendance row
+  if (req.user.role === 'student') {
+    const obj = session.toObject();
+    obj.records = (obj.records || []).filter(
+      (r) => String(r.student?._id || r.student) === String(req.user._id)
+    );
+    return res.json({ success: true, data: obj });
+  }
 
   res.json({ success: true, data: session });
 });

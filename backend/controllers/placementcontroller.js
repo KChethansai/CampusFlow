@@ -44,6 +44,14 @@ export const applyForJob = asyncHandler(async (req, res) => {
   const drive = await JobDrive.findOne({ _id: driveId, institution: req.user.institution });
   if (!drive) throw new ApiError(404, 'Job drive not found');
 
+  if (drive.status !== 'active') {
+    throw new ApiError(400, 'Job drive is not open for applications');
+  }
+
+  if (drive.applicationDeadline && new Date(drive.applicationDeadline).getTime() < Date.now()) {
+    throw new ApiError(400, 'Application deadline has passed');
+  }
+
   const existing = await JobApplication.findOne({
     drive: driveId,
     student: student._id
@@ -53,6 +61,9 @@ export const applyForJob = asyncHandler(async (req, res) => {
   }
 
   const eligibility = checkEligibility(student, drive);
+  if (!eligibility.eligible) {
+    throw new ApiError(403, `You are not eligible for this drive: ${eligibility.reasons.join(', ')}`);
+  }
 
   const jobApplication = await JobApplication.create({
     drive: driveId,

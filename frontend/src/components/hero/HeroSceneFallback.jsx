@@ -55,8 +55,8 @@ export default function HeroSceneFallback({ className = '' }) {
         <circle cx="250" cy="250" r="50" stroke="rgba(231, 166, 109, 0.35)" strokeWidth="1" />
 
         {/* Diagonal and orthogonal data pathways */}
-        <line x1="250" y1="55" x2="250" y2="445" stroke="url(#${gradId}-rail)" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.4" />
-        <line x1="55" y1="250" x2="445" y2="250" stroke="url(#${gradId}-rail)" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.4" />
+        <line x1="250" y1="55" x2="250" y2="445" stroke={`url(#${gradId}-rail)`} strokeWidth="1.2" strokeDasharray="4 4" opacity="0.4" />
+        <line x1="55" y1="250" x2="445" y2="250" stroke={`url(#${gradId}-rail)`} strokeWidth="1.2" strokeDasharray="4 4" opacity="0.4" />
         <line x1="112" y1="112" x2="388" y2="388" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
         <line x1="388" y1="112" x2="112" y2="388" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
 
@@ -64,7 +64,7 @@ export default function HeroSceneFallback({ className = '' }) {
         <polygon
           points="250,185 295,225 295,275 250,315 205,275 205,225"
           fill="#1A1410"
-          stroke="url(#${gradId}-core)"
+          stroke={`url(#${gradId}-core)`}
           strokeWidth="2"
         />
         <polygon

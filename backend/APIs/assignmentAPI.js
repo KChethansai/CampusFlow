@@ -21,8 +21,8 @@ assignmentApp.get('/', getAllAssignments);
 assignmentApp.get('/:id', getAssignmentById);
 
 // Write routes — restricted
-assignmentApp.post('/', verifyToken('faculty'), createAssignment);
-assignmentApp.patch('/:id', verifyToken('faculty'), updateAssignment);
+assignmentApp.post('/', verifyToken('super_admin', 'college_admin', 'faculty'), createAssignment);
+assignmentApp.patch('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), updateAssignment);
 assignmentApp.patch('/:id/status', verifyToken('super_admin', 'college_admin', 'faculty'), updateAssignmentStatus);
 assignmentApp.delete('/:id', verifyToken('super_admin', 'college_admin', 'faculty'), deleteAssignment);
 

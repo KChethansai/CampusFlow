@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import { CourseModel as Course } from '../models/CourseModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../utils/scope.js';
@@ -6,6 +8,12 @@ import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../uti
 // Create course
 export const createCourse = asyncHandler(async (req, res) => {
   const { name, code, durationYears, totalSemesters, department } = req.body;
+
+  if (department) {
+    if (!mongoose.isValidObjectId(department)) throw new ApiError(400, 'Invalid department ID');
+    const deptDoc = await Department.findOne({ _id: department, institution: req.user.institution });
+    if (!deptDoc) throw new ApiError(404, 'Department not found in institution');
+  }
 
   const course = await Course.create({
     name,
@@ -40,6 +48,12 @@ export const getCourseById = asyncHandler(async (req, res) => {
 
 // Update course (tenant-scoped, allowlisted)
 export const updateCourse = asyncHandler(async (req, res) => {
+  if (req.body.department) {
+    if (!mongoose.isValidObjectId(req.body.department)) throw new ApiError(400, 'Invalid department ID');
+    const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
+    if (!deptDoc) throw new ApiError(404, 'Department not found in institution');
+  }
+
   const course = await Course.findOneAndUpdate(
     { _id: req.params.id, institution: req.user.institution },
     pick(req.body, ['name', 'code', 'durationYears', 'totalSemesters', 'department', 'isActive']),

@@ -11,6 +11,13 @@ export function checkEligibility(student, drive) {
   if (rules.graduationYear != null && student.profile?.batchYear !== rules.graduationYear) {
     failures.push(`Graduation year (${student.profile?.batchYear}) does not match drive requirement (${rules.graduationYear})`);
   }
+  if (Array.isArray(rules.allowedDepartments) && rules.allowedDepartments.length > 0) {
+    const studentDept = String(student.department?._id || student.department || '');
+    const allowed = rules.allowedDepartments.map((d) => String(d?._id || d));
+    if (!allowed.includes(studentDept)) {
+      failures.push('Student department is not eligible for this drive');
+    }
+  }
 
-  return { eligible: failures.length === 0, failures };
+  return { eligible: failures.length === 0, failures, reasons: failures };
 }

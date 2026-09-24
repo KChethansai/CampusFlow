@@ -114,7 +114,7 @@ export function RoleBadge({ role, className, children }) {
 
 export function Card({ className, children, ...props }) {
   return (
-    <section className={cn(cardClass, 'glass-card cf-card-spot p-5', className)} {...props}>
+    <section className={cn(cardClass, 'cf-card-spot p-5', className)} {...props}>
       {children}
     </section>
   );

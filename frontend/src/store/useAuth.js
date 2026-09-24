@@ -1,11 +1,13 @@
 // useAuth: Zustand store for auth state, mirroring the former Redux slice.
 import { create } from 'zustand';
 import api from '../api/axios';
+import { clearAllOfflineCache } from '../config/api';
 
 const readStoredAuth = () => {
   try {
     return JSON.parse(localStorage.getItem('cf_auth') || 'null');
   } catch {
+    clearAllOfflineCache();
     return null;
   }
 };
@@ -50,6 +52,7 @@ export const useAuth = create((set) => ({
       // Logout even if API fails
     } finally {
       localStorage.removeItem('cf_auth');
+      clearAllOfflineCache();
       set({
         user: null,
         accessToken: null,

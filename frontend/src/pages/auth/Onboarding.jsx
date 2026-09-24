@@ -21,7 +21,7 @@ const STEP_COPY = {
 const AVATARS = [
   { id: 'scholar', label: 'Scholar', bg: 'bg-[#D86D3E]' },
   { id: 'mentor', label: 'Mentor', bg: 'bg-green-500' },
-  { id: 'builder', label: 'Builder', bg: 'bg-violet-500' },
+  { id: 'builder', label: 'Builder', bg: 'bg-[#A94727]' },
   { id: 'explorer', label: 'Explorer', bg: 'bg-[#C87D4B]' }
 ];
 

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { UserModel as User } from '../models/UserModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrl } from '../utils/sanitize.js';
@@ -152,7 +153,17 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   if (name !== undefined) user.name = name;
-  if (department !== undefined) user.department = department || undefined;
+  if (department !== undefined) {
+    if (department) {
+      const deptDoc = await Department.findOne({ _id: department, institution: req.user.institution });
+      if (!deptDoc) {
+        throw new ApiError(400, 'Department does not exist in this institution');
+      }
+      user.department = department;
+    } else {
+      user.department = undefined;
+    }
+  }
   if (profile !== undefined) {
     user.profile = {
       ...user.profile?.toObject?.(),

@@ -63,9 +63,24 @@ const writeOfflineCache = (storageKey, identity, data) => {
   }
 };
 
-const clearOfflineCache = (storageKey) => {
+export const clearOfflineCache = (storageKey) => {
   if (!storageKey) return;
   try { localStorage.removeItem(storageKey); } catch { /* storage may be disabled */ }
+};
+
+export const clearAllOfflineCache = () => {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(OFFLINE_CACHE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    /* storage may be disabled */
+  }
 };
 
 const safeReadAuth = () => {
@@ -73,6 +88,7 @@ const safeReadAuth = () => {
     return JSON.parse(localStorage.getItem('cf_auth') || 'null');
   } catch {
     localStorage.removeItem('cf_auth');
+    clearAllOfflineCache();
     return null;
   }
 };

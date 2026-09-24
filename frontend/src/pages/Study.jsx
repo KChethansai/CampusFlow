@@ -95,7 +95,7 @@ export default function Study() {
             <motion.div variants={reducedMotion ? undefined : staggerChild}>
               <Card>
                 <h2 className="font-display font-bold flex items-center gap-2 mb-3">
-                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-violet-500/10 text-violet-500" aria-hidden>
+                  <span className="w-8 h-8 grid place-items-center rounded-xl bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]" aria-hidden>
                     <CalendarCheck size={15} />
                   </span>
                   Revision plan

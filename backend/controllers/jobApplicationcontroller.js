@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { JobApplicationModel as JobApplication } from '../models/JobApplicationModel.js';
 import { JobDriveModel as JobDrive } from '../models/JobDriveModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -42,31 +43,78 @@ export const getJobApplicationById = asyncHandler(async (req, res) => {
   if (!jobApplication || String(jobApplication.drive?.institution) !== String(req.user.institution)) {
     throw new ApiError(404, 'Job application not found');
   }
+  if (req.user.role === 'student' && String(jobApplication.student?._id || jobApplication.student) !== String(req.user._id)) {
+    throw new ApiError(404, 'Job application not found');
+  }
   res.json({ success: true, data: jobApplication });
 });
 
-// Create job application (student applies)
+// Create job application (student applies) — unified validation
 export const createJobApplication = asyncHandler(async (req, res) => {
   const { drive, resumeUrl } = req.body;
+  if (!drive || !mongoose.isValidObjectId(drive)) {
+    throw new ApiError(400, 'Invalid drive ID');
+  }
+
+  const driveDoc = await JobDrive.findOne({ _id: drive, institution: req.user.institution });
+  if (!driveDoc) {
+    throw new ApiError(404, 'Job drive not found');
+  }
+
+  if (driveDoc.status !== 'active') {
+    throw new ApiError(400, 'Job drive is not open for applications');
+  }
+
+  if (driveDoc.applicationDeadline && new Date(driveDoc.applicationDeadline).getTime() < Date.now()) {
+    throw new ApiError(400, 'Application deadline has passed');
+  }
 
   const existing = await JobApplication.findOne({
-    drive,
+    drive: driveDoc._id,
     student: req.user._id
   });
   if (existing) {
     throw new ApiError(409, 'You have already applied to this drive');
   }
 
+  const { checkEligibility } = await import('../services/eligibility.service.js');
+  const eligibility = checkEligibility(req.user, driveDoc);
+  if (!eligibility.eligible) {
+    throw new ApiError(403, `You are not eligible for this drive: ${eligibility.reasons.join(', ')}`);
+  }
+
   const jobApplication = await JobApplication.create({
-    drive,
+    drive: driveDoc._id,
     student: req.user._id,
     stage: 'applied',
     resumeUrl: cleanUrl(resumeUrl, 'resumeUrl'),
+    eligibilitySnapshot: eligibility,
     history: [
       { stage: 'applied', at: new Date(), remarks: 'Application submitted' }
     ]
   });
-  res.status(201).json({ success: true, data: jobApplication });
+
+  const { UserModel: User } = await import('../models/UserModel.js');
+  const { createBulkNotifications } = await import('../services/notification.service.js');
+  const team = await User.find({
+    institution: driveDoc.institution,
+    role: { $in: ['placement_officer', 'college_admin', 'super_admin'] }
+  }).select('_id');
+
+  if (team.length > 0) {
+    await createBulkNotifications(
+      team.map((member) => ({
+        recipient: member._id,
+        category: 'placement',
+        title: 'New job application',
+        message: `${req.user.name} applied for ${driveDoc.role}`,
+        type: 'info',
+        link: '/placement'
+      }))
+    );
+  }
+
+  res.status(201).json({ success: true, data: jobApplication, eligibility });
 });
 
 // Update job application (placement officer updates stage — tenant-scoped

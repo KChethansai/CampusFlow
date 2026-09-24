@@ -8,8 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // Offline shell: precached app shell + navigation fallback. Authenticated
-    // API responses are deliberately NOT runtime-cached (per-user data would
-    // leak across accounts on shared devices) — offline shows empty states.
+    // API responses are deliberately NOT cached by Workbox to prevent cross-user
+    // leaks on shared devices; user-scoped offline caching is handled in config/api.js
+    // with session-isolated storage keys and complete purge on logout.
     VitePWA({
       registerType: 'autoUpdate',
       manifest: false, // hand-authored public/manifest.webmanifest stays canonical

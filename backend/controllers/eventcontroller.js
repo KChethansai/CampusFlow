@@ -1,5 +1,6 @@
 import { createEvent as createIcs } from 'ics';
 import { EventModel as Event } from '../models/EventModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { pageParams, pagedResponse, pick, scopedOne, tenantFilter } from '../utils/scope.js';
@@ -48,6 +49,13 @@ export const createEvent = asyncHandler(async (req, res) => {
   const isSuperOrCollegeAdmin = ['super_admin', 'college_admin'].includes(req.user.role);
   const assignedDepartment = isSuperOrCollegeAdmin ? department : (req.user.department || department);
 
+  if (assignedDepartment) {
+    const deptDoc = await Department.findOne({ _id: assignedDepartment, institution: req.user.institution });
+    if (!deptDoc) {
+      throw new ApiError(400, 'Department does not exist in this institution');
+    }
+  }
+
   const event = await Event.create({
     institution: req.user.institution,
     department: assignedDepartment,
@@ -88,6 +96,12 @@ export const updateEvent = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id, institution: req.user.institution };
   if (!['super_admin', 'college_admin'].includes(req.user.role) && req.user.department) {
     filter.department = req.user.department;
+  }
+  if (req.body.department) {
+    const deptDoc = await Department.findOne({ _id: req.body.department, institution: req.user.institution });
+    if (!deptDoc) {
+      throw new ApiError(400, 'Department does not exist in this institution');
+    }
   }
   const event = await Event.findOneAndUpdate(
     filter,

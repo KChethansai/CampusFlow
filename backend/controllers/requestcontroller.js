@@ -1,4 +1,6 @@
 import { RequestModel as Request } from '../models/RequestModel.js';
+import { DepartmentModel as Department } from '../models/DepartmentModel.js';
+import { UserModel as User } from '../models/UserModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { cleanUrlArray } from '../utils/sanitize.js';
@@ -7,6 +9,13 @@ import { publishRealtimeToInstitution, publishRealtimeToUser } from '../services
 // Student submits a new request
 export const createRequest = asyncHandler(async (req, res) => {
   const { department, type, title, description, attachments } = req.body;
+
+  if (department) {
+    const deptDoc = await Department.findOne({ _id: department, institution: req.user.institution });
+    if (!deptDoc) {
+      throw new ApiError(400, 'Department does not exist in this institution');
+    }
+  }
 
   const request = await Request.create({
     institution: req.user.institution,
@@ -85,6 +94,10 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     request.status = status;
   }
   if (assignedTo) {
+    const staff = await User.findOne({ _id: assignedTo, institution: req.user.institution });
+    if (!staff) {
+      throw new ApiError(400, 'Assigned staff does not exist in this institution');
+    }
     request.assignedTo = assignedTo;
   }
   if (resolution) {
@@ -102,6 +115,6 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
   await request.save();
 
   publishRealtimeToUser(request.student, 'request:updated', { request }); // live status for owner
-  publishRealtimeToInstitution(req.user.institution, 'request:updated', { request }); // live queue for staff
+  publishRealtimeToInstitution(req.user.institution, 'request:updated', { requestId: request._id, status: request.status }); // live queue for staff
   res.json({ success: true, data: request });
 });

@@ -10,5 +10,5 @@ analyticsApp.use(verifyToken());
 analyticsApp.use(auditLog);
 
 analyticsApp.get('/attendance-trend', attendanceTrend);
-analyticsApp.get('/placement-funnel', placementFunnel);
-analyticsApp.get('/enrollment-overview', enrollmentOverview);
+analyticsApp.get('/placement-funnel', verifyToken('super_admin', 'college_admin', 'placement_officer'), placementFunnel);
+analyticsApp.get('/enrollment-overview', verifyToken('super_admin', 'college_admin'), enrollmentOverview);

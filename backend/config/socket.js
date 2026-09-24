@@ -8,25 +8,28 @@ import { UserModel } from '../models/UserModel.js'
 
 let io = null
 
+export const authenticateSocket = async (socket, next) => {
+  try {
+    const token = socket.handshake?.auth?.token;
+    if (!token) return next(new Error('Not authorized, no token provided'));
+    const decoded = jwt.verify(token, env.secretKey);
+    const user = await UserModel.findById(decoded.sub).select('_id institution role isActive');
+    if (!user || !user.isActive) return next(new Error('Not authorized'));
+    socket.data = socket.data || {};
+    socket.data.user = { id: String(user._id), institution: String(user.institution), role: user.role };
+    next();
+  } catch {
+    next(new Error('Not authorized, token failed'));
+  }
+};
+
 export const initSocket = (httpServer) => {
   if (io) return io // singleton — hot-reload safe
   io = new Server(httpServer, {
     cors: { origin: env.clientUrls, credentials: true }
   })
 
-  io.use(async (socket, next) => {
-    try {
-      const token = socket.handshake.auth?.token || socket.handshake.query?.token
-      if (!token) return next(new Error('Not authorized, no token provided'))
-      const decoded = jwt.verify(token, env.secretKey)
-      const user = await UserModel.findById(decoded.sub).select('_id institution role isActive')
-      if (!user || !user.isActive) return next(new Error('Not authorized'))
-      socket.data.user = { id: String(user._id), institution: String(user.institution), role: user.role }
-      next()
-    } catch {
-      next(new Error('Not authorized, token failed'))
-    }
-  })
+  io.use(authenticateSocket)
 
   io.on('connection', (socket) => {
     const { id, institution } = socket.data.user
@@ -38,6 +41,7 @@ export const initSocket = (httpServer) => {
 }
 
 export const getIO = () => io // null until initSocket (tests import app only)
+export const setIO = (instance) => { io = instance; }
 
 // Fire-and-forget emits — never throw into the DB write path.
 export const emitToUser = (userId, event, payload) => {

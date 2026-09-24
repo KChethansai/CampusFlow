@@ -57,7 +57,7 @@ export default function DashboardHero({ onOpenCommandPalette }) {
       ]
     },
     college_admin: {
-      greeting: `Institutional command, ${firstName}.`,
+      greeting: `Institutional administration, ${firstName}.`,
       subhead: 'Real-time campus operations, academic department health, and governance signals.',
       icon: ShieldCheck,
       color: '#F5B08A',
@@ -68,7 +68,7 @@ export default function DashboardHero({ onOpenCommandPalette }) {
       ]
     },
     super_admin: {
-      greeting: `System root active, ${firstName}.`,
+      greeting: `Platform administration, ${firstName}.`,
       subhead: 'Multi-institution tenancy, system audits, and global security policies.',
       icon: ShieldCheck,
       color: '#F5B08A',
