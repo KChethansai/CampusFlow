@@ -14,7 +14,11 @@ const resolveBaseUrl = () => {
       throw new Error(`[CampusFlow Configuration Error] VITE_API_URL cannot point to localhost in production (received: "${trimmed}")`);
     }
     if (!/\/api\/v1\/?$/i.test(trimmed)) {
-      throw new Error(`[CampusFlow Configuration Error] VITE_API_URL must end in /api/v1 (received: "${trimmed}")`);
+      // Tolerate a bare backend origin (the common Vercel misconfiguration):
+      // normalize to <origin>/api/v1 instead of crashing to a blank page.
+      // The boot probe + health check still fail loud if the host is wrong.
+      console.warn('[CampusFlow] VITE_API_URL missing /api/v1 suffix, appending it.');
+      return `${trimmed.replace(/\/$/, '')}/api/v1`;
     }
     return trimmed.replace(/\/$/, '');
   }
