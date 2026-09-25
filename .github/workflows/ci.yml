@@ -17,6 +17,9 @@ jobs:
 
     env:
       NODE_ENV: test
+      DB_URL: mongodb://127.0.0.1:27017/campusflow-ci
+      SECRET_KEY: test-secret-key
+      SECRET_KEY_REFRESH: test-refresh-secret-key
 
     steps:
       - uses: actions/checkout@v4
