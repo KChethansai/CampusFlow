@@ -205,7 +205,7 @@ function Login() {
             className="w-full h-12 text-sm"
           >
             {loading ? (
-              <span>Authenticating…</span>
+              <span>Signing in…</span>
             ) : (
               <>
                 <span>Sign In to Workspace</span>
@@ -218,7 +218,7 @@ function Login() {
         <div className="pt-1 text-center">
           <Link
             to="/forgot-password"
-            className="text-xs text-[var(--cf-ink-mute)] hover:text-[#D86D3E] underline underline-offset-4 transition"
+            className="inline-block px-3 py-1.5 text-xs text-[var(--cf-ink-mute)] hover:text-[#D86D3E] underline underline-offset-4 transition"
           >
             Forgot your password?
           </Link>

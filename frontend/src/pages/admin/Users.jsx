@@ -312,7 +312,7 @@ function Users() {
       {loading ? (
         <LoadingState label="Loading users…" />
       ) : visible.length === 0 ? (
-        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 p-5"><EmptyState title={users.length ? 'No matches' : 'No users found'} hint={users.length ? 'Try another search.' : undefined} /></div>
+        <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 p-5"><EmptyState title={users.length ? 'No matches' : 'No users found'} hint={users.length ? 'Try another search.' : 'Add the first user above, or bulk-import a CSV.'} /></div>
       ) : (
         <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">

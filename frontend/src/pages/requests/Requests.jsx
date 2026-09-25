@@ -40,7 +40,7 @@ export default function Requests() {
   const [filter, setFilter] = useState('All');
   const [openId, setOpenId] = useState(null);
   const filterBtnRefs = useRef([]);
-  const { register, handleSubmit, reset } = useForm({ defaultValues: { type: 'leave', title: '', description: '' } });
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({ defaultValues: { type: 'leave', title: '', description: '' } });
 
   const fetchRequests = async () => {
     try {
@@ -131,7 +131,7 @@ export default function Requests() {
           </select>
           <input placeholder="Title" className={cn(inputClass, 'rounded-[14px]')} {...register('title', { required: true })} aria-label="Title" />
           <input placeholder="Description" className={cn(inputClass, 'rounded-[14px]')} {...register('description')} aria-label="Description" />
-          <button type="submit" className={btnClass('primary', 'medium')}>Submit</button>
+          <button type="submit" disabled={isSubmitting} className={btnClass('primary', 'medium')}>{isSubmitting ? 'Submitting…' : 'Submit'}</button>
         </form>
       )}
 
@@ -152,7 +152,7 @@ export default function Requests() {
                       </span>
                       <span className="block text-sm text-[var(--cf-ink-mute)] mt-0.5 line-clamp-1">{r.description || '—'}</span>
                       <span className="block font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)] mt-1">
-                        {r.student?.name || '—'} · {fmt(r.createdAt)}
+                        {r.student?.name || '—'} · filed {fmt(r.createdAt)} · updated {fmt(r.updatedAt)}
                         {r.assignedTo?.name ? ` · with ${r.assignedTo.name}` : ''}
                       </span>
                     </span>

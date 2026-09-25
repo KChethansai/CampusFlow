@@ -5,6 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 import HeroScene from '../hero/HeroScene';
 import LiquidGlassButton from '../visual/LiquidGlassButton';
 import ContainerScroll from '../visual/ContainerScroll';
+import { landingDisplayHero } from '../../system/tokens';
 import { BlurText } from './shared';
 
 export default function HeroSection() {
@@ -32,14 +33,13 @@ export default function HeroSection() {
       </div>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-32 sm:pt-44 pb-4 text-center">
-        <h1
-          className="font-display font-bold tracking-tight leading-[1.02] text-balance"
-          style={{ fontSize: 'clamp(3.2rem,8vw,9.5rem)' }}
-        >
+        <h1 className={landingDisplayHero}>
           <BlurText text="Your campus." className="block" />
-          <span className="landing-accent block bg-gradient-to-r from-[var(--cf-accent)] via-[var(--cf-teal)] to-[var(--cf-volt)] bg-clip-text text-transparent">
-            <BlurText text="In sync." />
-          </span>
+          <BlurText
+            text="In sync."
+            className="landing-accent block"
+            wordClassName="bg-gradient-to-r from-[#B6532B] via-[#2F6B5E] to-[#A66C1F] dark:from-[var(--cf-accent)] dark:via-[var(--cf-teal)] dark:to-[var(--cf-volt)] bg-clip-text text-transparent forced-colors:text-[CanvasText]"
+          />
         </h1>
         <motion.p
           initial={reduced ? false : { opacity: 0, y: 12 }}
@@ -49,18 +49,21 @@ export default function HeroSection() {
         >
           Attendance, assignments, placements and insight — moving together in one workspace, one record per student.
         </motion.p>
+        <p className="mt-3 text-[13px] font-medium text-[#6B7280] dark:text-[#A7B0BF]">
+          Mark attendance in seconds, track drives to offers, read AI reports with evidence attached.
+        </p>
         <motion.div
           initial={reduced ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.48, delay: 0.22 }}
           className="mt-8 flex flex-wrap items-center justify-center gap-3"
         >
-          <LiquidGlassButton to="/login" size="lg">
+          <LiquidGlassButton to="/login" size="lg" className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]">
             Get Started
           </LiquidGlassButton>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-black/10 dark:border-white/15 cf-glass font-semibold hover:border-[#D86D3E]/50 transition-colors"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-black/10 dark:border-white/15 cf-glass font-semibold hover:border-[#D86D3E]/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
           >
             Sign In <ArrowUpRight size={17} aria-hidden />
           </Link>

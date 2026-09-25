@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusFlow — Authorization &amp; Tenant Model</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;line-height:1.5}
+h1{font-size:1.4rem;margin:0 0 4px} p.sub{color:#666;margin:0 0 16px}
+table{border-collapse:collapse;width:100%;max-width:960px;margin:0 0 16px;font-size:.87rem}
+th,td{border:1px solid #bbb;padding:6px 10px;text-align:left} th{background:#f3f4f6}
+.box{max-width:960px;border:2px solid #333;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:.88rem}
+.super{border-color:#d62728;background:#fdecec}.mech{border-color:#41ab5d;background:#eaf7ee}.roles{border-color:#646cff;background:#eef2ff}
+code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.85em}
+footer{max-width:960px;margin:14px auto 0;font-size:.8rem;color:#666}
+</style>
+</head>
+<body>
+<h1>CampusFlow — Authorization &amp; Tenant Model</h1>
+<p class="sub">Sources: <code>models/UserModel.js</code> (role enum), <code>middlewares/verifyToken.js</code>, <code>utils/scope.js</code>, <code>utils/sanitize.js</code>, <code>APIs/*.js</code>, <code>APIs/institutionAPI.js</code>.</p>
+<div class="box roles"><strong>6 roles</strong> (<code>UserModel.role</code> enum): <code>super_admin</code> · <code>college_admin</code> · <code>hod</code> · <code>faculty</code> · <code>student</code> · <code>placement_officer</code>. Every user belongs to one <code>institution</code> (tenant root); <code>hod</code>/faculty may carry a <code>department</code>. JWT role claims are <strong>never trusted</strong> — <code>verifyToken</code> reloads <code>role</code>, <code>isActive</code>, <code>passwordChangedAt</code> from DB per request.</div>
+<div class="box mech"><strong>Mechanism:</strong> list queries add <code>tenantFilter(req)</code> = <code>{institution: req.user.institution}</code>; single-object reads/mutations go through <code>scopedOne(model, req, id)</code> = <code>findOne({_id, institution})</code> (cross-tenant id → 404, IDOR/BOLA guard). Writes are allowlisted via <code>pick()</code> / <code>sanitize.js</code> (+ <code>academicScope.js</code>); <code>hod</code> writes additionally constrained to own department via <code>requireDepartment(req)</code> (fail-closed 403). Pagination capped (<code>pageParams</code>, max 200).</div>
+<table>
+<tr><th>Capability</th><th>Allowed roles (representative routes)</th></tr>
+<tr><td>Institutions <code>POST/PATCH/DELETE /institutions</code></td><td><code>super_admin</code> only</td></tr>
+<tr><td>AI reports <code>/ai-reports/*</code> (whole router)</td><td><code>super_admin</code>, <code>college_admin</code></td></tr>
+<tr><td>User register <code>POST /auth/register</code>, bulk import <code>POST /users/bulk</code>, departments/courses, enrollments admin</td><td><code>super_admin</code>, <code>college_admin</code></td></tr>
+<tr><td>Subjects/rooms/timetable writes, assignments, announcements/events writes</td><td>+ <code>hod</code> (dept-scoped), <code>faculty</code> where teaching</td></tr>
+<tr><td>Attendance sessions <code>POST /attendance</code>, grading <code>PATCH /submissions/:id</code>, request status <code>PATCH /requests/:id/status</code></td><td><code>faculty</code>, <code>hod</code></td></tr>
+<tr><td>Companies/drives writes, application stage updates</td><td><code>placement_officer</code> (+ admins)</td></tr>
+<tr><td>Self-service: enroll <code>POST /enrollments/me</code>, submit <code>POST /submissions/…</code>, apply <code>POST /job-applications/drives/:driveId/apply</code>, event register, onboarding</td><td><code>student</code></td></tr>
+</table>
+<div class="box super"><strong>Super-admin-only surfaces:</strong> tenant lifecycle (<code>institutionAPI.js</code> writes) and anything crossing institutions. There is no cross-tenant read path: institution scoping is applied in the controller/service layer on every object route, with server-enforced workflow transitions (requests, drives, assignment status) and <code>auditLog</code> on writes.</div>
+<footer>Regression cover: <code>security</code> suite (RBAC/tenant isolation) + <code>integrity</code> suite in <code>backend/tests/</code>.</footer>
+</body>
+</html>

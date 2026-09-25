@@ -1,7 +1,9 @@
 // Subjects: glass table. Endpoint preserved: GET /subjects.
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import api from '../../api/axios';
 import { EmptyState, LoadingState, PageHeader, Card } from '../../components/ui/primitives';
+import { btnClass } from '../../system/tokens';
 
 function Subjects() {
   const [subjects, setSubjects] = useState([]);
@@ -27,7 +29,7 @@ function Subjects() {
       {loading ? (
         <LoadingState label="Loading subjects…" />
       ) : subjects.length === 0 ? (
-        <Card><EmptyState title="No subjects found" hint="Subjects appear here once the catalog is built." /></Card>
+        <Card><EmptyState title="No subjects found" hint="Subjects appear here once the catalog is built." action={<Link to="/schedule" className={btnClass('outline', 'small')}>View schedule</Link>} /></Card>
       ) : (
         <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">

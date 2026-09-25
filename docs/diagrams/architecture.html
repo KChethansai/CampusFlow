@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusFlow — System Architecture</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;line-height:1.5}
+h1{font-size:1.4rem;margin:0 0 4px} p.sub{color:#666;margin:0 0 20px}
+.layer{border:2px solid #333;border-radius:10px;padding:12px 16px;margin:0 auto 14px;max-width:960px}
+.layer h2{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
+.client{background:#eef2ff;border-color:#646cff}
+.server{background:#eaf7ee;border-color:#41ab5d}
+.data{background:#fff4e0;border-color:#e8930c}
+.ext{background:#f3f4f6;border-color:#9ca3af}
+code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.85em}
+.arrow{text-align:center;font-size:1.3rem;line-height:1;margin:2px 0}
+.grid{display:flex;flex-wrap:wrap;gap:6px} .chip{border:1px solid #bbb;border-radius:20px;padding:2px 10px;font-size:.8rem;background:#fff}
+footer{max-width:960px;margin:18px auto 0;font-size:.8rem;color:#666}
+</style>
+</head>
+<body>
+<h1>CampusFlow — System Architecture</h1>
+<p class="sub">4-layer: routers → controllers → models + services. Sources: <code>backend/app.js</code>, <code>backend/APIs/index.js</code>, <code>backend/server.js</code>.</p>
+
+<div class="layer client"><h2>Client layer — PWA frontend (React 19 + Vite)</h2>
+<div>Browser → Vite dev server / Vercel <code>dist</code> → React Router 8 · Zustand <code>cf_auth</code> session · Axios client (<code>src/api/axios.js</code>, refresh interceptor) · Socket.IO client (<code>src/store/useSocket</code>) · Tailwind 4 · PWA via <code>vite-plugin-pwa</code> (<code>frontend/vite.config.js</code>)</div></div>
+<div class="arrow">⇅ HTTPS / WSS</div>
+
+<div class="layer server"><h2>Server layer — Express 4 (<code>backend/app.js</code> → <code>backend/server.js</code>)</h2>
+<div><strong>Middleware chain (in order):</strong> <code>trust proxy</code> → <code>securityMiddleware</code> (Helmet + global rate-limit) → CORS allowlist (<code>CLIENT_URL</code>) → <code>express.json({limit:'1mb'})</code> → <code>express-mongo-sanitize</code> → <code>rejectUnsafePayload</code> → credential limiters (10 req/15 min × 6 auth endpoints) → <code>/api/v1</code> router</div>
+<div style="margin-top:8px"><strong>23 routers</strong> (<code>backend/APIs/index.js</code>):</div>
+<div class="grid" style="margin-top:6px">
+<span class="chip">auth</span><span class="chip">users</span><span class="chip">institutions</span><span class="chip">departments</span><span class="chip">courses</span><span class="chip">subjects</span><span class="chip">rooms</span><span class="chip">timetable</span><span class="chip">enrollments</span><span class="chip">assignments</span><span class="chip">submissions</span><span class="chip">attendance</span><span class="chip">announcements</span><span class="chip">events</span><span class="chip">companies</span><span class="chip">job-drives</span><span class="chip">job-applications</span><span class="chip">requests</span><span class="chip">notifications</span><span class="chip">analytics</span><span class="chip">search</span><span class="chip">study</span><span class="chip">ai-reports</span>
+</div>
+<div style="margin-top:8px">→ <code>verifyToken(...roles)</code> (<code>middlewares/verifyToken.js</code>, role re-checked from DB) → <code>auditLog</code> → <code>validate</code> (422) → <strong>controllers/</strong> (25: auth, user, institution, … + <code>filecontroller.js</code>, <code>placementcontroller.js</code>) → <strong>services/</strong> (<code>notification</code>, <code>digest</code> cron, <code>email</code>, <code>ai</code>, <code>eligibility</code>, <code>activityLog</code>, <code>accountProvisioning</code>) → <strong>models/</strong> (Mongoose 8, 22 schemas)</div>
+<div style="margin-top:8px"><strong>Realtime:</strong> Socket.IO singleton (<code>config/socket.js</code>: <code>initSocket</code>, rooms <code>user:{id}</code> + <code>institution:{id}</code>) · weekly digest via <code>node-cron</code> (<code>services/digest.service.js</code> <code>0 6 * * 0</code>) · uploads Multer → local disk / Cloudinary · SMTP via Nodemailer</div>
+</div>
+<div class="arrow">⇅ Mongoose 8 ODM</div>
+
+<div class="layer data"><h2>Database layer — MongoDB (Atlas prod / local dev)</h2>
+<div>Users · Institutions · Departments · Courses · Subjects · Rooms · Timetable · Enrollments · Assignments · Submissions · AttendanceSessions · Announcements · Events · Companies · JobDrives · JobApplications · Requests · Notifications · AIReports · LearningResources · RefreshTokens · ActivityLogs</div></div>
+<div class="arrow">⇅</div>
+
+<div class="layer ext"><h2>External services</h2>
+<div>MongoDB Atlas · Cloudinary CDN (prod uploads) · SMTP (password-reset + digest mail, in-app fallback without) · OpenAI <code>gpt-4o-mini</code> (AI reports, snapshot fallback without key)</div></div>
+
+<footer>Health: <code>GET /api/health</code> (unversioned) · errors via <code>notFound</code> + <code>errorHandler</code>. See <code>docs/ops-handover.md</code> for env + release checklist.</footer>
+</body>
+</html>

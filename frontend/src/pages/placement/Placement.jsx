@@ -164,6 +164,7 @@ export default function Placement() {
   });
 
   const onCreateCompany = async (form) => {
+    setBusy('company');
     try {
       if (editingCompany) {
         await api.patch(`/companies/${editingCompany._id}`, form);
@@ -178,6 +179,8 @@ export default function Placement() {
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save company');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -188,6 +191,7 @@ export default function Placement() {
   };
 
   const onCreateDrive = async (form) => {
+    setBusy('drive');
     try {
       if (editingDrive) {
         await api.patch(`/job-drives/${editingDrive._id}`, buildDrivePayload(form));
@@ -202,6 +206,8 @@ export default function Placement() {
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save drive');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -494,6 +500,11 @@ export default function Placement() {
         {appDetail && (
           <div className="space-y-4">
             <PipelineLabels current={appDetail.stage || 'applied'} />
+            <p className="font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]">
+              {appDetail.student?.name || '—'} · applied {fmtDT(appDetail.createdAt) || '—'} · updated {fmtDT(appDetail.updatedAt) || '—'}
+              {appDetail.offerPackageLPA ? ` · ${appDetail.offerPackageLPA} LPA offer` : ''}
+              {appDetail.outcome ? ` · ${appDetail.outcome}` : ''}
+            </p>
             <WorkflowTimeline steps={appTimeline(appDetail)} />
             {isStaff && appDetail.stage !== 'placed' && appDetail.stage !== 'rejected' && (
               <div>
@@ -522,7 +533,7 @@ export default function Placement() {
               <input id={`co-${f}`} className={inputClass} placeholder={f === 'website' ? 'https://example.com' : undefined} {...companyForm.register(f, { required: f === 'name' })} />
             </div>
           ))}
-          <button type="submit" className={btnClass('success', 'medium') + ' w-full'}>{editingCompany ? 'Save changes' : 'Add company'}</button>
+          <button type="submit" disabled={busy === 'company'} className={btnClass('success', 'medium') + ' w-full'}>{busy === 'company' ? 'Saving…' : editingCompany ? 'Save changes' : 'Add company'}</button>
         </form>
       </Modal>
 
@@ -575,7 +586,7 @@ export default function Placement() {
             <label className={labelClass} htmlFor="dr-deadline">Deadline</label>
             <input id="dr-deadline" type="date" className={inputClass} {...driveForm.register('applicationDeadline')} />
           </div>
-          <button type="submit" className={btnClass('success', 'medium') + ' sm:col-span-2'}>{editingDrive ? 'Save changes' : 'Post drive'}</button>
+          <button type="submit" disabled={busy === 'drive'} className={btnClass('success', 'medium') + ' sm:col-span-2'}>{busy === 'drive' ? 'Saving…' : editingDrive ? 'Save changes' : 'Post drive'}</button>
         </form>
       </Modal>
 

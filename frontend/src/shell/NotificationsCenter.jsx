@@ -3,12 +3,13 @@
 // NOTE: components/ui/{buttons,cards,overlays}/ do not exist in this repo — composed locally.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Bell, Briefcase, GraduationCap, Inbox, Megaphone, Settings2 } from 'lucide-react';
+import { Bell, Briefcase, Download, GraduationCap, Inbox, Megaphone, Settings2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import api from '../api/axios';
 import { useSocket } from '../store/useSocket';
 import { useFocusTrap } from '../system/focusTrap';
 import { cn } from '../system/tokens';
+import { downloadCsv, rowsToCsv } from '../utils/exportCsv';
 import { EASE_OUT, motionVariants } from '../system/motion';
 
 const CATEGORY_ICON = {
@@ -127,6 +128,19 @@ export default function NotificationsCenter() {
 
   const dismiss = (id) => setItems((prev) => prev.filter((x) => x._id !== id));
 
+  // Visible affordance for the client CSV export (same columns as the
+  // command-palette export in AppShell) — real /notifications rows only.
+  const exportCsv = async () => {
+    try {
+      const { data } = await api.get('/notifications');
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      downloadCsv(
+        'campusflow-notifications.csv',
+        rowsToCsv(rows, ['title', 'message', 'type', 'read', 'createdAt'])
+      );
+    } catch { /* handled by tray staying open */ }
+  };
+
   const trapRef = useFocusTrap(open);
   useEffect(() => {
     if (!open) return;
@@ -169,6 +183,15 @@ export default function NotificationsCenter() {
                   <p className="font-display font-semibold text-sm tracking-tight text-[var(--cf-ink)]">
                     Notifications{unread > 0 && ` (${unread})`}
                   </p>
+                  <button
+                    type="button"
+                    onClick={exportCsv}
+                    aria-label="Export notifications as CSV"
+                    title="Export notifications as CSV"
+                    className="inline-flex items-center gap-1 rounded-full border border-[var(--cf-line)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--cf-ink-soft)] transition hover:border-[var(--cf-accent)]/50 hover:text-[var(--cf-ink)]"
+                  >
+                    <Download size={13} aria-hidden /> Export
+                  </button>
                   <div className="flex gap-1 text-xs overflow-x-auto" role="tablist" aria-label="Filter">
                     {TABS.map((f) => (
                       <button

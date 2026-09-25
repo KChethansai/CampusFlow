@@ -21,7 +21,7 @@ export default function FinalCTA() {
                 Bring your campus in sync.
               </h2>
               <p className="mt-4 text-[#A7B0BF] max-w-md mx-auto text-base">
-                Sign in to step into the workspace your role unlocks.
+                Sign in — your role opens its workspace.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <LiquidGlassButton to="/login" size="lg">

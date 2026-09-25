@@ -42,7 +42,7 @@ export default function DirectorySection() {
                   </span>
                   <Link
                     to="/dashboard"
-                    className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[#D86D3E] dark:text-[#F5B08A] hover:underline underline-offset-4"
+                    className="mt-2.5 inline-flex items-center gap-1 py-1 text-[13px] font-semibold text-[#A94727] dark:text-[#F5B08A] hover:underline underline-offset-4"
                   >
                     View workspace <ArrowRight size={13} aria-hidden />
                   </Link>

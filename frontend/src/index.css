@@ -132,6 +132,16 @@
   --duration-modal: 280ms;
   --duration-page: 350ms;
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Landing display-type scale (serif, system stack — zero webfont bytes) */
+  --cf-display-serif: Georgia, 'Times New Roman', ui-serif, system-ui, serif;
+  --cf-display-hero-size: clamp(3.5rem, 7vw, 7rem);
+  --cf-display-hero-leading: 1;
+  --cf-display-hero-tracking: -0.02em;
+  --cf-display-h2-size: clamp(2.2rem, 4.5vw, 4rem);
+  --cf-display-h2-leading: 1.05;
+  --cf-display-h2-tracking: -0.02em;
+  --cf-kicker-size: 0.7rem;
+  --cf-kicker-tracking: 0.16em;
   color-scheme: light;
 }
 
@@ -168,6 +178,16 @@
   --cf-frame: rgba(255,238,220,.12);
   --cf-glow-ember: 0 0 32px rgba(240,138,82,.30);
   --cf-glow-volt: 0 0 20px rgba(231,166,109,.28);
+  /* Landing display-type scale (mirrors light values; same restrained ramp) */
+  --cf-display-serif: Georgia, 'Times New Roman', ui-serif, system-ui, serif;
+  --cf-display-hero-size: clamp(3.5rem, 7vw, 7rem);
+  --cf-display-hero-leading: 1;
+  --cf-display-hero-tracking: -0.02em;
+  --cf-display-h2-size: clamp(2.2rem, 4.5vw, 4rem);
+  --cf-display-h2-leading: 1.05;
+  --cf-display-h2-tracking: -0.02em;
+  --cf-kicker-size: 0.7rem;
+  --cf-kicker-tracking: 0.16em;
   color-scheme: dark;
 }
 
@@ -416,6 +436,53 @@ body {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--cf-ink-mute);
+}
+/* Landing display-type utilities (LANDING ONLY) — consume vars above, no raw values. */
+.cf-display-hero {
+  font-family: var(--cf-display-serif);
+  font-weight: 400;
+  font-size: var(--cf-display-hero-size);
+  line-height: var(--cf-display-hero-leading);
+  letter-spacing: var(--cf-display-hero-tracking);
+  text-wrap: balance;
+}
+.cf-display-h2 {
+  font-family: var(--cf-display-serif);
+  font-weight: 400;
+  font-size: var(--cf-display-h2-size);
+  line-height: var(--cf-display-h2-leading);
+  letter-spacing: var(--cf-display-h2-tracking);
+  text-wrap: balance;
+}
+.cf-kicker-landing {
+  font-family: var(--font-mono);
+  font-size: var(--cf-kicker-size);
+  font-weight: 600;
+  letter-spacing: var(--cf-kicker-tracking);
+  text-transform: uppercase;
+  color: var(--cf-ink-mute);
+}
+.cf-chapter-reveal {
+  will-change: transform, opacity;
+}
+.cf-chapter-stack {
+  transform-origin: center top;
+}
+.cf-chapter-stack.armed {
+  will-change: transform, opacity;
+}
+/* Keyboard users can Tab into a card that a later card overlaps: lift the
+   focused card above the stack so its focus ring and link stay visible. */
+.cf-chapter-stack:focus-within {
+  z-index: 20;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-display-hero, .cf-display-h2, .cf-kicker-landing,
+  .cf-chapter-reveal, .cf-chapter-stack {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 /* Film grain over hero / statement bands — pure CSS, zero assets */
 .cf-grain { position: relative; isolation: isolate; }

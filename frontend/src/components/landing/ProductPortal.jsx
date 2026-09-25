@@ -186,13 +186,27 @@ export default function ProductPortal() {
           className="flex items-center gap-1 p-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]"
           role="tablist"
           aria-label="Preview workspace by role"
+          onKeyDown={(e) => {
+            const idx = TABS.indexOf(tab);
+            let next = null;
+            if (e.key === 'ArrowRight') next = TABS[(idx + 1) % TABS.length];
+            else if (e.key === 'ArrowLeft') next = TABS[(idx - 1 + TABS.length) % TABS.length];
+            else if (e.key === 'Home') next = TABS[0];
+            else if (e.key === 'End') next = TABS[TABS.length - 1];
+            if (next === null) return;
+            e.preventDefault();
+            setTab(next);
+            e.currentTarget.querySelector(`[data-index="${TABS.indexOf(next)}"]`)?.focus();
+          }}
         >
-          {TABS.map((t) => (
+          {TABS.map((t, i) => (
             <button
               key={t}
               type="button"
               role="tab"
+              data-index={i}
               aria-selected={tab === t}
+              aria-controls="portal-preview-panel"
               onClick={() => setTab(t)}
               className={cn(
                 'px-3 py-1.5 rounded-full font-display text-xs font-semibold transition-all',
@@ -208,7 +222,7 @@ export default function ProductPortal() {
       </div>
 
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={tab} {...morph}>
+        <motion.div key={tab} id="portal-preview-panel" {...morph}>
           <div className="flex flex-wrap items-end justify-between gap-3 px-5 sm:px-6 pt-5">
             <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#100D0B] dark:text-[#F5F7FA]">
               {HEADLINES[tab]}

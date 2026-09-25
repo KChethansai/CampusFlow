@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusFlow — Request Flow</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;line-height:1.5}
+h1{font-size:1.4rem;margin:0 0 4px} p.sub{color:#666;margin:0 0 20px}
+.flow{max-width:720px;margin:0 auto}
+.step{border:2px solid #333;border-radius:10px;padding:10px 14px;margin:0}
+.step h2{font-size:.9rem;margin:0 0 4px} .step p{margin:0;font-size:.88rem}
+.c1{border-color:#646cff;background:#eef2ff}.c2{border-color:#41ab5d;background:#eaf7ee}
+.c3{border-color:#e8930c;background:#fff4e0}.c4{border-color:#d62728;background:#fdecec}
+code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.85em}
+.arrow{text-align:center;font-size:1.2rem;margin:2px 0}
+.branch{display:flex;gap:10px}.branch>div{flex:1}
+footer{max-width:720px;margin:18px auto 0;font-size:.8rem;color:#666}
+</style>
+</head>
+<body>
+<h1>CampusFlow — Overall Request Flow</h1>
+<p class="sub">Sources: <code>backend/app.js</code>, <code>middlewares/verifyToken.js</code>, <code>middlewares/validate.js</code>, <code>middlewares/errorHandler.js</code>, <code>utils/scope.js</code>, <code>src/api/axios.js</code>.</p>
+<div class="flow">
+<div class="step c1"><h2>1. Browser (React + Vite)</h2><p>Axios client reads access token from <code>localStorage cf_auth</code>, sends <code>Authorization: Bearer &lt;15m access&gt;</code> to <code>VITE_API_URL</code> (must end <code>/api/v1</code>). Expired token → interceptor calls <code>POST /auth/refresh</code> silently.</p></div>
+<div class="arrow">↓ HTTPS</div>
+<div class="step c2"><h2>2. Express middleware chain (<code>app.js</code>)</h2><p><code>trust proxy</code> → Helmet + global rate-limit → CORS allowlist → 1 MB JSON cap → <code>mongoSanitize</code> → <code>rejectUnsafePayload</code> (400 on <code>$</code>/<code>.</code> keys) → credential limiters (10/15 min) → <code>/api/v1</code> router.</p></div>
+<div class="arrow">↓</div>
+<div class="step c2"><h2>3. Router → <code>verifyToken(...roles)</code> → <code>validate</code></h2><p>Missing/invalid/expired token → <strong>401</strong>. Deactivated account or wrong role → <strong>403</strong> (role re-loaded from DB, never JWT claim). Schema violations → <strong>422</strong> with field details.</p></div>
+<div class="arrow">↓</div>
+<div class="step c3"><h2>4. Controller + service + tenant-scoped model</h2><p>Allowlisted writes only (<code>utils/sanitize.js</code> + <code>pick()</code>); single-object reads via <code>scopedOne(model, req, id)</code> = <code>findOne({_id, institution})</code> → wrong tenant reads as <strong>404</strong> (no oracle leak). Mongoose errors mapped: CastError → <strong>400</strong>, ValidationError → <strong>422</strong>, dup key 11000 → <strong>409</strong>.</p></div>
+<div class="arrow">↓</div>
+<div class="branch">
+<div class="step c2"><h2>5a. Success → JSON</h2><p><code>200 OK</code> / <code>201 Created</code> (+ <code>pagination {page,limit,total,pages}</code> on lists) rendered by React; realtime side-effects emitted via Socket.IO.</p></div>
+<div class="step c4"><h2>5b. Failure → JSON error</h2><p><code>{success:false, message, details?}</code> (+ stack in development). Unknown route → <strong>404</strong> via <code>notFound</code>; file too large → <strong>413</strong>.</p></div>
+</div>
+</div>
+<footer>Status map: 400 invalid ID/payload · 401 auth · 403 forbidden/deactivated · 404 not-found · 409 duplicate · 413 file too large · 422 validation.</footer>
+</body>
+</html>

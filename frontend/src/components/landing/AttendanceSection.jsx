@@ -125,7 +125,7 @@ export default function AttendanceSection() {
                 Direction only — live values resolve per subject after sign-in.
               </p>
               <Link
-                to="/dashboard"
+                to="/attendance"
                 className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#D86D3E] dark:text-[#F5B08A] hover:underline underline-offset-4"
               >
                 Check attendance <ArrowUpRight size={15} aria-hidden />

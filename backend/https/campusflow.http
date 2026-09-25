@@ -1,0 +1,478 @@
+# CampusFlow full API collection — manual REST Client flows (dev).
+# Covers every router mounted in backend/APIs/index.js under /api/v1
+# (23 resource routers + unversioned health below).
+# Setup: run Login, copy accessToken into @token, then run any request.
+@base = http://localhost:4000/api/v1
+@token = <paste-access-token>
+
+### Health (unversioned, backend/app.js)
+GET http://localhost:4000/api/health
+
+### Auth — login
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@anurag.edu.in",
+  "password": "<paste-dev-password>"
+}
+
+### Auth — refresh (rotating, backend/controllers/authcontroller.js)
+POST {{base}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "<paste-refresh-token>"
+}
+
+### Auth — me
+GET {{base}}/auth/me
+Authorization: Bearer {{token}}
+
+### Auth — register (super_admin/college_admin only, backend/APIs/authAPI.js)
+POST {{base}}/auth/register
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Faculty",
+  "email": "newfaculty@anurag.edu.in",
+  "password": "<paste-dev-password>",
+  "role": "faculty"
+}
+
+### Auth — change password
+PATCH {{base}}/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "<paste-current-password>",
+  "newPassword": "<paste-new-password>"
+}
+
+### Auth — forgot / reset password (rate-limited 10/15min)
+POST {{base}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "student1@anurag.edu.in"
+}
+
+### Auth — reset password
+POST {{base}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "<reset-token>",
+  "newPassword": "<paste-new-password>"
+}
+
+### Auth — logout (refresh-tolerant)
+POST {{base}}/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refreshToken": "<paste-refresh-token>"
+}
+
+### Users — list (tenant-scoped, paginated)
+GET {{base}}/users?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Users — get by id (scopedOne: 404 across tenants)
+GET {{base}}/users/<user-id>
+Authorization: Bearer {{token}}
+
+### Users — update allowlisted fields
+PATCH {{base}}/users/<user-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### Users — deactivate (isActive=false)
+PATCH {{base}}/users/<user-id>/deactivate
+Authorization: Bearer {{token}}
+
+### Users — onboarding
+PATCH {{base}}/users/me/onboarding
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Institutions — list / detail
+GET {{base}}/institutions
+Authorization: Bearer {{token}}
+
+### Institutions — detail
+GET {{base}}/institutions/<institution-id>
+Authorization: Bearer {{token}}
+
+### Institutions — create (super_admin ONLY, backend/APIs/institutionAPI.js)
+POST {{base}}/institutions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Demo Institute",
+  "domain": "demo.edu.in"
+}
+
+### Institutions — update (super_admin ONLY)
+PATCH {{base}}/institutions/<institution-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Demo Institute Renamed"
+}
+
+### Departments — list / create (super_admin, college_admin)
+GET {{base}}/departments
+Authorization: Bearer {{token}}
+
+### Departments — create
+POST {{base}}/departments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Computer Science",
+  "code": "CSE"
+}
+
+### Departments — update / delete
+PATCH {{base}}/departments/<department-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Computer Science & Engineering"
+}
+
+### Courses — list / create (super_admin, college_admin)
+GET {{base}}/courses
+Authorization: Bearer {{token}}
+
+### Courses — create
+POST {{base}}/courses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "B.Tech CSE",
+  "code": "BTECH-CSE",
+  "department": "<department-id>"
+}
+
+### Courses — update / delete
+PATCH {{base}}/courses/<course-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "B.Tech CSE (2024)"
+}
+
+### Subjects — list / detail (populated course/department/faculty)
+GET {{base}}/subjects
+Authorization: Bearer {{token}}
+
+### Subjects — create (super_admin, college_admin, hod)
+POST {{base}}/subjects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Data Structures",
+  "code": "CS201",
+  "course": "<course-id>",
+  "department": "<department-id>"
+}
+
+### Rooms — list / create (super_admin, college_admin, hod)
+GET {{base}}/rooms
+Authorization: Bearer {{token}}
+
+### Rooms — create
+POST {{base}}/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "LH-101",
+  "capacity": 60
+}
+
+### Timetable — list / create (super_admin, college_admin, hod)
+GET {{base}}/timetable
+Authorization: Bearer {{token}}
+
+### Timetable — create
+POST {{base}}/timetable
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "subject": "<subject-id>",
+  "room": "<room-id>",
+  "day": "monday",
+  "startTime": "09:00",
+  "endTime": "10:00"
+}
+
+### Enrollments — list (admin) / self-enroll (student)
+GET {{base}}/enrollments
+Authorization: Bearer {{token}}
+
+### Enrollments — enroll self
+POST {{base}}/enrollments/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "course": "<course-id>",
+  "subject": "<subject-id>"
+}
+
+### Enrollments — drop self
+DELETE {{base}}/enrollments/me/<enrollment-id>
+Authorization: Bearer {{token}}
+
+### Assignments — list / detail (populated submissions → student)
+GET {{base}}/assignments
+Authorization: Bearer {{token}}
+
+### Assignments — create (super_admin, college_admin, faculty, hod)
+POST {{base}}/assignments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "subject": "<subject-id>",
+  "title": "Assignment 1",
+  "instructions": "Solve all problems",
+  "maxMarks": 100,
+  "dueDate": "2026-12-31"
+}
+
+### Assignments — status transition
+PATCH {{base}}/assignments/<assignment-id>/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "published"
+}
+
+### Submissions — list (faculty, hod, student, admins)
+GET {{base}}/submissions
+Authorization: Bearer {{token}}
+
+### Submissions — create (student; file-upload variant in submissions.http)
+POST {{base}}/submissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assignment": "<assignment-id>",
+  "content": "https://example.com/my-work"
+}
+
+### Submissions — grade (faculty, hod; allowlisted marks/grade)
+PATCH {{base}}/submissions/<submission-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "marks": 85,
+  "grade": "A"
+}
+
+### Attendance — list sessions
+GET {{base}}/attendance
+Authorization: Bearer {{token}}
+
+### Attendance — mark session (faculty, hod; realtime broadcast)
+POST {{base}}/attendance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "subject": "<subject-id>",
+  "date": "2026-09-25",
+  "records": [{ "student": "<student-id>", "status": "present" }]
+}
+
+### Attendance — student view
+GET {{base}}/attendance/student/<student-id>
+Authorization: Bearer {{token}}
+
+### Announcements — list / create (super_admin, college_admin, faculty, hod)
+GET {{base}}/announcements
+Authorization: Bearer {{token}}
+
+### Announcements — create
+POST {{base}}/announcements
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Holiday declared",
+  "body": "College closed on Monday",
+  "priority": "high"
+}
+
+### Events — list / create / register
+GET {{base}}/events
+Authorization: Bearer {{token}}
+
+### Events — create (super_admin, college_admin, faculty, hod)
+POST {{base}}/events
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Tech Fest",
+  "description": "Annual tech fest",
+  "date": "2026-12-01"
+}
+
+### Events — student register
+POST {{base}}/events/<event-id>/register
+Authorization: Bearer {{token}}
+
+### Events — ICS export
+GET {{base}}/events/<event-id>/ics
+Authorization: Bearer {{token}}
+
+### Companies — list / register (super_admin, college_admin, placement_officer)
+GET {{base}}/companies
+Authorization: Bearer {{token}}
+
+### Companies — create
+POST {{base}}/companies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corp",
+  "recruiting": true
+}
+
+### Job drives — list / create (super_admin, placement_officer, college_admin)
+GET {{base}}/job-drives
+Authorization: Bearer {{token}}
+
+### Job drives — create
+POST {{base}}/job-drives
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "company": "<company-id>",
+  "title": "SDE Hiring 2026",
+  "minCGPA": 7.0
+}
+
+### Job applications — eligibility check
+GET {{base}}/job-applications/drives/<drive-id>/eligibility
+Authorization: Bearer {{token}}
+
+### Job applications — apply (student)
+POST {{base}}/job-applications/drives/<drive-id>/apply
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Job applications — stage update (placement_officer)
+PATCH {{base}}/job-applications/<application-id>
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "stage": "technical",
+  "status": "shortlisted"
+}
+
+### Requests — list / submit (student creates)
+GET {{base}}/requests
+Authorization: Bearer {{token}}
+
+### Requests — submit
+POST {{base}}/requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category": "leave",
+  "reason": "Medical appointment",
+  "fromDate": "2026-10-01",
+  "toDate": "2026-10-02"
+}
+
+### Requests — workflow transition (faculty, hod, admins)
+PATCH {{base}}/requests/<request-id>/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved"
+}
+
+### Notifications — mine / preferences / mark read
+GET {{base}}/notifications
+Authorization: Bearer {{token}}
+
+### Notifications — preferences
+GET {{base}}/notifications/preferences
+Authorization: Bearer {{token}}
+
+### Notifications — mark read
+PATCH {{base}}/notifications/<notification-id>/read
+Authorization: Bearer {{token}}
+
+### Analytics — attendance trend
+GET {{base}}/analytics/attendance-trend
+Authorization: Bearer {{token}}
+
+### Analytics — placement funnel (super_admin, college_admin, placement_officer)
+GET {{base}}/analytics/placement-funnel
+Authorization: Bearer {{token}}
+
+### Analytics — enrollment overview (super_admin, college_admin)
+GET {{base}}/analytics/enrollment-overview
+Authorization: Bearer {{token}}
+
+### Search — global tenant-scoped (60 req/min)
+GET {{base}}/search?q=midterm
+Authorization: Bearer {{token}}
+
+### Study — plan / resources (multipart variant in study.http)
+GET {{base}}/study/plan
+Authorization: Bearer {{token}}
+
+### Study — learning resources
+GET {{base}}/study/learning-resources?subject=<subject-id>
+Authorization: Bearer {{token}}
+
+### AI reports — list / generate (super_admin, college_admin router-wide)
+GET {{base}}/ai-reports
+Authorization: Bearer {{token}}
+
+### AI reports — generate (snapshot summary without OPENAI_API_KEY)
+POST {{base}}/ai-reports/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "attendance",
+  "subject": "<subject-id>"
+}

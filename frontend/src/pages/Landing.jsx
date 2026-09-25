@@ -1,12 +1,14 @@
-// Landing: cinematic 12-section product story orchestrated through modular sections.
-// ONE dominant interaction per section, never stacked effects. Oversized type,
-// sticky scenes, scroll choreography, and Obsidian Ember visual identity.
+// Landing: cinematic product story orchestrated through modular sections.
+// Flow: hero → proof → chapters → grid. ONE dominant interaction per
+// section, never stacked effects. Oversized type, sticky scenes, scroll
+// choreography, and Obsidian Ember visual identity.
 // Clean typography without decorative badge noise or category pills.
-// CTAs route to /login, /dashboard, /placement.
+// CTAs route to real product routes only (/login, /dashboard, /attendance,
+// /placement, /users).
 
 import LandingHeader from '../components/landing/LandingHeader';
 import HeroSection from '../components/landing/HeroSection';
-import PulseSection from '../components/landing/PulseSection';
+import TrustBar from '../components/landing/TrustBar';
 import SignalsSection from '../components/landing/SignalsSection';
 import AttendanceSection from '../components/landing/AttendanceSection';
 import PlacementSection from '../components/landing/PlacementSection';
@@ -21,7 +23,7 @@ import { SectionConnector } from '../components/landing/shared';
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-[#F6F7F9] dark:bg-[#100D0B] text-[#100D0B] dark:text-[#F5F7FA] antialiased overflow-x-clip">
+    <div className="min-h-screen bg-[var(--cf-bg)] text-[#100D0B] dark:text-[#F5F7FA] antialiased overflow-x-clip">
       {/* 01 — Capsule nav */}
       <LandingHeader />
 
@@ -29,12 +31,16 @@ export default function Landing() {
         {/* 02 — Hero with 3D ContainerScroll */}
         <HeroSection />
 
+        {/* 03 — Proof, directly under hero */}
+        <section className="landing-band relative isolate w-full" aria-label="CampusFlow at a glance">
+          <div className="landing-inner max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-10 sm:pb-14">
+            <TrustBar />
+          </div>
+        </section>
+
         <SectionConnector />
 
-        {/* 03 — Platform pulse */}
-        <PulseSection />
-
-        {/* 04 — Academic intelligence */}
+        {/* 04 — Academic intelligence (pulse framing folded in) */}
         <SignalsSection />
 
         {/* 05 — Attendance matrix & movement */}
@@ -60,12 +66,12 @@ export default function Landing() {
 
         <SectionConnector />
 
-        {/* 10 — Role experiences portal */}
+        {/* 10 — Role experiences grid */}
         <RoleExperiencesSection />
 
         <SectionConnector />
 
-        {/* 11 — Getting started journey */}
+        {/* 11 — Getting-started chapters */}
         <JourneySection />
 
         <SectionConnector />

@@ -100,7 +100,7 @@ export default function AdminHome() {
   }, [departments, users, courses]);
 
   if (loading) return <LoadingState label="Reading institution pulse…" />;
-  if (failed) return <ErrorState message="Couldn't load institution data." onRetry={load} />;
+  if (failed) return <ErrorState message="Could not load institution data." onRetry={load} />;
 
   return (
     <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">

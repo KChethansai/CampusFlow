@@ -89,7 +89,7 @@ export default function FacultyHome() {
   }, [gradeQueue]);
 
   if (loading) return <LoadingState label="Preparing your classes…" />;
-  if (failed) return <ErrorState message="Couldn't load your dashboard." onRetry={load} />;
+  if (failed) return <ErrorState message="Could not load your dashboard." onRetry={load} />;
 
   const hintFor = (key) =>
     key === 'gradeQueue' ? `${gradeQueue.length} pending`

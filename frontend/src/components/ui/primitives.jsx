@@ -102,11 +102,26 @@ export const Textarea = forwardRef(function Textarea({ label, error, id, classNa
   );
 });
 
+// Status aliases: values the backend stores that have no dedicated token map
+// entry reuse the closest existing palette entry (no new colors, tokens.js
+// untouched). Covers enrollment dropped/completed, submission
+// resubmission_requested, and the escalated request state.
+const statusAlias = {
+  dropped: 'inactive',
+  completed: 'approved',
+  resubmission_requested: 'pending',
+  escalated: 'pending'
+};
+
+const resolveStatus = (status) => statusAlias[status] || status;
+
 // Glass pills — single status language (statusBadge/roleBadge/badge already
 // include badgeBase; no second wrapper class).
 export function Badge({ tone, status, role, className, children }) {
-  if (status)
-    return <span className={cn(statusBadgeFn(status), className)}>{children ?? status.replace(/_/g, ' ')}</span>;
+  if (status) {
+    const resolved = resolveStatus(status);
+    return <span className={cn(statusBadgeFn(resolved), className)}>{children ?? status.replace(/_/g, ' ')}</span>;
+  }
   if (role)
     return <span className={cn(roleBadgeFn(role), className)}>{children ?? role.replace(/_/g, ' ')}</span>;
   return <span className={cn(badgeFn(tone), className)}>{children}</span>;
@@ -114,7 +129,7 @@ export function Badge({ tone, status, role, className, children }) {
 
 export function StatusPill({ status, className, children }) {
   return (
-    <span className={cn(statusBadgeFn(status), className)}>
+    <span className={cn(statusBadgeFn(resolveStatus(status)), className)}>
       {children ?? String(status || '').replace(/_/g, ' ')}
     </span>
   );
@@ -193,13 +208,13 @@ export function LoadingState({ label = 'Loading…' }) {
   );
 }
 
-export function ErrorState({ message = 'Something went wrong.', onRetry }) {
+export function ErrorState({ message = 'Could not load this section.', onRetry }) {
   return (
     <div className="text-center py-10">
       <p className="text-sm font-medium text-[#FF5964]">{message}</p>
       {onRetry && (
         <button onClick={onRetry} className={btnClass('outline', 'small') + ' mt-3'}>
-          Try again
+          Retry
         </button>
       )}
     </div>

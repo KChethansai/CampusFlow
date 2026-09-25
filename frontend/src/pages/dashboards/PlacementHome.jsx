@@ -94,7 +94,7 @@ export default function PlacementHome() {
   );
 
   if (loading) return <LoadingState label="Mapping career paths…" />;
-  if (failed) return <ErrorState message="Couldn't load placement data." onRetry={load} />;
+  if (failed) return <ErrorState message="Could not load placement data." onRetry={load} />;
 
   return (
     <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">

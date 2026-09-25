@@ -15,7 +15,7 @@ This registry tracks the internal mappings, adaptations, and architectural decis
 | **Form Controls & Triggers** | **Smooth UI** | `frontend/src/components/ui/primitives.jsx` | Animated Tabs (layoutId), Drawer (Motion slide-over), Tooltip, ProgressRing, StepBar. |
 | **Data Visualization** | **Bklit UI** | `frontend/src/components/data/charts/` | Pure SVG + Motion ports: AreaChart, BarChart, FunnelChart, GaugeChart, HeatmapChart, RingChart, LineChart. Zero Recharts dependency. |
 | **Compositions & Shell** | **21st.dev** | `frontend/src/shell/AppShell.jsx` | Docked rail navigation with active indicators, floating topbar with hide-on-scroll, mobile bottom bar, command palette. |
-| **Modular Landing Story** | **CampusFlow Decomposed** | `frontend/src/components/landing/` | Decomposed section components (`HeroSection`, `PulseSection`, `SignalsSection`, `AttendanceSection`, `PlacementSection`, `WorkflowSection`, `DirectorySection`, `IntelligenceSection`, `RoleExperiencesSection`, `JourneySection`, `FinalCTA`). Zero decorative badge noise. |
+| **Modular Landing Story** | **CampusFlow Decomposed** | `frontend/src/components/landing/` | Decomposed section components (`HeroSection`, `SignalsSection`, `AttendanceSection`, `PlacementSection`, `WorkflowSection`, `DirectorySection`, `IntelligenceSection`, `RoleExperiencesSection`, `JourneySection`, `FinalCTA`). Zero decorative badge noise. |
 
 ## Technical Directives Enforced
 1. **Zero TypeScript:** Every component is stored as `.jsx` or `.js` with clean standard prop types.

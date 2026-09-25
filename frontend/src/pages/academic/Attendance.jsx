@@ -29,6 +29,7 @@ export default function Attendance() {
   const [period, setPeriod] = useState('1');
   const [marks, setMarks] = useState({});
   const [studentQuery, setStudentQuery] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const fetchSessions = async () => {
     try {
@@ -149,7 +150,9 @@ export default function Attendance() {
 
   const saveSession = async () => {
     if (!subjectId) return toast.error('Select a subject');
+    if (saving) return;
     const records = markableStudents.map((s) => ({ student: s._id, status: marks[s._id] || 'present' }));
+    setSaving(true);
     try {
       await api.post('/attendance', {
         subject: subjectId,
@@ -163,6 +166,8 @@ export default function Attendance() {
       fetchSessions();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to mark attendance');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -313,8 +318,8 @@ export default function Attendance() {
           {markableStudents.length === 0 && <li className="px-3 py-6 text-center text-sm text-[var(--cf-ink-mute)]">No students enrolled in this subject&apos;s course.</li>}
           {markableStudents.length > 0 && visibleStudents.length === 0 && <li className="px-3 py-6 text-center text-sm text-[var(--cf-ink-mute)]">No students match this search.</li>}
         </ul>
-        <button onClick={saveSession} className={btnClass('success', 'medium') + ' w-full mt-4'}>
-          Save session · {markableStudents.length} students
+        <button onClick={saveSession} disabled={saving} className={btnClass('success', 'medium') + ' w-full mt-4'}>
+          {saving ? 'Saving…' : `Save session · ${markableStudents.length} students`}
         </button>
       </Modal>
     </div>

@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Pause, Play } from 'lucide-react';
 import { PIPELINE_STAGES, cn, roleLabel } from '../../system/tokens';
 import { Reveal, SectionHead, glassCard, kicker } from './shared';
 
 export default function PlacementSection() {
   const reduced = useReducedMotion();
   const [stage, setStage] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [hoverPause, setHoverPause] = useState(false);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced || paused || hoverPause) return;
     const id = setInterval(() => setStage((s) => (s + 1) % PIPELINE_STAGES.length), 2400);
     return () => clearInterval(id);
-  }, [reduced]);
+  }, [reduced, paused, hoverPause]);
 
   return (
     <section id="placement" className="landing-band relative isolate w-full" aria-label="Placements">
@@ -54,7 +56,13 @@ export default function PlacementSection() {
             </Reveal>
           </div>
           <Reveal delay={0.08} className="lg:sticky lg:top-24 self-start">
-            <div className={`${glassCard} p-5 sm:p-6 min-h-[280px] flex flex-col`}>
+            <div
+              className={`${glassCard} p-5 sm:p-6 min-h-[280px] flex flex-col`}
+              onMouseEnter={() => setHoverPause(true)}
+              onMouseLeave={() => setHoverPause(false)}
+              onFocus={() => setHoverPause(true)}
+              onBlur={() => setHoverPause(false)}
+            >
               <p className={kicker}>Stage transition</p>
               <div className="mt-4 flex-1" aria-live="polite">
                 <AnimatePresence mode="wait" initial={false}>
@@ -65,7 +73,7 @@ export default function PlacementSection() {
                     exit={reduced ? { opacity: 0 } : { opacity: 0, x: -32 }}
                     transition={reduced ? { duration: 0.01 } : { duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <p className="font-mono text-[11px] uppercase tracking-wider text-[#4B5563] dark:text-[#707A89]">
+                    <p className="font-mono text-[11px] uppercase tracking-wider text-[#4B5563] dark:text-[#A7B0BF]">
                       Stage {String(stage + 1).padStart(2, '0')} of {PIPELINE_STAGES.length}
                     </p>
                     <p className="font-display text-3xl font-bold tracking-tight mt-1 text-[#100D0B] dark:text-[#F5F7FA]">
@@ -79,21 +87,52 @@ export default function PlacementSection() {
                   </motion.div>
                 </AnimatePresence>
               </div>
-              <div className="mt-4 flex items-center gap-1.5" role="tablist" aria-label="Placement stages">
+              <div
+                className="mt-4 flex items-center gap-1.5"
+                role="tablist"
+                aria-label="Placement stages"
+                onKeyDown={(e) => {
+                  const count = PIPELINE_STAGES.length;
+                  let next = null;
+                  if (e.key === 'ArrowRight') next = (stage + 1) % count;
+                  else if (e.key === 'ArrowLeft') next = (stage - 1 + count) % count;
+                  else if (e.key === 'Home') next = 0;
+                  else if (e.key === 'End') next = count - 1;
+                  if (next === null) return;
+                  e.preventDefault();
+                  setStage(next);
+                  e.currentTarget.querySelector(`[data-index="${next}"]`)?.focus();
+                }}
+              >
                 {PIPELINE_STAGES.map((s, i) => (
                   <button
                     key={s}
                     type="button"
                     role="tab"
+                    data-index={i}
                     aria-selected={stage === i}
                     aria-label={`Show stage ${roleLabel(s)}`}
                     onClick={() => setStage(i)}
-                    className={cn(
-                      'h-2 rounded-full transition-all',
-                      stage === i ? 'w-7 bg-[#D86D3E]' : 'w-2 bg-black/15 dark:bg-white/20 hover:bg-black/30 dark:hover:bg-white/40'
-                    )}
-                  />
+                    className="min-h-6 min-w-6 grid place-items-center rounded-full"
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'h-2 rounded-full transition-all',
+                        stage === i ? 'w-7 bg-[#D86D3E]' : 'w-2 bg-black/15 dark:bg-white/20 hover:bg-black/30 dark:hover:bg-white/40'
+                      )}
+                    />
+                  </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={paused}
+                  aria-label={paused ? 'Resume stage rotation' : 'Pause stage rotation'}
+                  onClick={() => setPaused((p) => !p)}
+                  className="ml-1 grid h-11 w-11 place-items-center rounded-full border border-black/10 dark:border-white/10 text-[#4B5563] dark:text-[#A7B0BF] hover:border-[#D86D3E]/40"
+                >
+                  {paused ? <Play size={15} aria-hidden /> : <Pause size={15} aria-hidden />}
+                </button>
               </div>
               <Link
                 to="/placement"

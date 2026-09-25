@@ -132,7 +132,7 @@ export default function StudentHome() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   if (loading) return <LoadingState label="Assembling your day…" />;
-  if (failed) return <ErrorState message="Couldn't load your dashboard." onRetry={load} />;
+  if (failed) return <ErrorState message="Could not load your dashboard." onRetry={load} />;
 
   return (
     <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">

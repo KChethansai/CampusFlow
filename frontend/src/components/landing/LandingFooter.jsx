@@ -12,18 +12,18 @@ export default function LandingFooter() {
             C
           </span>
           <span className="font-display font-semibold tracking-tight">CampusFlow</span>
-          <span className="text-xs text-[#4B5563] dark:text-[#707A89]">
+          <span className="text-xs text-[#4B5563] dark:text-[#A7B0BF]">
             © {new Date().getFullYear()}
           </span>
         </p>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm font-medium" aria-label="Footer">
-          <Link to="/dashboard" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
+          <Link to="/dashboard" className="py-1 text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
             Dashboard
           </Link>
-          <Link to="/placement" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
+          <Link to="/placement" className="py-1 text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
             Placement
           </Link>
-          <Link to="/login" className="text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
+          <Link to="/login" className="py-1 text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors">
             Sign In
           </Link>
         </nav>

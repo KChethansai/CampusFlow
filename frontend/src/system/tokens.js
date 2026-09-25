@@ -49,7 +49,6 @@ export const cardClass =
 export const floatClass =
   'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-brutal-lg';
 // Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
-// Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
 // NOTE: the live `glassCard` surface is owned by components/landing/shared.jsx
 // (landing-soft shadow); the former canonical duplicate here had zero imports.
 export const spotCard = 'cf-card-spot cf-spotlight';
@@ -170,3 +169,13 @@ export const normalizeStage = (stage) => {
   if (stage === 'interview_1' || stage === 'interview_2' || stage === 'hr_round') return 'interview';
   return stage;
 };
+
+// DISPLAY-TYPE (LANDING ONLY) — restrained serif display, zero webfont bytes.
+// System serif stack only; scale/leading/tracking live as CSS vars in
+// index.css (:root + .dark). Components consume the class helpers below,
+// never raw values — existing color/surface/button/badge tokens untouched.
+export const displaySerifStack = "Georgia, 'Times New Roman', ui-serif, system-ui, serif";
+export const landingDisplayHero = 'cf-display-hero';
+export const landingDisplayH2 = 'cf-display-h2';
+export const landingKicker = 'cf-kicker-landing';
+export const landingChapter = 'cf-chapter-reveal';

@@ -7,8 +7,10 @@ export const sub = 'mt-3 text-[15px] leading-relaxed text-[var(--cf-ink-soft)] m
 // Landing-soft surface: intentionally lighter than app cards (single glassCard owner; tokens.js duplicate removed).
 export const glassCard = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-sm';
 
-/* Word-stagger blur reveal */
-export function BlurText({ text, className }) {
+/* Word-stagger blur reveal. wordClassName (optional) is applied to each word
+   span — required when words carry their own background-clip:text gradient,
+   since a filtered child breaks the parent's bg-clip:text. */
+export function BlurText({ text, className, wordClassName }) {
   const reduced = useReducedMotion();
   if (reduced) return <span className={className}>{text}</span>;
   const words = String(text).split(' ');
@@ -18,7 +20,7 @@ export function BlurText({ text, className }) {
         <motion.span
           key={i}
           aria-hidden
-          className="inline-block will-change-transform"
+          className={cn('inline-block will-change-transform', wordClassName)}
           style={{ marginRight: i < words.length - 1 ? '0.26em' : 0 }}
           initial={{ opacity: 0, filter: 'blur(10px)', y: 10 }}
           whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}

@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Link } from 'react-router';
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import { Menu } from 'lucide-react';
 import LiquidGlassButton from '../visual/LiquidGlassButton';
 import { cn } from '../../system/tokens';
+
+// Lazy-mounted interaction enhancer: the mobile drawer chunk only loads when opened.
+const LandingDrawer = lazy(() => import('./LandingDrawer'));
 
 const NAV = [
   { label: 'Platform', to: '/dashboard' },
@@ -16,10 +20,12 @@ export default function LandingHeader() {
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 24));
 
   return (
+    <>
     <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-4">
       <motion.div
         animate={reduced ? {} : { y: scrolled ? 0 : 4, opacity: 1 }}
@@ -32,7 +38,7 @@ export default function LandingHeader() {
             : 'bg-transparent border-transparent'
         )}
       >
-        <Link to="/" className="flex items-center gap-2 shrink-0" aria-label="CampusFlow home">
+        <Link to="/" className="flex items-center gap-2 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727] rounded-full" aria-label="CampusFlow home">
           <span className="w-8 h-8 rounded-full bg-[#A94727] text-white grid place-items-center font-display font-bold text-sm" aria-hidden>
             C
           </span>
@@ -48,7 +54,7 @@ export default function LandingHeader() {
               key={n.label}
               to={n.to}
               onMouseEnter={() => setHoveredNav(n.label)}
-              className="relative px-3.5 py-2 rounded-full text-sm font-medium text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors"
+              className="relative px-3.5 py-2 rounded-full text-sm font-medium text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
             >
               {hoveredNav === n.label && (
                 <motion.span
@@ -64,15 +70,33 @@ export default function LandingHeader() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/login"
-            className="hidden sm:block px-3 py-2 rounded-full text-sm font-semibold text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors"
+            className="hidden sm:block px-3 py-2 rounded-full text-sm font-semibold text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
           >
             Sign In
           </Link>
-          <LiquidGlassButton to="/login" size="sm">
+          <LiquidGlassButton to="/login" size="sm" className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]">
             Get Started
           </LiquidGlassButton>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-expanded={drawerOpen}
+            aria-controls="landing-mobile-drawer"
+            aria-label="Open navigation"
+            className="md:hidden min-w-11 min-h-11 grid place-items-center rounded-full text-[#4B5563] dark:text-[#A7B0BF] hover:bg-black/[0.05] dark:hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
+          >
+            <Menu size={20} aria-hidden />
+          </button>
         </div>
       </motion.div>
     </header>
+    <AnimatePresence>
+      {drawerOpen && (
+        <Suspense fallback={null}>
+          <LandingDrawer links={NAV} onClose={() => setDrawerOpen(false)} />
+        </Suspense>
+      )}
+    </AnimatePresence>
+    </>
   );
 }

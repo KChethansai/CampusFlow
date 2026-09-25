@@ -6,6 +6,22 @@ Five roles: **super admin, college admin (institution admin), faculty, student, 
 
 ---
 
+## System diagrams
+
+Self-contained HTML (open file-direct, no build). Thumbnails are crisp SVG.
+
+| Diagram | Open | Thumbnail |
+|---|---|---|
+| System architecture (4-layer: routers → controllers → models + services) | [architecture.html](docs/diagrams/architecture.html) | ![architecture](docs/diagrams/architecture.svg) |
+| Overall request flow (middleware chain → JSON, incl. 401/403/422) | [request-flow.html](docs/diagrams/request-flow.html) | ![request flow](docs/diagrams/request-flow.svg) |
+| Authentication sequence (15m access + 7d rotating refresh, reuse detection) | [authentication-sequence.html](docs/diagrams/authentication-sequence.html) | ![auth sequence](docs/diagrams/authentication-sequence.svg) |
+| Realtime flow (Socket.IO handshake, rooms, fan-out) | [realtime-flow.html](docs/diagrams/realtime-flow.html) | ![realtime](docs/diagrams/realtime-flow.svg) |
+| Authorization & tenant model (6 roles, `utils/scope.js` scoping) | [authorization-tenant-model.html](docs/diagrams/authorization-tenant-model.html) | ![tenant model](docs/diagrams/authorization-tenant-model.svg) |
+
+Ops appendix (seed, env matrix, demo credentials, release checklist): [docs/ops-handover.md](docs/ops-handover.md). Full REST collection: [backend/https/campusflow.http](backend/https/campusflow.http).
+
+---
+
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)

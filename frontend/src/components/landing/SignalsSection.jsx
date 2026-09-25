@@ -60,7 +60,7 @@ export default function SignalsSection() {
       <div className="landing-inner max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <SectionHead
           title="Signals, not noise."
-          body="Attendance health, queue movement and pipeline position — each insight ships with its evidence attached."
+          body="Attendance health, queue movement and pipeline position — each insight ships with its evidence attached. The counts above name real workspace facts, never vanity metrics."
         />
         <div className="mt-7 grid lg:grid-cols-5 gap-3.5 sm:gap-4">
           <Reveal className="lg:col-span-3">
@@ -96,7 +96,7 @@ export default function SignalsSection() {
               </ul>
               <Link
                 to="/dashboard"
-                className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[#D86D3E] dark:text-[#F5B08A] hover:underline underline-offset-4"
+                className="mt-6 inline-flex items-center gap-1.5 py-1 text-sm font-semibold text-[#A94727] dark:text-[#F5B08A] hover:underline underline-offset-4"
               >
                 Open the workspace <ArrowUpRight size={15} aria-hidden />
               </Link>

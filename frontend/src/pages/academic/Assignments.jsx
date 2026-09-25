@@ -74,7 +74,7 @@ export default function Assignments() {
   const [submitFor, setSubmitFor] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [gradeFor, setGradeFor] = useState(null);
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({
     defaultValues: { subject: '', title: '', description: '', maxScore: 100, dueDate: '' }
   });
 
@@ -271,7 +271,7 @@ export default function Assignments() {
               <input id="as-due" type="date" className={inputClass} {...register('dueDate', { required: true })} />
             </div>
           </div>
-          <button type="submit" className={btnClass('success', 'medium') + ' w-full'}>Create draft</button>
+          <button type="submit" disabled={isSubmitting} className={btnClass('success', 'medium') + ' w-full'}>{isSubmitting ? 'Saving…' : 'Create draft'}</button>
         </form>
       </Modal>
 

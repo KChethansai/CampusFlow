@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusFlow — Authentication Sequence</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;line-height:1.6}
+h1{font-size:1.4rem;margin:0 0 4px} p.sub{color:#666;margin:0 0 16px}
+.warn{background:#fff4e0;border:2px solid #e8930c;border-radius:8px;padding:8px 14px;max-width:900px;margin:0 0 16px;font-size:.9rem}
+ol.seq{max-width:900px;margin:0;padding:0;list-style:none;counter-reset:s}
+ol.seq>li{counter-increment:s;border:1px solid #ccc;border-left:6px solid #41ab5d;border-radius:8px;padding:10px 14px;margin:0 0 10px;background:#fff}
+ol.seq>li::before{content:counter(s) ". ";font-weight:700}
+ol.seq li.deny{border-left-color:#d62728} ol.seq li.note{border-left-color:#646cff;background:#eef2ff}
+code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.85em}
+footer{max-width:900px;margin:14px auto 0;font-size:.8rem;color:#666}
+</style>
+</head>
+<body>
+<h1>CampusFlow — Authentication Sequence (15m access + 7d rotating refresh)</h1>
+<p class="sub">Sources: <code>controllers/authcontroller.js</code>, <code>utils/token.js</code>, <code>models/RefreshTokenModel.js</code>, <code>models/UserModel.js</code>, <code>config/env.js</code>.</p>
+<div class="warn"><strong>Not a 1-day JWT flow.</strong> Access tokens live <code>15m</code> (<code>ACCESS_TOKEN_EXPIRES</code>); refresh tokens live <code>7d</code> (<code>REFRESH_TOKEN_EXPIRES_DAYS</code>), are DB-backed, single-use, and rotate on every refresh.</div>
+<ol class="seq">
+<li><strong>Login</strong> — <code>POST /api/v1/auth/login {email, password}</code> (rate-limited 10/15 min). Server finds user, checks <code>isActive</code>, compares with <code>bcryptjs.compare()</code>. On success: <code>signAccessToken()</code> (claims <code>sub/role/institution/department</code>, 15m) + <code>signRefreshToken()</code> (<code>sub/type:jti</code>, 7d). Refresh stored as <code>sha256</code> hash in <code>RefreshTokenModel</code> with <code>expiresAt</code>; also set as <code>httpOnly</code> cookie (<code>getCookieOptions()</code>). Client persists <code>{user, accessToken, refreshToken}</code> to <code>localStorage cf_auth</code>.</li>
+<li><strong>API calls</strong> — <code>Authorization: Bearer &lt;access&gt;</code> → <code>verifyToken</code> re-loads role/<code>isActive</code>/<code>passwordChangedAt</code> from DB per request; rejects post-password-change sessions (<code>changedPasswordAfter(iat)</code> → 401).</li>
+<li><strong>Refresh (rotation)</strong> — <code>POST /api/v1/auth/refresh</code> with body or cookie token. Server verifies signature, loads stored hash with <code>revokedAt: {$exists:false}</code>, marks it revoked, issues a brand-new pair. A 15s grace window absorbs double-submit retries.</li>
+<li class="deny"><strong>Reuse detection → revoke-all</strong> — presenting an already-rotated (or unknown) refresh token means theft: server runs <code>RefreshToken.updateMany({user}, {revokedAt: now})</code>, revoking the whole family; client must re-login.</li>
+<li class="deny"><strong>Password-change invalidation</strong> — <code>change-password</code> / <code>reset-password</code> bump <code>passwordChangedAt</code>; any access token with <code>iat</code> before it is rejected, and refresh rotation against a pre-change token revokes the family instead of rotating.</li>
+<li><strong>Logout (refresh-tolerant)</strong> — <code>POST /api/v1/auth/logout</code> revokes the presented refresh session even with an expired access token, clears the cookie; client clears <code>cf_auth</code>. Password-reset uses emailed token falling back to in-app notification without SMTP.</li>
+<li class="note"><strong>Registration is privileged</strong> — <code>POST /auth/register</code> requires <code>verifyToken('super_admin','college_admin')</code>; there is no public self-signup.</li>
+</ol>
+<footer>Lifetimes configurable via <code>ACCESS_TOKEN_EXPIRES</code> / <code>REFRESH_TOKEN_EXPIRES_DAYS</code> (legacy aliases <code>JWT_ACCESS_EXPIRES</code> / <code>JWT_REFRESH_EXPIRES_DAYS</code>).</footer>
+</body>
+</html>

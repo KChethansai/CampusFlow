@@ -77,3 +77,32 @@ export const pressable = 'transition-transform duration-100 active:scale-[.98]';
 
 export const resolveTransition = (reduced, transition) =>
   reduced ? noMotion : transition;
+
+// SCROLL IDIOMS (LANDING, reserved for later phases) — scale/opacity/y only.
+// All transitions reuse luxeSpring or EASE_OUT; consumers gate via
+// useReducedMotion + resolveTransition. No new easing curves, no new libs.
+export const stackEnter = {
+  initial: { opacity: 0, scale: 0.94 },
+  animate: { opacity: 1, scale: 1 },
+  transition: luxeSpring
+};
+
+export const stackExit = {
+  initial: { opacity: 1, scale: 1 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.94 },
+  transition: { duration: 0.28, ease: EASE_OUT }
+};
+
+export const chapterReveal = {
+  initial: { opacity: 0, y: 32 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.7, ease: EASE_OUT }
+};
+
+export const drawerSpring = {
+  initial: { opacity: 0, y: -12, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -8, scale: 0.98 },
+  transition: luxeSpring
+};
