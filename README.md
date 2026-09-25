@@ -1,4 +1,4 @@
-# 🎓 CampusFlow — Smart College Management Platform
+# CampusFlow — Smart College Management Platform
 
 **CampusFlow** is a full-stack, multi-tenant campus management platform built with **React 19 + Vite** (frontend) and **Express 4 + Mongoose 8 + MongoDB** (backend). It provides an integrated system for managing institutions, users, departments, courses, subjects, enrollments, assignments, submissions, attendance sessions, announcements, events, companies, placement drives, job applications, requests/leave, notifications, study resources, AI reports, search, and analytics.
 
@@ -6,7 +6,7 @@ Five roles: **super admin, college admin (institution admin), faculty, student, 
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [System Flowcharts](#system-flowcharts)
@@ -25,6 +25,7 @@ Five roles: **super admin, college admin (institution admin), faculty, student, 
 5. [Backend — Modules & APIs](#backend--modules--apis)
 6. [Frontend — Structure & Working](#frontend--structure--working)
 7. [Setup & Installation](#setup--installation)
+8. [Demo Credentials](#demo-credentials)
 8. [API Endpoint Reference](#api-endpoint-reference)
 9. [Rate Limiting](#rate-limiting)
 10. [Key Relationships Between Models](#key-relationships-between-models)
@@ -35,7 +36,7 @@ Five roles: **super admin, college admin (institution admin), faculty, student, 
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### Component Layer Diagram
 
@@ -103,7 +104,7 @@ graph LR
 
 ---
 
-## 🔄 System Flowcharts
+## System Flowcharts
 
 ### 1. Overall Request Flow
 
@@ -236,7 +237,7 @@ flowchart LR
     StudentsApply --> StageProgress{Stage Evaluation}
     StageProgress -->|Pass| NextStage[Advance to Next Stage]
     StageProgress -->|Fail| Rejected[Application Marked Rejected]
-    NextStage -->|Pass All Stages| Placed[Student Placed ✅]
+    NextStage -->|Pass All Stages| Placed[Student Placed ]
 
     style CompanyRegistered fill:#646cff,stroke:#333,stroke-width:2px,color:#fff
     style CollegeValidated fill:#ffa500,stroke:#333,stroke-width:2px,color:#000
@@ -370,7 +371,7 @@ flowchart TD
 
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 CampusFlow/
@@ -448,7 +449,7 @@ CampusFlow/
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend (`frontend/package.json`)
 
@@ -490,7 +491,7 @@ CampusFlow/
 
 ---
 
-## ⚙️ Backend — Modules & APIs
+## Backend — Modules & APIs
 
 ### Server Configuration
 
@@ -500,41 +501,41 @@ CampusFlow/
 
 ### Module Details
 
-#### 🔐 Auth (`models/UserModel.js` + `RefreshTokenModel.js`)
+#### Auth (`models/UserModel.js` + `RefreshTokenModel.js`)
 - Short-lived **access tokens (default 15m)** + DB-backed **rotating refresh tokens (default 7d)** with **reuse detection** (reuse revokes the whole family).
 - Password hashing via **bcryptjs**; role re-loaded from DB per request, never trusted from the JWT claim. Deactivated / post-password-change sessions rejected.
 - Endpoints: register, login, refresh, logout, forgot-password, reset-password, change-password.
 
-#### 👤 Users (`models/UserModel.js`)
+#### Users (`models/UserModel.js`)
 - Role-based (`super_admin`, `college_admin`/`institution admin`, `faculty`, `student`, `placement_officer`), institution-scoped, `isActive` soft delete, bulk import, avatar uploads.
 
-#### 🏫 Institutions (`models/InstitutionModel.js`)
+#### Institutions (`models/InstitutionModel.js`)
 - Tenants of the system. Every object route is scoped with `findOne({ _id, institution })` via `utils/scope.js`.
 
-#### 🏢 Departments / 📚 Courses / 📖 Subjects / 🎓 Enrollments
+#### Departments /  Courses /  Subjects /  Enrollments
 - `DepartmentModel` → institution; `CourseModel` → institution + department; `SubjectModel` → course + department + faculty; `EnrollmentModel` links students to courses/subjects. Syllabus PDF ingest feeds `LearningResourceModel`.
 
-#### 📝 Assignments / 📤 Submissions
+#### Assignments /  Submissions
 - `AssignmentModel` (subject, instructions, max marks, due date, `submissions[]`); `SubmissionModel` (student, files, marks, grade). Creation auto-links submission → assignment; grading uses allowlisted fields.
 
-#### 📅 Attendance (`models/AttendanceSessionModel.js`)
+#### Attendance (`models/AttendanceSessionModel.js`)
 - Session-based records per subject + date with per-student `present/absent/late` entries; realtime Socket.IO broadcast on change.
 
-#### 📢 Announcements / 🎉 Events / 🔔 Notifications
+#### Announcements /  Events /  Notifications
 - Targeted by institution/department/course; pinned + priority announcements; realtime notification delivery with preferences; weekly email digest (no-op without SMTP).
 
-#### 🏢 Companies / 💼 Placement Drives / 📄 Job Applications
+#### Companies /  Placement Drives /  Job Applications
 - `CompanyModel` (recruiting toggle) → `JobDriveModel` (eligibility, stages, window, status) → `JobApplicationModel` (stage progression to placed/rejected). Eligibility checks (CGPA/backlogs/branch) enforced server-side.
 
-#### 📋 Requests (`models/RequestModel.js`)
+#### Requests (`models/RequestModel.js`)
 - Categories: leave, document, fee, course-drop, subject-change, extension, grievance, other. Server-enforced status transitions with audit log.
 
-#### 📊 Analytics / 🔍 Search / 📚 Study / 🤖 AI Reports
+#### Analytics /  Search /  Study /  AI Reports
 - Aggregated dashboards (Recharts frontend), global tenant-scoped search, learning resources + syllabus ingest, OpenAI reports that degrade to snapshot summaries without a key.
 
 ---
 
-## 🌐 Frontend — Structure & Working
+## Frontend — Structure & Working
 
 ### Entry Point (`src/main.jsx` / `src/App.jsx`)
 - Router + auth provider + PWA registration; `App.jsx` composes shell/layout, landing, dashboards, and protected routes.
@@ -560,7 +561,7 @@ React plugin + Tailwind plugin + PWA; `vercel.json` adds the SPA fallback so non
 
 ---
 
-## 🚀 Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - **Node.js 20+**, **MongoDB** (local URI for dev, Atlas for prod), **npm**.
@@ -574,7 +575,7 @@ npm run seed           # demo data — DROPS existing data first; never run in p
 npm run dev            # http://localhost:5000/api/health
 ```
 
-Seed logins: `superadmin@campusflow.app` / `admin@anurag.edu.in` / `placement@anurag.edu.in` (`Admin@123`), `faculty1@anurag.edu.in` (`Faculty@123`), `student1@anurag.edu.in` (`Student@123`).
+Seed logins: see [Demo Credentials](#demo-credentials) below.
 
 ### 2. Frontend Setup
 ```bash
@@ -597,7 +598,21 @@ Frontend (`frontend/.env`): `VITE_API_URL` — must include the `/api/v1` suffix
 
 ---
 
-## 📡 API Endpoint Reference
+## Demo Credentials
+
+Seeded demo accounts created by `backend/seed/seed.js` (the seed script drops all collections first — never run against production). No super admin credential is published here.
+
+| Role | Email | Password |
+|---|---|---|
+| College admin | `admin@anurag.edu.in` | `Admin@123` |
+| Placement officer | `placement@anurag.edu.in` | `Admin@123` |
+| HOD | `hod.cse@anurag.edu.in` | `Faculty@123` |
+| Faculty | `faculty1@anurag.edu.in` | `Faculty@123` |
+| Student | `student1@anurag.edu.in` | `Student@123` |
+
+---
+
+## API Endpoint Reference
 
 Base path: **`/api/v1`**. All object routes are tenant-scoped; most require a Bearer access token with role authorization.
 
@@ -670,7 +685,7 @@ Health: `GET /api/health` → `{"status":"ok","uptime":…}` (unversioned).
 
 ---
 
-## ⚙️ Rate Limiting
+## Rate Limiting
 
 Credential endpoints use **dedicated `express-rate-limit` instances** (`backend/app.js`) so one endpoint's traffic never starves another's budget:
 
@@ -684,7 +699,7 @@ app.use('/api/v1', routes);
 
 ---
 
-## 🔗 Key Relationships Between Models
+## Key Relationships Between Models
 
 ```
 Institution (tenant root)
@@ -705,7 +720,7 @@ Institution (tenant root)
 
 ---
 
-## 🧪 Testing & CI
+## Testing & CI
 
 ```bash
 cd backend && npm test        # jest + supertest + mongodb-memory-server (245 tests, 19 suites)
@@ -718,7 +733,7 @@ CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: backend job (`n
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 Production path: **MongoDB Atlas → Render (backend) → Vercel (frontend)**. Full guide: [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -728,13 +743,13 @@ Production path: **MongoDB Atlas → Render (backend) → Vercel (frontend)**. F
 
 ---
 
-## 🔒 Security Model
+## Security Model
 
 Tenant isolation on every object route (`findOne({ _id, institution })` via `utils/scope.js`); role re-checked from DB per request, never from the JWT claim; deactivated and post-password-change sessions rejected; refresh rotation with reuse detection (`RefreshTokenModel`); allowlisted writes (`utils/sanitize.js` + `academicScope.js`); server-enforced workflow transitions; per-endpoint credential rate limits; Helmet + CORS allowlist + `express-mongo-sanitize` + unsafe-payload rejection; protected upload serving (`controllers/filecontroller.js`); `http(s)`-only URL fields; audit logging (`middlewares/auditLog.js`). Adversarial coverage lives in `backend/tests/security*.test.js`.
 
 ---
 
-## 📝 Notes
+## Notes
 
 - Access tokens default to **15 minutes**, refresh tokens to **7 days** (configurable via `ACCESS_TOKEN_EXPIRES` / `REFRESH_TOKEN_EXPIRES_DAYS`).
 - **Soft delete** (`isActive: false`) is used instead of hard deletion for users and key records.
@@ -746,6 +761,6 @@ Tenant isolation on every object route (`findOne({ _id, institution })` via `uti
 
 ---
 
-## 📄 License
+## License
 
 ISC
