@@ -1,5 +1,6 @@
-// Role-based onboarding. Persists locally (no self-update endpoint exists
-// server-side) and unlocks the dashboard on completion.
+// Role-based onboarding for accounts the server flags as genuinely incomplete.
+// Marks the server-side mandatory flag (PATCH /users/me/onboarding) so the
+// dashboard unlocks on every device — localStorage no longer gates anything.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
@@ -29,7 +30,7 @@ const PROGRESS_KEY = 'cf_onboarding_progress';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, completeOnboarding } = useAuth();
   const role = user?.role || 'student';
   const steps = STEP_COPY[role] || STEP_COPY.student;
   const [step, setStep] = useState(() => {
@@ -69,11 +70,14 @@ export default function Onboarding() {
   };
   const back = () => { setDir(-1); setStep((s) => s - 1); };
 
-  const finish = () => {
+  const finish = async () => {
     try {
-      localStorage.setItem('cf_onboarding', JSON.stringify({ role, ...form, doneAt: new Date().toISOString() }));
-      localStorage.removeItem(PROGRESS_KEY);
-    } catch { /* ignore */ }
+      await completeOnboarding();
+    } catch {
+      // Server unreachable — do not block the user out of their account.
+      toast.error('Could not save onboarding — you can continue; we will retry.');
+    }
+    try { localStorage.removeItem(PROGRESS_KEY); } catch { /* ignore */ }
     navigate('/dashboard', { replace: true });
   };
 

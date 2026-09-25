@@ -553,7 +553,19 @@ export default function AppShell() {
       <Tour steps={tourStepsFor(user?.role)} storageKey={`cf_tour_app:${user?._id || 'account'}`} autoOpen={!user?.onboardingTourCompleted} startSignal={tourSignal}
         onDone={() => completeOnboardingTour().catch(() => toast.error('Tour completion could not be saved to your account.'))} />
       <ToastAnnouncer />
-      <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            background: 'var(--cf-surface)',
+            color: 'var(--cf-ink)',
+            border: '1px solid var(--cf-line)',
+            borderRadius: '0.75rem',
+            fontSize: '0.875rem',
+          },
+        }}
+      />
     </div>
   );
 }

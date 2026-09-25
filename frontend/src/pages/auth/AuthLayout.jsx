@@ -79,7 +79,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             {/* Auth Card Surface */}
             <div className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-2xl p-6 sm:p-8 shadow-xl shadow-black/5 dark:shadow-black/40">
               <div className="mb-6">
-                <p className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D86D3E]">
+                <p className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--cf-accent)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
                   Institutional Access
                 </p>
@@ -103,7 +103,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             </div>
 
             <p className="mt-4 text-center text-[11px] text-[var(--cf-ink-mute)]">
-              Authorized access only · Protected by institution Single Sign-On
+              Your role decides what you can see.
             </p>
           </motion.div>
         </div>

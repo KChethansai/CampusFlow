@@ -340,6 +340,12 @@ body {
     radial-gradient(700px 500px at 50% 110%, rgba(37, 216, 144, 0.10), transparent 60%);
 }
 
+/* Ink-based dot grid — resolves from --cf-ink in both appearances */
+.cf-dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--cf-ink) 18%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 /* Display type — Space Grotesk only (no serif). */
 .cf-display {
   font-family: "Space Grotesk", "Inter", sans-serif;

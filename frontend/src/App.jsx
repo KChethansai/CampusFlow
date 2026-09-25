@@ -46,23 +46,38 @@ function NoSelfSignup() {
 const adminRoles = ['super_admin', 'college_admin'];
 const learnRoles = [...adminRoles, 'faculty', 'student'];
 
+// The user record from /auth/me is the ONLY authority for mandatory profile
+// completion. localStorage is never consulted: a fresh browser, incognito
+// window, cleared storage, or new device must NOT route an existing user into
+// the questionnaire. A user is only onboarding when the server says so.
+const profileComplete = (user) => {
+  if (!user) return false;
+  if (user.onboardingCompleted) return true;
+  const profile = user.profile || {};
+  if (['faculty', 'hod'].includes(user.role)) return Boolean(user.department);
+  if (user.role === 'student') {
+    return Boolean(
+      user.institution && user.department
+      && profile.rollNumber && profile.course
+      && profile.semester && profile.batchYear,
+    );
+  }
+  return Boolean(user.institution);
+};
+
+const needsOnboarding = (user) => Boolean(user) && !profileComplete(user);
+
 function HomeRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Landing />;
-  try {
-    if (!localStorage.getItem('cf_onboarding')) return <Navigate to="/onboarding" replace />;
-  } catch { /* storage unavailable — let dashboard through */ }
+  if (needsOnboarding(user)) return <Navigate to="/onboarding" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
 function RequireOnboarding({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return children;
-  try {
-    if (!localStorage.getItem('cf_onboarding')) {
-      return <Navigate to="/onboarding" replace />;
-    }
-  } catch { /* ignore */ }
+  if (needsOnboarding(user)) return <Navigate to="/onboarding" replace />;
   return children;
 }
 

@@ -94,6 +94,7 @@ export const sanitizeUser = (user, scope = 'self') => {
     isActive: raw.isActive,
     lastLoginAt: raw.lastLoginAt,
     onboardingTourCompleted: raw.onboardingTourCompleted,
+    onboardingCompleted: raw.onboardingCompleted,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt
   };

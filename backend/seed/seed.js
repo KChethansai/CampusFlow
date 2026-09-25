@@ -297,7 +297,9 @@ async function seed() {
       };
     });
 
-    const allUserDocs = [superAdminDoc, collegeAdminDoc, placementOfficerDoc, hodDoc, ...facultyDocs, ...studentDocs];
+    // Seeded accounts are provisioned complete — they must never see the questionnaire.
+    const allUserDocs = [superAdminDoc, collegeAdminDoc, placementOfficerDoc, hodDoc, ...facultyDocs, ...studentDocs]
+      .map((d) => ({ ...d, onboardingCompleted: true }));
     const users = await User.insertMany(allUserDocs);
     console.log(`✓ Seeded ${users.length} Users (1 super admin, 1 college admin, 1 placement officer, 1 hod, 5 faculty, 30 students)`);
 

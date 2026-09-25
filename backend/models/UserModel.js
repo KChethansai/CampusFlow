@@ -57,6 +57,10 @@ const userSchema = new Schema({
   isActive: { type: Boolean, default: true },
   lastLoginAt: Date,
   onboardingTourCompleted: { type: Boolean, default: false },
+  // Explicit server-side mandatory-onboarding state. The client gate MUST derive
+  // "needs onboarding" from this flag (via /auth/me) combined with required
+  // profile fields — never from localStorage presence alone.
+  onboardingCompleted: { type: Boolean, default: false },
   notificationPreferences: { type: notificationPreferencesSchema, default: () => ({}) }
 }, {
   timestamps: true,

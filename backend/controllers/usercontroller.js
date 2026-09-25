@@ -134,6 +134,18 @@ export const completeOnboardingTour = asyncHandler(async (req, res) => {
   res.json({ success: true, data: sanitizeUser(req.user, 'self') });
 });
 
+// Mandatory onboarding completion — self-scoped, single-purpose, exact-body
+// validated like completeOnboardingTour. Sets the explicit server-side flag the
+// client gate uses; never accepts profile fields (no generic self-update).
+export const completeOnboarding = asyncHandler(async (req, res) => {
+  if (Object.keys(req.body || {}).length !== 1 || req.body.completed !== true) {
+    throw new ApiError(400, 'completed must be true');
+  }
+  req.user.onboardingCompleted = true;
+  await req.user.save();
+  res.json({ success: true, data: sanitizeUser(req.user, 'self') });
+});
+
 // Update user — allowlisted fields, tenant-scoped, password via save() so the
 // bcrypt pre-save hook runs (findByIdAndUpdate would store plaintext).
 export const updateUser = asyncHandler(async (req, res) => {

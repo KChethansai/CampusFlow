@@ -425,7 +425,8 @@ describe('Final CampusFlow Closure Matrix (Requirements A-N)', () => {
       expect(source).not.toContain('Unified Platform');
       expect(source).not.toContain('Operational Infrastructure');
       expect(source).not.toContain('Multi-Role RBAC');
-      expect(source).toContain('100% Deterministic RBAC');
+      expect(source).not.toContain('100% Deterministic RBAC');
+      expect(source).toContain('Role-based access');
     });
 
     it('HeroSceneFallback does not contain ornamental SVG text labels', () => {

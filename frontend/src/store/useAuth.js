@@ -76,7 +76,7 @@ export const useAuth = create((set) => ({
         refreshToken: auth.refreshToken,
         isAuthenticated: true
       });
-      // Revalidate against server without blocking paint.
+      // Revalidate against server — authoritative source for the onboarding gate.
       api.get('/auth/me').then(({ data }) => {
         const serverUser = data.user || data.data;
         if (serverUser) {
@@ -88,6 +88,19 @@ export const useAuth = create((set) => ({
         }
       }).catch(() => { /* token refresh interceptor handles expiry */ });
     }
+  },
+
+  completeOnboarding: async () => {
+    const { data } = await api.patch('/users/me/onboarding', { completed: true });
+    const user = data.data || data.user;
+    if (user) {
+      const auth = readStoredAuth();
+      if (auth) localStorage.setItem('cf_auth', JSON.stringify({ ...auth, user }));
+      set({ user });
+    } else {
+      set((state) => ({ user: state.user ? { ...state.user, onboardingCompleted: true } : null }));
+    }
+    return data;
   },
 
   forgotPassword: async (email) => {

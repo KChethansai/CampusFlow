@@ -9,6 +9,7 @@ import {
   updateUser,
   deleteUser,
   completeOnboardingTour,
+  completeOnboarding,
 } from '../controllers/usercontroller.js';
 
 export const userApp = Router();
@@ -22,6 +23,7 @@ userApp.route('/')
 
 userApp.post('/bulk', verifyToken('super_admin', 'college_admin'), uploadBulkFile, bulkCreateUsers);
 userApp.patch('/me/onboarding-tour', completeOnboardingTour);
+userApp.patch('/me/onboarding', completeOnboarding);
 
 userApp.route('/:id')
   .get(verifyToken('super_admin', 'college_admin', 'faculty', 'placement_officer'), getUserById)
