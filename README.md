@@ -420,7 +420,7 @@ CampusFlow/
 │   ├── utils/                       # scope, sanitize, token, asyncHandler, logger…
 │   ├── seed/                        # seed.js demo data (DROPS data first)
 │   ├── scripts/                     # smoke.mjs, provisionIndexes.js, check-syntax
-│   ├── tests/                       # jest + supertest, 19 suites
+│   ├── tests/                       # jest + supertest, 8 focused suites
 │   └── uploads/                     # Local upload fallback (gitignored content)
 ├── frontend/                        # React 19 + Vite 8
 │   ├── package.json · vite.config.js · vercel.json · index.html
@@ -443,7 +443,6 @@ CampusFlow/
 │       │   └── requests/        # Requests / leave workflow
 │       ├── config/ · utils/ · system/ · styles/ · assets/
 ├── .github/workflows/ci.yml
-├── DEPLOYMENT.md
 └── README.md
 ```
 
@@ -487,7 +486,7 @@ CampusFlow/
 | **openai** | ^4.47.0 | AI reports (optional, graceful fallback) |
 | **ics / json2csv / pdf-parse** | misc | Calendar export, CSV export, syllabus ingest |
 | **winston** | ^3.13.0 | Logging |
-| **jest + supertest + mongodb-memory-server** | dev | 19 test suites |
+| **jest + supertest + mongodb-memory-server** | dev | 8 focused suites |
 
 ---
 
@@ -723,19 +722,24 @@ Institution (tenant root)
 ## Testing & CI
 
 ```bash
-cd backend && npm test        # jest + supertest + mongodb-memory-server (245 tests, 19 suites)
+cd backend && npm test        # jest + supertest + mongodb-memory-server (8 focused suites)
 npm run check-syntax           # syntax gate used by CI
 npm run smoke                  # post-deploy smoke script
 cd frontend && npm run build   # production build check
+
+The suite is intentionally small and regression-focused: `auth` (login/session/refresh/logout/password-change),
+`onboarding` (server-authoritative gate), `attendance` (marking + scoping), `security` (RBAC/tenant isolation),
+`files` (protected uploads), `socket` (handshake + room scoping), `contracts` (critical endpoint shapes),
+`integrity` (duplicate guards + key indexes). Every test answers "what expensive regression would this catch?"
 ```
 
-CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: backend job (`npm ci` → `check-syntax` → `npm test`, `NODE_ENV=test`), frontend job (`npm ci` → `npm run build`, needs backend), lint job (`git diff --check`).
+CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: backend job (`npm ci` → `check-syntax` → `npm test`, `NODE_ENV=test`), frontend job (`npm ci` → `npm run build`), lint job (`git diff --check`).
 
 ---
 
 ## Deployment
 
-Production path: **MongoDB Atlas → Render (backend) → Vercel (frontend)**. Full guide: [DEPLOYMENT.md](DEPLOYMENT.md).
+Production path: **MongoDB Atlas → Render (backend) → Vercel (frontend)**.
 
 - **Render**: root `backend`, build `npm ci`, start `npm start`, health path `/api/health`. Required: `NODE_ENV=production`, `DB_URL`, `SECRET_KEY`, `SECRET_KEY_REFRESH`, `CLIENT_URL` (exact Vercel origin). Ephemeral disk → set `UPLOAD_DRIVER=cloudinary` + credentials in prod.
 - **Vercel**: root `frontend`, preset Vite, build `npm run build`, output `dist`; `vercel.json` SPA fallback. Set `VITE_API_URL=https://<api>/api/v1`.
@@ -745,7 +749,7 @@ Production path: **MongoDB Atlas → Render (backend) → Vercel (frontend)**. F
 
 ## Security Model
 
-Tenant isolation on every object route (`findOne({ _id, institution })` via `utils/scope.js`); role re-checked from DB per request, never from the JWT claim; deactivated and post-password-change sessions rejected; refresh rotation with reuse detection (`RefreshTokenModel`); allowlisted writes (`utils/sanitize.js` + `academicScope.js`); server-enforced workflow transitions; per-endpoint credential rate limits; Helmet + CORS allowlist + `express-mongo-sanitize` + unsafe-payload rejection; protected upload serving (`controllers/filecontroller.js`); `http(s)`-only URL fields; audit logging (`middlewares/auditLog.js`). Adversarial coverage lives in `backend/tests/security*.test.js`.
+Tenant isolation on every object route (`findOne({ _id, institution })` via `utils/scope.js`); role re-checked from DB per request, never from the JWT claim; deactivated and post-password-change sessions rejected; refresh rotation with reuse detection (`RefreshTokenModel`); allowlisted writes (`utils/sanitize.js` + `academicScope.js`); server-enforced workflow transitions; per-endpoint credential rate limits; Helmet + CORS allowlist + `express-mongo-sanitize` + unsafe-payload rejection; protected upload serving (`controllers/filecontroller.js`); `http(s)`-only URL fields; audit logging (`middlewares/auditLog.js`). Focused regression coverage lives in `backend/tests/` (8 suites: auth, onboarding, attendance, security, files, socket, contracts, integrity).
 
 ---
 
