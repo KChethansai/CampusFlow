@@ -73,6 +73,14 @@ describe('AR24 syllabus ingestion review artifact', () => {
     const result = spawnSync(process.execPath, ['scripts/ingestSyllabus.js', '--commit', '--input', tmpPath], {
       cwd: backendRoot,
       encoding: 'utf8',
+      // Jest ESM workers do not propagate process.env mutations to children —
+      // pass the (setup-file-provided) values explicitly.
+      env: {
+        ...process.env,
+        DB_URL: process.env.DB_URL || 'mongodb://127.0.0.1:27017/campusflow-test-unused',
+        SECRET_KEY: process.env.SECRET_KEY || 'test-access-secret-not-for-production',
+        SECRET_KEY_REFRESH: process.env.SECRET_KEY_REFRESH || 'test-refresh-secret-not-for-production',
+      },
     });
     rmSync(tmpPath, { force: true });
     expect(result.status).toBe(1);
