@@ -28,6 +28,7 @@ export const colors = {
 export const ROLES = [
   'super_admin',
   'college_admin',
+  'hod',
   'faculty',
   'student',
   'placement_officer'
@@ -169,6 +170,9 @@ export const normalizeStage = (stage) => {
   if (stage === 'interview_1' || stage === 'interview_2' || stage === 'hr_round') return 'interview';
   return stage;
 };
+
+// Attendance mark vocabulary (single definition — UI and metrics share it).
+export const ATTENDANCE_STATUSES = ['present', 'absent', 'late', 'od'];
 
 // DISPLAY-TYPE (LANDING ONLY) — restrained serif display, zero webfont bytes.
 // System serif stack only; scale/leading/tracking live as CSS vars in

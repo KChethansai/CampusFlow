@@ -50,7 +50,7 @@ export default function HeroSection() {
           Attendance, assignments, placements and insight — moving together in one workspace, one record per student.
         </motion.p>
         <p className="mt-3 text-[13px] font-medium text-[#6B7280] dark:text-[#A7B0BF]">
-          Mark attendance in seconds, track drives to offers, read AI reports with evidence attached.
+          Mark attendance from the roster, track drives to offers, read AI reports with evidence attached.
         </p>
         <motion.div
           initial={reduced ? false : { opacity: 0, y: 12 }}

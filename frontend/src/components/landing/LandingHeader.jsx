@@ -9,10 +9,10 @@ import { cn } from '../../system/tokens';
 const LandingDrawer = lazy(() => import('./LandingDrawer'));
 
 const NAV = [
-  { label: 'Platform', to: '/dashboard' },
-  { label: 'Academics', to: '/attendance' },
-  { label: 'Placements', to: '/placement' },
-  { label: 'Intelligence', to: '/ai-reports' }
+  { label: 'Capabilities', href: '#intelligence' },
+  { label: 'Roles', href: '#roles' },
+  { label: 'How it works', href: '#workflow' },
+  { label: 'Placements', href: '#placement' }
 ];
 
 export default function LandingHeader() {
@@ -50,9 +50,9 @@ export default function LandingHeader() {
           onMouseLeave={() => setHoveredNav(null)}
         >
           {NAV.map((n) => (
-            <Link
+            <a
               key={n.label}
-              to={n.to}
+              href={n.href}
               onMouseEnter={() => setHoveredNav(n.label)}
               className="relative px-3.5 py-2 rounded-full text-sm font-medium text-[#4B5563] dark:text-[#A7B0BF] hover:text-[#100D0B] dark:hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
             >
@@ -64,7 +64,7 @@ export default function LandingHeader() {
                 />
               )}
               {n.label}
-            </Link>
+            </a>
           ))}
         </nav>
         <div className="flex items-center gap-2 shrink-0">

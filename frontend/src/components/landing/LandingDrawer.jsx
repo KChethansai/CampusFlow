@@ -83,14 +83,14 @@ export default function LandingDrawer({ links, onClose }) {
         >
           {links.map((n) => (
             <motion.div key={n.label} variants={reduced ? undefined : staggerChild}>
-              <Link
-                to={n.to}
+              <a
+                href={n.href}
                 onClick={onClose}
                 className="flex items-center justify-between gap-2 rounded-2xl px-4 min-h-11 py-2.5 text-[15px] font-medium text-[#100D0B] dark:text-[#F5F7FA] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94727]"
               >
                 {n.label}
                 <ArrowRight size={16} aria-hidden className="text-[#D86D3E] dark:text-[#F5B08A]" />
-              </Link>
+              </a>
             </motion.div>
           ))}
         </motion.div>

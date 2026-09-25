@@ -7,7 +7,7 @@ export default function WorkflowSection() {
       <div className="landing-inner max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <SectionHead
           title="How campus workflows connect."
-          body="Interactive radial topology showing how coursework, attendance, placement drives, and governance synchronize in real time."
+          body="Interactive radial topology showing how coursework, attendance, placement drives, and governance connect in one record."
         />
         <Reveal className="mt-7">
           <RadialOrbitalTimeline />

@@ -14,7 +14,6 @@ import AttendanceSection from '../components/landing/AttendanceSection';
 import PlacementSection from '../components/landing/PlacementSection';
 import WorkflowSection from '../components/landing/WorkflowSection';
 import DirectorySection from '../components/landing/DirectorySection';
-import IntelligenceSection from '../components/landing/IntelligenceSection';
 import RoleExperiencesSection from '../components/landing/RoleExperiencesSection';
 import JourneySection from '../components/landing/JourneySection';
 import FinalCTA from '../components/landing/FinalCTA';
@@ -61,22 +60,17 @@ export default function Landing() {
 
         <SectionConnector />
 
-        {/* 09 — Grounded intelligence */}
-        <IntelligenceSection />
-
-        <SectionConnector />
-
-        {/* 10 — Role experiences grid */}
+        {/* 09 — Role experiences grid */}
         <RoleExperiencesSection />
 
         <SectionConnector />
 
-        {/* 11 — Getting-started chapters */}
+        {/* 10 — Getting-started chapters */}
         <JourneySection />
 
         <SectionConnector />
 
-        {/* 12 — Final CTA */}
+        {/* 11 — Final CTA */}
         <FinalCTA />
       </main>
 

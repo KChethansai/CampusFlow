@@ -154,7 +154,6 @@ export default function AppShell() {
   const location = useLocation();
   const reduced = useReducedMotion();
   const items = visibleNav(user?.role);
-  const centerLinks = items.slice(0, 4);
   const semester = user?.profile?.semester;
   const accent = ROLE_ACCENT[user?.role] || ROLE_ACCENT.student;
 
@@ -228,7 +227,7 @@ export default function AppShell() {
         Skip to content
       </a>
 
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-5 flex items-start gap-4">
+      <div className="w-full px-3 sm:px-5 xl:px-8 flex items-start gap-4">
         {/* Left navigation rail */}
         <aside
           className={cn(
@@ -335,38 +334,7 @@ export default function AppShell() {
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cf-volt)' }} aria-hidden />
                 {semester ? `Sem ${semester}` : 'Campus'}
               </span>
-              <nav aria-label="Sections" className="hidden xl:flex flex-1 items-center justify-center gap-1">
-                {centerLinks.map(({ label, to }) => (
-                  <NavLink
-                    key={to + label}
-                    to={to}
-                    className={({ isActive }) => cn(
-                      `relative rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
-                      isActive
-                        ? 'text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]'
-                        : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
-                    )}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        {isActive && (reduced ? (
-                          <span className="absolute inset-0 rounded-full bg-[var(--cf-accent)]/10" aria-hidden />
-                        ) : (
-                          <motion.span
-                            layoutId="cf-topbar-pill"
-                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                            className="absolute inset-0 rounded-full"
-                            style={{ background: `linear-gradient(90deg, ${accent[0]}1a, ${accent[1]}1a)`, boxShadow: `inset 0 0 0 1px ${accent[0]}33` }}
-                            aria-hidden
-                          />
-                        ))}
-                        <span className="relative">{label}</span>
-                      </>
-                    )}
-                  </NavLink>
-                ))}
-              </nav>
-              <div className="flex-1 xl:hidden" />
+              <div className="flex-1" />
               <span className="hidden lg:inline-flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] px-3 text-xs font-semibold capitalize text-[var(--cf-ink-soft)]">
                 <span className="w-2 h-2 rounded-full bg-[var(--cf-volt)] animate-pulse-dot" aria-hidden />
                 {roleLabel(user?.role)}
@@ -384,13 +352,6 @@ export default function AppShell() {
               <span id="cf-notifications" className="inline-flex">
                 <NotificationsCenter />
               </span>
-              <Link
-                to="/profile"
-                aria-label="Settings"
-                className={cn(iconBtn, 'hidden md:grid')}
-              >
-                <Settings size={19} />
-              </Link>
               <Link
                 to="/profile"
                 className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[var(--cf-accent)]/40`}

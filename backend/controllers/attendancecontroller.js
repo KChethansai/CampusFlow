@@ -131,6 +131,11 @@ export const markSession = asyncHandler(async (req, res) => {
 
 // List attendance sessions (with optional subject / date filters)
 export const getSessions = asyncHandler(async (req, res) => {
+  // Placement officers have no attendance workflow — per-student aggregates
+  // remain available for eligibility checks, but bulk session reads are denied.
+  if (req.user.role === 'placement_officer') {
+    throw new ApiError(403, 'Placement officers do not have attendance access');
+  }
   const filter = { institution: req.user.institution };
 
   if (req.user.role === 'student') {
@@ -209,6 +214,9 @@ export const getSessions = asyncHandler(async (req, res) => {
 export const getSessionById = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) {
     throw new ApiError(400, 'Invalid attendance session ID');
+  }
+  if (req.user.role === 'placement_officer') {
+    throw new ApiError(403, 'Placement officers do not have attendance access');
   }
 
   const session = await AttendanceSession.findOne({

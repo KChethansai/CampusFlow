@@ -5,6 +5,7 @@ import { Reveal, SectionHead, glassCard, kicker } from './shared';
 
 const ATTENDANCE_STATES = [
   { key: 'present', label: 'Present', color: '#D86D3E', hint: 'Marked in the live matrix' },
+  { key: 'late', label: 'Late', color: '#C9A227', hint: 'Grace-window arrivals' },
   { key: 'od', label: 'On duty', color: '#E7A66D', hint: 'Approved leave shapes' },
   { key: 'absent', label: 'Absent', color: '#B4806A', hint: 'Watch-list inputs' }
 ];
@@ -12,9 +13,9 @@ const ATTENDANCE_STATES = [
 function StatusRing() {
   const r = 58;
   const c = 2 * Math.PI * r;
-  const third = c / 3;
+  const quarter = c / 4;
   return (
-    <svg width="168" height="168" viewBox="0 0 168 168" role="img" aria-label="The three attendance states: present, on duty, absent">
+    <svg width="168" height="168" viewBox="0 0 168 168" role="img" aria-label="The four attendance states: present, late, on duty, absent">
       {ATTENDANCE_STATES.map((s, i) => (
         <circle
           key={s.key}
@@ -25,13 +26,13 @@ function StatusRing() {
           stroke={s.color}
           strokeWidth="14"
           strokeLinecap="butt"
-          strokeDasharray={`${third - 6} ${c - third + 6}`}
-          strokeDashoffset={-i * third}
+          strokeDasharray={`${quarter - 6} ${c - quarter + 6}`}
+          strokeDashoffset={-i * quarter}
           transform="rotate(-90 84 84)"
         />
       ))}
       <text x="84" y="80" textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.6" fontFamily="monospace">
-        3
+        4
       </text>
       <text x="84" y="96" textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.6" fontFamily="monospace">
         states
@@ -40,7 +41,7 @@ function StatusRing() {
   );
 }
 
-const HEAT_CELLS = Array.from({ length: 48 }, (_, i) => ATTENDANCE_STATES[i % 3].key);
+const HEAT_CELLS = Array.from({ length: 48 }, (_, i) => ATTENDANCE_STATES[i % 4].key);
 
 function StatusHeatmap() {
   const reduced = useReducedMotion();
@@ -49,7 +50,7 @@ function StatusHeatmap() {
     <div
       className="grid grid-cols-8 gap-1.5"
       role="img"
-      aria-label="Illustrative attendance matrix showing the present, on duty and absent status key"
+      aria-label="Illustrative attendance matrix showing the present, late, on duty and absent status key"
     >
       {HEAT_CELLS.map((k, i) => (
         <motion.span
@@ -74,12 +75,12 @@ export default function AttendanceSection() {
       <div className="landing-inner max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <SectionHead
           title="Every mark, one matrix."
-          body="Present, on duty, absent — three states resolve every session in the live grid."
+          body="Present, late, on duty, absent — four states resolve every session in the live grid."
         />
         <div className="mt-7 grid md:grid-cols-3 gap-3.5 sm:gap-4">
           <Reveal>
             <div className={`${glassCard} p-5 sm:p-6 text-center h-full`}>
-              <p className={kicker}>The three states</p>
+              <p className={kicker}>The four states</p>
               <div className="mt-4 flex justify-center">
                 <StatusRing />
               </div>

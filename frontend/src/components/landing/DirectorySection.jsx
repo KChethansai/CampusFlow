@@ -10,7 +10,7 @@ export default function DirectorySection() {
       <div className="landing-inner max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <SectionHead
           title="Everyone, findable."
-          body="Five verified roles, unified authentication — the directory mirrors the real identity model."
+          body="Six verified roles, unified authentication — the directory mirrors the real identity model."
         />
         <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
           {ROLES.map((role, i) => (
@@ -34,6 +34,8 @@ export default function DirectorySection() {
                       ? 'Learner Workspace'
                       : role === 'faculty'
                       ? 'Faculty Portal'
+                      : role === 'hod'
+                      ? 'Department Desk'
                       : role === 'placement_officer'
                       ? 'Placement Cell'
                       : role === 'college_admin'

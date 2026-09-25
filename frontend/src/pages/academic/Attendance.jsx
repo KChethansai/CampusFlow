@@ -3,6 +3,7 @@
 // Endpoints preserved: GET /attendance, POST /attendance, GET /subjects,
 // GET /users. Role gates + marking logic unchanged. Heatmap matrix restyled
 // to the Obsidian Ember surface.
+import { Link } from 'react-router';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Printer } from 'lucide-react';
@@ -11,9 +12,9 @@ import { useAuth } from '../../store/useAuth';
 import { EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
 import { Modal } from '../../components/ui/Modal';
 import { AttendanceRing, Heatmap, Sparkline } from '../../components/data/views';
-import { btnClass, inputClass, labelClass, selectClass, statusBadge } from '../../system/tokens';
+import { btnClass, inputClass, labelClass, selectClass, statusBadge, ATTENDANCE_STATUSES } from '../../system/tokens';
 
-const STATUSES = ['present', 'absent', 'late', 'od'];
+const STATUSES = ATTENDANCE_STATUSES;
 const GLASS = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5';
 
 export default function Attendance() {
@@ -59,6 +60,12 @@ export default function Attendance() {
   const selectedSubject = useMemo(
     () => subjects.find((s) => String(s._id) === String(subjectId)),
     [subjects, subjectId]
+  );
+  // Faculty may only mark subjects they teach — hide the rest instead of
+  // letting the backend 403. HOD/admin subject lists are already scoped server-side.
+  const markableSubjects = useMemo(
+    () => (user?.role === 'faculty' ? subjects.filter((s) => isTaughtBy(s, user?._id)) : subjects),
+    [subjects, user?.role, user?._id]
   );
   const selectedCourseId = useMemo(() => {
     const c = selectedSubject?.course;
@@ -173,13 +180,20 @@ export default function Attendance() {
 
   const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 
+  const scopeLabel = user?.role === 'student' ? 'My attendance'
+    : user?.role === 'faculty' ? 'My classes'
+    : user?.role === 'hod' ? 'Department overview'
+    : 'Institution overview';
+  const baseSubtitle = health == null ? 'No sessions recorded yet.' : `${recs.length} records · ${missed} missed classes`;
+
   return (
     <div className="print-report">
       <PageHeader
         title="Attendance"
-        subtitle={health == null ? 'No sessions recorded yet.' : `${recs.length} records · ${missed} missed classes`}
+        subtitle={`${scopeLabel} · ${baseSubtitle}`}
         actions={<div className="flex flex-wrap gap-2 print-hide">
           <button type="button" onClick={() => window.print()} className={btnClass('outline', 'small')}><Printer size={14} aria-hidden /> Export / print</button>
+          {!canMark && <Link to="/requests" className={btnClass('outline', 'small')}>Request correction</Link>}
           {canMark && <button onClick={() => setShowMark(true)} className={btnClass('primary', 'medium')}><Plus size={15} /> Mark attendance</button>}
         </div>}
       />
@@ -257,7 +271,7 @@ export default function Attendance() {
           <div>
             <label className={labelClass} htmlFor="att-subject">Subject</label>
             <select id="att-subject" className={selectClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
-              {subjects.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+              {markableSubjects.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
             </select>
           </div>
           <div>

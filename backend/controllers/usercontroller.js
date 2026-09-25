@@ -102,10 +102,23 @@ export const bulkCreateUsers = asyncHandler(async (req, res) => {
   });
 });
 
+// Platform protection: super_admin accounts are invisible and immutable to
+// every non-super_admin caller. Enforcement lives here (server-side) —
+// frontend hiding is presentation only and never a security control.
+const isPlatformUser = (user) => user?.role === 'super_admin';
+const assertNotProtectedTarget = (caller, target) => {
+  if (isPlatformUser(target) && caller?.role !== 'super_admin') {
+    throw new ApiError(404, 'User not found');
+  }
+};
+
 // List all users scoped to the institution (paginated)
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page, limit, skip } = pageParams(req);
   const filter = { institution: req.user.institution };
+  if (req.user.role !== 'super_admin') {
+    filter.role = { $ne: 'super_admin' };
+  }
   const [users, total] = await Promise.all([
     User.find(filter).populate('department', 'name code').skip(skip).limit(limit),
     User.countDocuments(filter),
@@ -121,6 +134,7 @@ export const getUserById = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
+  assertNotProtectedTarget(req.user, user);
 
   res.json({ success: true, data: sanitizeUser(user, 'admin') });
 });
@@ -154,6 +168,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
+  assertNotProtectedTarget(req.user, user);
 
   const { name, department, profile, isActive, role, password, avatarUrl } = req.body;
 
@@ -226,15 +241,16 @@ export const deleteUser = asyncHandler(async (req, res) => {
   if (String(req.params.id) === String(req.user._id)) {
     throw new ApiError(403, 'You cannot deactivate your own account');
   }
-  const user = await User.findOneAndUpdate(
-    { _id: req.params.id, institution: req.user.institution },
-    { isActive: false },
-    { new: true },
-  );
+  const user = await User.findOne({ _id: req.params.id, institution: req.user.institution });
 
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
+  // Guard BEFORE mutating: the target must be re-checked after fetch.
+  assertNotProtectedTarget(req.user, user);
+
+  user.isActive = false;
+  await user.save();
 
   res.json({ success: true, message: 'User deactivated' });
 });

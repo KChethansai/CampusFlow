@@ -6,12 +6,24 @@
  * Run:  npm run seed          (from backend/)
  *       node seed/seed.js     (from backend/)
  *
- * WARNING: Drops ALL existing data before seeding.
+ * Idempotent: every section checks for existing documents first, so repeated
+ * runs never duplicate data. Deterministic: all randomness flows from a fixed
+ * seed, so repeated fresh seeds produce identical demo data.
+ *
+ * To wipe and reseed from scratch (never in production):
+ *       node seed/seed.js --reset
+ *
+ * WARNING: --reset drops ALL existing data before seeding.
  */
 
 if (process.env.NODE_ENV === 'production') {
-  console.error('Refusing to run seed script in production (NODE_ENV=production). This script drops collections.');
+  console.error('Refusing to run seed script in production (NODE_ENV=production).');
   process.exit(1);
+}
+
+const RESET = process.argv.includes('--reset');
+if (RESET) {
+  console.log('⚠ --reset: existing data will be dropped before seeding.');
 }
 
 import mongoose from 'mongoose';
@@ -35,12 +47,23 @@ import { EventModel as Event } from '../models/EventModel.js'
 import { RequestModel as Request } from '../models/RequestModel.js'
 import { AnnouncementModel as Announcement } from '../models/AnnouncementModel.js'
 import { LearningResourceModel as LearningResource } from '../models/LearningResourceModel.js'
+import { NotificationModel as Notification } from '../models/NotificationModel.js'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const hash = (pw) => bcrypt.hashSync(pw, 12);
 
+// Deterministic PRNG (mulberry32, fixed seed) — every run generates identical
+// demo data. Never use Math.random() in this file.
+let rngState = 20260801;
+const rng = () => {
+  rngState |= 0; rngState = (rngState + 0x6D2B79F5) | 0;
+  let t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
 /** Return a random integer in [min, max] (inclusive). */
-const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randInt = (min, max) => Math.floor(rng() * (max - min + 1)) + min;
 
 /** Pick a random element from an array. */
 const pick = (arr) => arr[randInt(0, arr.length - 1)];
@@ -67,32 +90,39 @@ async function seed() {
     await mongoose.connect(env.dbUrl);
     console.log(`✓ Connected to MongoDB: ${env.dbUrl}`);
 
-    // ── Drop existing data ────────────────────────────────────────────────
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    for (const col of collections) {
-      await mongoose.connection.db.dropCollection(col.name);
+    // ── Reset only on explicit flag ─────────────────────────────────────
+    if (RESET) {
+      const collections = await mongoose.connection.db.listCollections().toArray();
+      for (const col of collections) {
+        await mongoose.connection.db.dropCollection(col.name);
+      }
+      console.log(`✓ Dropped ${collections.length} existing collection(s)`);
     }
-    console.log(`✓ Dropped ${collections.length} existing collection(s)`);
 
     // ====================================================================
-    // 1. Institution
+    // 1. Institution (upsert by code — reruns reuse it)
     // ====================================================================
-    const [institution] = await Institution.insertMany([
-      {
-        name: 'Anurag University',
-        code: 'ANURAG',
-        emailDomainPattern: 'anurag.edu.in',
-        address: { city: 'Bangalore', state: 'Karnataka', country: 'India' },
-        contactEmail: 'info@anurag.edu.in',
-        settings: {
-          attendanceThreshold: 75,
-          gradingScale: '10-point',
-          academicYearStart: '2025-08-01',
+    let institution = await Institution.findOne({ code: 'ANURAG' });
+    if (!institution) {
+      [institution] = await Institution.insertMany([
+        {
+          name: 'Anurag University',
+          code: 'ANURAG',
+          emailDomainPattern: 'anurag.edu.in',
+          address: { city: 'Bangalore', state: 'Karnataka', country: 'India' },
+          contactEmail: 'info@anurag.edu.in',
+          settings: {
+            attendanceThreshold: 75,
+            gradingScale: '10-point',
+            academicYearStart: '2025-08-01',
+          },
+          isActive: true,
         },
-        isActive: true,
-      },
-    ]);
-    console.log('✓ Seeded 1 Institution');
+      ]);
+      console.log('✓ Seeded 1 Institution');
+    } else {
+      console.log('○ Institution exists — reusing');
+    }
 
     // ====================================================================
     // 2. Departments (3)
@@ -102,15 +132,23 @@ async function seed() {
       { name: 'Electronics & Communication Engineering', code: 'ECE' },
       { name: 'Mechanical Engineering', code: 'MECH' },
     ];
-    const departments = await Department.insertMany(
-      deptDefs.map((d) => ({
-        institution: institution._id,
-        name: d.name,
-        code: d.code,
-        isActive: true,
-      }))
-    );
-    console.log(`✓ Seeded ${departments.length} Departments`);
+    let departments = await Department.find({ institution: institution._id });
+    const existingDeptCodes = new Set(departments.map((d) => d.code));
+    const missingDepts = deptDefs.filter((d) => !existingDeptCodes.has(d.code));
+    if (missingDepts.length > 0) {
+      const inserted = await Department.insertMany(
+        missingDepts.map((d) => ({
+          institution: institution._id,
+          name: d.name,
+          code: d.code,
+          isActive: true,
+        }))
+      );
+      departments = departments.concat(inserted);
+      console.log(`✓ Seeded ${inserted.length} Departments`);
+    } else {
+      console.log(`○ ${departments.length} Departments exist — reusing`);
+    }
 
     // Map for quick lookup: code → doc
     const deptMap = {};
@@ -124,18 +162,26 @@ async function seed() {
       { name: 'B.Tech in Electronics & Communication Engineering', code: 'BTECE', dept: 'ECE' },
       { name: 'B.Tech in Mechanical Engineering', code: 'BTMECH', dept: 'MECH' },
     ];
-    const courses = await Course.insertMany(
-      courseDefs.map((c) => ({
-        institution: institution._id,
-        department: deptMap[c.dept]._id,
-        name: c.name,
-        code: c.code,
-        durationYears: 4,
-        totalSemesters: 8,
-        isActive: true,
-      }))
-    );
-    console.log(`✓ Seeded ${courses.length} Courses`);
+    let courses = await Course.find({ institution: institution._id });
+    const existingCourseCodes = new Set(courses.map((c) => c.code));
+    const missingCourses = courseDefs.filter((c) => !existingCourseCodes.has(c.code));
+    if (missingCourses.length > 0) {
+      const inserted = await Course.insertMany(
+        missingCourses.map((c) => ({
+          institution: institution._id,
+          department: deptMap[c.dept]._id,
+          name: c.name,
+          code: c.code,
+          durationYears: 4,
+          totalSemesters: 8,
+          isActive: true,
+        }))
+      );
+      courses = courses.concat(inserted);
+      console.log(`✓ Seeded ${inserted.length} Courses`);
+    } else {
+      console.log(`○ ${courses.length} Courses exist — reusing`);
+    }
 
     const courseMap = {};
     courses.forEach((c) => (courseMap[c.code] = c));
@@ -160,18 +206,26 @@ async function seed() {
       { code: 'ME501', name: 'Manufacturing Methods',        course: 'BTMECH', semester: 5, credits: 3 },
       { code: 'ME502', name: 'Dynamics of Machines',         course: 'BTMECH', semester: 5, credits: 3 },
     ];
-    const subjects = await Subject.insertMany(
-      subjectDefs.map((s) => ({
-        institution: institution._id,
-        course: courseMap[s.course]._id,
-        code: s.code,
-        name: s.name,
-        semester: s.semester,
-        credits: s.credits,
-        isActive: true,
-      }))
-    );
-    console.log(`✓ Seeded ${subjects.length} Subjects`);
+    let subjects = await Subject.find({ institution: institution._id });
+    const existingSubjectCodes = new Set(subjects.map((s) => s.code));
+    const missingSubjects = subjectDefs.filter((s) => !existingSubjectCodes.has(s.code));
+    if (missingSubjects.length > 0) {
+      const inserted = await Subject.insertMany(
+        missingSubjects.map((s) => ({
+          institution: institution._id,
+          course: courseMap[s.course]._id,
+          code: s.code,
+          name: s.name,
+          semester: s.semester,
+          credits: s.credits,
+          isActive: true,
+        }))
+      );
+      subjects = subjects.concat(inserted);
+      console.log(`✓ Seeded ${inserted.length} Subjects`);
+    } else {
+      console.log(`○ ${subjects.length} Subjects exist — reusing`);
+    }
 
     const subjectMap = {};
     subjects.forEach((s) => (subjectMap[s.code] = s));
@@ -273,7 +327,7 @@ async function seed() {
       const deptCode = deptCodes[i % 3]; // distribute evenly
       const courseCode = { CSE: 'BTCSE', ECE: 'BTECE', MECH: 'BTMECH' }[deptCode];
       const semester = randInt(3, 6);
-      const cgpa = +(Math.random() * (9.8 - 5.5) + 5.5).toFixed(2);
+      const cgpa = +(rng() * (9.8 - 5.5) + 5.5).toFixed(2);
       const backlogs = randInt(0, 3);
       return {
         name: `${firstName} ${pick(['Kumar', 'Reddy', 'Sharma', 'Patil', 'Joshi', 'Nair', 'Rao', 'Gupta', 'Iyer', 'Das'])}`,
@@ -298,10 +352,24 @@ async function seed() {
     });
 
     // Seeded accounts are provisioned complete — they must never see the questionnaire.
+    // Email-keyed upserts: reruns reuse existing accounts, fresh DBs get all 39.
     const allUserDocs = [superAdminDoc, collegeAdminDoc, placementOfficerDoc, hodDoc, ...facultyDocs, ...studentDocs]
       .map((d) => ({ ...d, onboardingCompleted: true }));
-    const users = await User.insertMany(allUserDocs);
-    console.log(`✓ Seeded ${users.length} Users (1 super admin, 1 college admin, 1 placement officer, 1 hod, 5 faculty, 30 students)`);
+    let insertedUsers = 0;
+    for (const doc of allUserDocs) {
+      const res = await User.updateOne(
+        { email: doc.email },
+        { $setOnInsert: doc },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) insertedUsers += 1;
+    }
+    const users = await User.find({ institution: institution._id });
+    if (insertedUsers > 0) {
+      console.log(`✓ Seeded ${insertedUsers} Users (1 super admin, 1 college admin, 1 placement officer, 1 hod, 5 faculty, 30 students)`);
+    } else {
+      console.log(`○ ${users.length} Users exist — reusing`);
+    }
 
     // Quick lookup helpers
     const userByEmail = {};
@@ -327,7 +395,11 @@ async function seed() {
       ME501: 'faculty5@anurag.edu.in',
       ME502: 'faculty5@anurag.edu.in',
     };
+    // Seed subject codes actually present in this institution's graph — foreign
+    // subject graphs (other departments, other seeds) are never touched.
+    const seedSubCodes = Object.keys(facultySubjectAssignment).filter((c) => subjectMap[c]);
     for (const [subCode, email] of Object.entries(facultySubjectAssignment)) {
+      if (!subjectMap[subCode] || !userByEmail[email]) continue;
       await Subject.updateOne(
         { _id: subjectMap[subCode]._id },
         { faculty: userByEmail[email]._id }
@@ -335,29 +407,45 @@ async function seed() {
     }
     console.log('  → Assigned faculty to subjects');
 
-    // Assign HODs
-    await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['hod.cse@anurag.edu.in']._id });
-    await Department.updateOne({ _id: deptMap['ECE']._id },  { hod: userByEmail['faculty3@anurag.edu.in']._id });
-    await Department.updateOne({ _id: deptMap['MECH']._id }, { hod: userByEmail['faculty5@anurag.edu.in']._id });
+    // Assign HODs (only where the department and user exist)
+    if (deptMap['CSE'] && userByEmail['hod.cse@anurag.edu.in']) {
+      await Department.updateOne({ _id: deptMap['CSE']._id },  { hod: userByEmail['hod.cse@anurag.edu.in']._id });
+    }
+    if (deptMap['ECE'] && userByEmail['faculty3@anurag.edu.in']) {
+      await Department.updateOne({ _id: deptMap['ECE']._id },  { hod: userByEmail['faculty3@anurag.edu.in']._id });
+    }
+    if (deptMap['MECH'] && userByEmail['faculty5@anurag.edu.in']) {
+      await Department.updateOne({ _id: deptMap['MECH']._id }, { hod: userByEmail['faculty5@anurag.edu.in']._id });
+    }
     console.log('  → Assigned HODs to departments');
 
     // ====================================================================
     // 6. Enrollments (1 per student)
     // ====================================================================
-    const enrollmentDocs = allStudents.map((stu) => {
+    let insertedEnrollments = 0;
+    for (const stu of allStudents) {
       const courseId = stu.profile?.course;
       const semester = stu.profile?.semester || 4;
-      return {
-        institution: institution._id,
-        student: stu._id,
-        course: courseId,
-        academicYear: '2025-26',
-        semester,
-        status: 'active',
-      };
-    });
-    const enrollments = await Enrollment.insertMany(enrollmentDocs);
-    console.log(`✓ Seeded ${enrollments.length} Enrollments`);
+      const res = await Enrollment.updateOne(
+        { student: stu._id, course: courseId },
+        { $setOnInsert: {
+          institution: institution._id,
+          student: stu._id,
+          course: courseId,
+          academicYear: '2025-26',
+          semester,
+          status: 'active',
+        } },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) insertedEnrollments += 1;
+    }
+    const enrollments = await Enrollment.find({ institution: institution._id });
+    if (insertedEnrollments > 0) {
+      console.log(`✓ Seeded ${insertedEnrollments} Enrollments`);
+    } else {
+      console.log(`○ ${enrollments.length} Enrollments exist — reusing`);
+    }
 
     // ====================================================================
     // 7. Assignments (10)
@@ -374,62 +462,101 @@ async function seed() {
       { title: 'Carnot Cycle Problems',        subj: 'ME401', status: 'graded',    dueDays: -20 },
       { title: 'Pipe Flow Calculations',       subj: 'ME402', status: 'open',      dueDays: 12 },
     ];
-    const assignmentDocs = assignmentDefs.map((a) => {
+    let insertedAssignments = 0;
+    let skippedAssignments = 0;
+    for (const a of assignmentDefs) {
       const subj = subjectMap[a.subj];
       const fEmail = facultySubjectAssignment[a.subj];
-      return {
-        institution: institution._id,
-        subject: subj._id,
-        title: a.title,
-        description: `Complete the ${a.title} assignment as per the guidelines discussed in class.`,
-        maxScore: 100,
-        dueDate: a.dueDays > 0 ? daysAhead(a.dueDays) : daysAgo(Math.abs(a.dueDays)),
-        status: a.status,
-        createdBy: userByEmail[fEmail]._id,
-      };
-    });
-    const assignments = await Assignment.insertMany(assignmentDocs);
-    console.log(`✓ Seeded ${assignments.length} Assignments`);
+      if (!subj || !userByEmail[fEmail]) { skippedAssignments += 1; continue; }
+      const res = await Assignment.updateOne(
+        { institution: institution._id, subject: subj._id, title: a.title },
+        { $setOnInsert: {
+          institution: institution._id,
+          subject: subj._id,
+          title: a.title,
+          description: `Complete the ${a.title} assignment as per the guidelines discussed in class.`,
+          maxScore: 100,
+          dueDate: a.dueDays > 0 ? daysAhead(a.dueDays) : daysAgo(Math.abs(a.dueDays)),
+          status: a.status,
+          createdBy: userByEmail[fEmail]._id,
+        } },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) insertedAssignments += 1;
+    }
+    const assignments = await Assignment.find({ institution: institution._id });
+    if (insertedAssignments > 0) {
+      console.log(`✓ Seeded ${insertedAssignments} Assignments`);
+    } else {
+      console.log(`○ ${assignments.length} Assignments exist — reusing`);
+    }
+    if (skippedAssignments > 0) {
+      console.log(`○ ${skippedAssignments} Assignment defs skipped (subject absent from graph)`);
+    }
 
     // ====================================================================
     // 8. Attendance Sessions (50)
     // ====================================================================
-    const attendanceDocs = [];
-    const subjectCodes = Object.keys(subjectMap);
+    // Attendance is generated only for seed subjects lacking sessions — never
+    // duplicated on reruns, never fabricated for foreign subject graphs.
+    const seedSubjectIds = Object.values(subjectMap).map((s) => s._id);
+    const existingSeedSessions = await AttendanceSession.countDocuments({
+      institution: institution._id,
+      subject: { $in: seedSubjectIds },
+    });
+    let attendanceSessions = [];
+    if (existingSeedSessions === 0 && seedSubCodes.length > 0) {
+      const attendanceDocs = [];
+      const subjectCodes = seedSubCodes;
 
-    for (let i = 0; i < 50; i++) {
-      const subCode = subjectCodes[i % subjectCodes.length];
-      const subj = subjectMap[subCode];
-      const fEmail = facultySubjectAssignment[subCode];
-      const dayOffset = randInt(1, 30);
-      const period = randInt(1, 6);
+      for (let i = 0; i < 50; i++) {
+        const subCode = subjectCodes[i % subjectCodes.length];
+        const subj = subjectMap[subCode];
+        const fEmail = facultySubjectAssignment[subCode];
+        const dayOffset = randInt(1, 30);
+        const period = randInt(1, 6);
 
-      // Find students in the same course as this subject
-      const courseForSubject = subj.course;
-      const studentsInCourse = allStudents.filter(
-        (s) => s.profile?.course?.toString() === courseForSubject.toString()
-      );
+        // Find students in the same course as this subject
+        const courseForSubject = subj.course;
+        const studentsInCourse = allStudents.filter(
+          (s) => s.profile?.course?.toString() === courseForSubject.toString()
+        );
 
-      const records = studentsInCourse.map((stu) => {
-        const roll = Math.random();
-        let status;
-        if (roll < 0.80) status = 'present';
-        else if (roll < 0.90) status = 'absent';
-        else status = 'late';
-        return { student: stu._id, status };
-      });
+        const records = studentsInCourse.map((stu) => {
+          const roll = rng();
+          // Deterministic low-attendance cases: every 10th student struggles.
+          const stuIdx = allStudents.findIndex((s) => String(s._id) === String(stu._id));
+          const atRisk = stuIdx % 10 === 9;
+          let status;
+          if (atRisk) {
+            if (roll < 0.45) status = 'absent';
+            else if (roll < 0.65) status = 'present';
+            else if (roll < 0.85) status = 'late';
+            else status = 'od';
+          } else {
+            if (roll < 0.80) status = 'present';
+            else if (roll < 0.90) status = 'absent';
+            else status = 'late';
+          }
+          return { student: stu._id, status };
+        });
 
-      attendanceDocs.push({
-        institution: institution._id,
-        subject: subj._id,
-        date: daysAgo(dayOffset),
-        period,
-        markedBy: userByEmail[fEmail]._id,
-        records,
-      });
+        attendanceDocs.push({
+          institution: institution._id,
+          subject: subj._id,
+          date: daysAgo(dayOffset),
+          period,
+          markedBy: userByEmail[fEmail]._id,
+          records,
+        });
+      }
+      attendanceSessions = await AttendanceSession.insertMany(attendanceDocs);
+      console.log(`✓ Seeded ${attendanceSessions.length} Attendance Sessions`);
+    } else if (seedSubCodes.length === 0) {
+      console.log('○ No seed subjects in graph — attendance generation skipped');
+    } else {
+      console.log(`○ ${existingSeedSessions} Attendance Sessions exist — reusing`);
     }
-    const attendanceSessions = await AttendanceSession.insertMany(attendanceDocs);
-    console.log(`✓ Seeded ${attendanceSessions.length} Attendance Sessions`);
 
     // ====================================================================
     // 9. Companies (5)
@@ -441,17 +568,28 @@ async function seed() {
       { name: 'Google',                    website: 'https://careers.google.com', industry: 'Technology',  hr: 'recruiting@google.com' },
       { name: 'Amazon',                    website: 'https://www.amazon.jobs',  industry: 'E-Commerce & Cloud', hr: 'campus@amazon.com' },
     ];
-    const companies = await Company.insertMany(
-      companyDefs.map((c) => ({
-        institution: institution._id,
-        name: c.name,
-        website: c.website,
-        industry: c.industry,
-        hrContact: c.hr,
-        isActive: true,
-      }))
-    );
-    console.log(`✓ Seeded ${companies.length} Companies`);
+    let insertedCompanies = 0;
+    for (const c of companyDefs) {
+      const res = await Company.updateOne(
+        { institution: institution._id, name: c.name },
+        { $setOnInsert: {
+          institution: institution._id,
+          name: c.name,
+          website: c.website,
+          industry: c.industry,
+          hrContact: c.hr,
+          isActive: true,
+        } },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) insertedCompanies += 1;
+    }
+    let companies = await Company.find({ institution: institution._id });
+    if (insertedCompanies > 0) {
+      console.log(`✓ Seeded ${insertedCompanies} Companies`);
+    } else {
+      console.log(`○ ${companies.length} Companies exist — reusing`);
+    }
 
     // ====================================================================
     // 10. Job Drives (5)
@@ -463,25 +601,40 @@ async function seed() {
       { company: 3, role: 'SDE Intern',                  pkg: 12.0, minCGPA: 7.5, maxBack: 0, jt: 'internship' },
       { company: 4, role: 'Operations Associate',        pkg: 8.5,  minCGPA: 6.5, maxBack: 1, jt: 'full-time' },
     ];
-    const jobDrives = await JobDrive.insertMany(
-      driveDefs.map((d) => ({
-        institution: institution._id,
-        company: companies[d.company]._id,
-        role: d.role,
-        jobType: d.jt,
-        packageLPA: d.pkg,
-        location: 'Bangalore',
-        eligibility: {
-          minCGPA: d.minCGPA,
-          graduationYear: 2026,
-          maxBacklogs: d.maxBack,
-          allowedDepartments: departments.map((dp) => dp._id),
-        },
-        applicationDeadline: daysAhead(randInt(10, 30)),
-        status: 'active',
-      }))
-    );
-    console.log(`✓ Seeded ${jobDrives.length} Job Drives`);
+    const companyByName = {};
+    companies.forEach((c) => (companyByName[c.name] = c));
+    let insertedDrives = 0;
+    const seedDrives = [];
+    for (const d of driveDefs) {
+      const company = companyByName[companyDefs[d.company].name];
+      let drive = await JobDrive.findOne({ company: company._id, role: d.role });
+      if (!drive) {
+        drive = await JobDrive.create({
+          institution: institution._id,
+          company: company._id,
+          role: d.role,
+          jobType: d.jt,
+          packageLPA: d.pkg,
+          location: 'Bangalore',
+          eligibility: {
+            minCGPA: d.minCGPA,
+            graduationYear: 2026,
+            maxBacklogs: d.maxBack,
+            allowedDepartments: departments.map((dp) => dp._id),
+          },
+          applicationDeadline: daysAhead(randInt(10, 30)),
+          status: 'active',
+        });
+        insertedDrives += 1;
+      }
+      seedDrives.push(drive);
+    }
+    const jobDrives = await JobDrive.find({ institution: institution._id });
+    if (insertedDrives > 0) {
+      console.log(`✓ Seeded ${insertedDrives} Job Drives`);
+    } else {
+      console.log(`○ ${jobDrives.length} Job Drives exist — reusing`);
+    }
 
     // ====================================================================
     // 11. Job Applications (20)
@@ -490,29 +643,41 @@ async function seed() {
       'applied', 'shortlisted', 'assessment', 'interview_1',
       'interview_2', 'hr_round', 'offer', 'placed', 'rejected',
     ];
-    const jobAppDocs = [];
-    const usedPairs = new Set();
+    let insertedApps = 0;
+    {
+      const usedPairs = new Set();
+      for (let i = 0; i < 20; i++) {
+        let driveIdx, stuIdx, pairKey;
+        // Ensure unique (drive, student) pairs
+        do {
+          driveIdx = randInt(0, seedDrives.length - 1);
+          stuIdx = randInt(0, allStudents.length - 1);
+          pairKey = `${driveIdx}-${stuIdx}`;
+        } while (usedPairs.has(pairKey));
+        usedPairs.add(pairKey);
 
-    for (let i = 0; i < 20; i++) {
-      let driveIdx, stuIdx, pairKey;
-      // Ensure unique (drive, student) pairs
-      do {
-        driveIdx = randInt(0, jobDrives.length - 1);
-        stuIdx = randInt(0, allStudents.length - 1);
-        pairKey = `${driveIdx}-${stuIdx}`;
-      } while (usedPairs.has(pairKey));
-      usedPairs.add(pairKey);
-
-      const stage = applicationStages[randInt(0, applicationStages.length - 1)];
-      jobAppDocs.push({
-        drive: jobDrives[driveIdx]._id,
-        student: allStudents[stuIdx]._id,
-        stage,
-        resumeUrl: `https://storage.campusflow.app/resumes/student${stuIdx + 1}.pdf`,
-      });
+        const stage = applicationStages[randInt(0, applicationStages.length - 1)];
+        const res = await JobApplication.updateOne(
+          { drive: seedDrives[driveIdx]._id, student: allStudents[stuIdx]._id },
+          { $setOnInsert: {
+            drive: seedDrives[driveIdx]._id,
+            student: allStudents[stuIdx]._id,
+            stage,
+            resumeUrl: `https://storage.campusflow.app/resumes/student${stuIdx + 1}.pdf`,
+          } },
+          { upsert: true }
+        );
+        if (res.upsertedCount > 0) insertedApps += 1;
+      }
     }
-    const jobApplications = await JobApplication.insertMany(jobAppDocs);
-    console.log(`✓ Seeded ${jobApplications.length} Job Applications`);
+    const jobApplications = await JobApplication.find({
+      drive: { $in: seedDrives.map((d) => d._id) },
+    });
+    if (insertedApps > 0) {
+      console.log(`✓ Seeded ${insertedApps} Job Applications`);
+    } else {
+      console.log(`○ ${jobApplications.length} Job Applications exist — reusing`);
+    }
 
     // ====================================================================
     // 12. Events (5)
@@ -524,12 +689,14 @@ async function seed() {
       { title: 'Inter-College Cricket Tournament',             type: 'sports',    startDays: 20, dur: 2, vis: 'public' },
       { title: 'Campus Recruitment Drive – Orientation',       type: 'placement', startDays: 5,  dur: 1, vis: 'internal' },
     ];
-    const events = await Event.insertMany(
-      eventDefs.map((e) => {
-        const start = daysAhead(e.startDays);
-        const end = new Date(start);
-        end.setDate(end.getDate() + e.dur);
-        return {
+    let insertedEvents = 0;
+    for (const e of eventDefs) {
+      const start = daysAhead(e.startDays);
+      const end = new Date(start);
+      end.setDate(end.getDate() + e.dur);
+      const res = await Event.updateOne(
+        { institution: institution._id, title: e.title },
+        { $setOnInsert: {
           institution: institution._id,
           title: e.title,
           description: `Join us for ${e.title}. Open to all eligible participants.`,
@@ -538,10 +705,17 @@ async function seed() {
           endAt: end,
           visibility: e.vis,
           registeredStudents: allStudents.slice(0, randInt(5, 15)).map((s) => s._id),
-        };
-      })
-    );
-    console.log(`✓ Seeded ${events.length} Events`);
+        } },
+        { upsert: true }
+      );
+      if (res.upsertedCount > 0) insertedEvents += 1;
+    }
+    let events = await Event.find({ institution: institution._id });
+    if (insertedEvents > 0) {
+      console.log(`✓ Seeded ${insertedEvents} Events`);
+    } else {
+      console.log(`○ ${events.length} Events exist — reusing`);
+    }
 
     // ====================================================================
     // 13. Requests (10)
@@ -560,8 +734,16 @@ async function seed() {
       { type: 'bonafide',     title: 'Bonafide for education loan',        stu: 25, status: 'pending' },
       { type: 'leave',        title: 'Personal leave – 2 days',            stu: 28, status: 'approved' },
     ];
-    const requestDocsArr = requestDefs.map((r) => {
+    let insertedRequests = 0;
+    for (const r of requestDefs) {
       const student = allStudents[r.stu];
+      if (!student || !collegeAdmin) continue;
+      const exists = await Request.findOne({
+        institution: institution._id,
+        student: student._id,
+        title: r.title,
+      });
+      if (exists) continue;
       const timeline = [
         {
           status: 'pending',
@@ -583,7 +765,7 @@ async function seed() {
           at: daysAgo(randInt(0, 2)),
         });
       }
-      return {
+      await Request.create({
         institution: institution._id,
         student: student._id,
         department: student.department,
@@ -593,10 +775,15 @@ async function seed() {
         status: r.status,
         assignedTo: collegeAdmin._id,
         timeline,
-      };
-    });
-    const requests = await Request.insertMany(requestDocsArr);
-    console.log(`✓ Seeded ${requests.length} Requests`);
+      });
+      insertedRequests += 1;
+    }
+    const requests = await Request.find({ institution: institution._id });
+    if (insertedRequests > 0) {
+      console.log(`✓ Seeded ${insertedRequests} Requests`);
+    } else {
+      console.log(`○ ${requests.length} Requests exist — reusing`);
+    }
 
     // ====================================================================
     // 14. Announcements (10)
@@ -613,17 +800,27 @@ async function seed() {
       { title: 'DBMS Lab Rescheduled to Thursday',                  by: 'faculty1@anurag.edu.in', dept: 'CSE' },
       { title: 'ECE Project Expo – Submissions Due Sept 10',        by: 'faculty4@anurag.edu.in', dept: 'ECE' },
     ];
-    const announcements = await Announcement.insertMany(
-      announcementDefs.map((a, i) => ({
+    let insertedAnnouncements = 0;
+    for (const [i, a] of announcementDefs.entries()) {
+      if (!userByEmail[a.by]) continue;
+      const exists = await Announcement.findOne({ institution: institution._id, title: a.title });
+      if (exists) continue;
+      await Announcement.create({
         institution: institution._id,
-        department: a.dept ? deptMap[a.dept]._id : undefined,
+        department: a.dept && deptMap[a.dept] ? deptMap[a.dept]._id : undefined,
         title: a.title,
         body: `${a.title}. Please check the notice board or your email for details.`,
         pinned: i < 3,
         createdBy: userByEmail[a.by]._id,
-      }))
-    );
-    console.log(`✓ Seeded ${announcements.length} Announcements`);
+      });
+      insertedAnnouncements += 1;
+    }
+    const announcements = await Announcement.find({ institution: institution._id });
+    if (insertedAnnouncements > 0) {
+      console.log(`✓ Seeded ${insertedAnnouncements} Announcements`);
+    } else {
+      console.log(`○ ${announcements.length} Announcements exist — reusing`);
+    }
 
     // ====================================================================
     // 15. Learning Resources (5)
@@ -635,8 +832,16 @@ async function seed() {
       { subj: 'ME401', topic: 'Carnot Cycle',  title: 'Thermodynamics Lecture Notes – Carnot',   url: 'https://ocw.mit.edu/courses/2-005-thermal-fluids-engineering/resources/', type: 'document', diff: 'intermediate' },
       { subj: 'CS501', topic: 'TCP/IP',        title: 'Computer Networks – TCP/IP Model Podcast', url: 'https://podcasts.example.com/cn-tcpip', type: 'podcast', diff: 'beginner' },
     ];
-    const learningResources = await LearningResource.insertMany(
-      resourceDefs.map((r) => ({
+    let insertedResources = 0;
+    for (const r of resourceDefs) {
+      if (!subjectMap[r.subj]) continue;
+      const exists = await LearningResource.findOne({
+        institution: institution._id,
+        subject: subjectMap[r.subj]._id,
+        title: r.title,
+      });
+      if (exists) continue;
+      await LearningResource.create({
         institution: institution._id,
         subject: subjectMap[r.subj]._id,
         topic: r.topic,
@@ -644,9 +849,56 @@ async function seed() {
         url: r.url,
         type: r.type,
         difficulty: r.diff,
-      }))
-    );
-    console.log(`✓ Seeded ${learningResources.length} Learning Resources`);
+      });
+      insertedResources += 1;
+    }
+    const learningResources = await LearningResource.find({ institution: institution._id });
+    if (insertedResources > 0) {
+      console.log(`✓ Seeded ${insertedResources} Learning Resources`);
+    } else {
+      console.log(`○ ${learningResources.length} Learning Resources exist — reusing`);
+    }
+
+    // ====================================================================
+    // 16. Notifications (read + unread across roles)
+    // ====================================================================
+    const existingNotifs = await Notification.countDocuments({
+      recipient: { $in: users.map((u) => u._id) },
+    });
+    let notificationCount = existingNotifs;
+    if (existingNotifs === 0) {
+      const notifDefs = [
+        { to: 'student1@anurag.edu.in',  title: 'Assignment due soon',            message: 'SQL Query Optimization is due in 7 days.', type: 'warning', category: 'assignment', read: false },
+        { to: 'student1@anurag.edu.in',  title: 'Low attendance alert',           message: 'Your DBMS attendance is below 75%. Attend upcoming sessions.', type: 'error', category: 'system', read: false },
+        { to: 'student2@anurag.edu.in',  title: 'Assignment graded',              message: 'Process Scheduling Simulation has been graded.', type: 'success', category: 'assignment', read: true },
+        { to: 'student5@anurag.edu.in',  title: 'Placement shortlist',            message: 'You are shortlisted for the Systems Engineer drive.', type: 'success', category: 'placement', read: false },
+        { to: 'student10@anurag.edu.in', title: 'Bonafide request approved',      message: 'Your bonafide certificate request was approved.', type: 'success', category: 'request', read: true },
+        { to: 'faculty1@anurag.edu.in',  title: 'Timetable updated',              message: 'CS401 moves to Thursday, period 3, effective next week.', type: 'info', category: 'system', read: false },
+        { to: 'faculty3@anurag.edu.in',  title: 'Submissions pending review',     message: '12 FIR Filter Design submissions await review.', type: 'warning', category: 'assignment', read: false },
+        { to: 'hod.cse@anurag.edu.in',   title: 'Department attendance review',   message: '3 students are below the 75% threshold this month.', type: 'warning', category: 'system', read: false },
+        { to: 'admin@anurag.edu.in',     title: 'New leave requests',             message: '4 leave requests are waiting for approval.', type: 'info', category: 'request', read: false },
+        { to: 'admin@anurag.edu.in',     title: 'Drive applications closed',      message: 'Applications closed for the Project Engineer drive.', type: 'info', category: 'placement', read: true },
+        { to: 'placement@anurag.edu.in', title: 'Offer letters pending',          message: '2 offer letters await company confirmation.', type: 'warning', category: 'placement', read: false },
+        { to: 'student15@anurag.edu.in', title: 'TechVista 2026 registrations',   message: 'Registrations close in 5 days. 40 seats left.', type: 'info', category: 'event', read: false },
+        { to: 'student20@anurag.edu.in', title: 'Mid-sem schedule released',      message: 'The mid-semester examination schedule is now live.', type: 'info', category: 'announcement', read: true },
+        { to: 'student25@anurag.edu.in', title: 'Welcome to CampusFlow',          message: 'Your account is ready. Complete your profile to get started.', type: 'info', category: 'account', read: true },
+      ];
+      const notifDocs = notifDefs
+        .filter((n) => userByEmail[n.to])
+        .map((n) => ({
+          recipient: userByEmail[n.to]._id,
+          title: n.title,
+          message: n.message,
+          type: n.type,
+          category: n.category,
+          isRead: n.read,
+        }));
+      const notifications = await Notification.insertMany(notifDocs);
+      notificationCount = notifications.length;
+      console.log(`✓ Seeded ${notifications.length} Notifications`);
+    } else {
+      console.log(`○ ${existingNotifs} Notifications exist — reusing`);
+    }
 
     // ====================================================================
     // Summary
@@ -669,6 +921,7 @@ async function seed() {
     console.log(`  Requests           : ${requests.length}`);
     console.log(`  Announcements      : ${announcements.length}`);
     console.log(`  Learning Resources : ${learningResources.length}`);
+    console.log(`  Notifications      : ${notificationCount}`);
     console.log('══════════════════════════════════════════\n');
   } catch (err) {
     console.error('✗ Seed failed:', err);
