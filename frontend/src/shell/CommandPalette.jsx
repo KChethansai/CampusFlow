@@ -137,6 +137,17 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
   const trapRef = useFocusTrap(open);
   const reduced = useReducedMotion();
 
+  // Global Escape: input handles its own keydown, but focus may sit on a
+  // result row or the backdrop close button — close from anywhere.
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, onClose]);
+
   useEffect(() => {
     if (open) {
       setQuery('');
@@ -263,8 +274,8 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
           >
             {/* Kokonut-AI-input-style search field: hero input with icon tile + hints */}
             <div className="p-3 pb-0">
-              <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[#D86D3E]/60 focus-within:ring-[3px] focus-within:ring-[#D86D3E]/20">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]" aria-hidden>
+              <div className="flex items-center gap-2 rounded-[18px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1.5 pl-2 pr-2.5 transition-colors focus-within:border-[var(--cf-accent)]/60 focus-within:ring-[3px] focus-within:ring-[var(--cf-focus)]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--cf-accent)]/12 text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]" aria-hidden>
                   {query ? <Search size={16} /> : <Sparkles size={16} />}
                 </span>
                 <input
@@ -278,6 +289,7 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                     if (e.key === 'Escape') onClose();
                   }}
                   placeholder="Ask or search students, courses, drives…"
+                  aria-label="Search commands, pages, and campus records"
                   className="w-full bg-transparent py-2 text-sm font-medium text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none"
                   role="combobox"
                   aria-expanded="true"
@@ -314,20 +326,20 @@ export default function CommandPalette({ open, onClose, onDownloadCsv, onStartTo
                         onClick={() => go(item)}
                         className={`w-full text-left px-2 min-h-11 py-1.5 rounded-[14px] flex items-center gap-2.5 text-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                           active
-                            ? 'bg-[#D86D3E]/10 text-[var(--cf-ink)] ring-1 ring-inset ring-[#D86D3E]/25'
+                            ? 'bg-[var(--cf-accent)]/10 text-[var(--cf-ink)] ring-1 ring-inset ring-[var(--cf-accent)]/25'
                             : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
                         }`}
                       >
                         <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[10px] transition-colors ${
                           item.quick || active
-                            ? 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]'
+                            ? 'bg-[var(--cf-accent)]/12 text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]'
                             : 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]'
                         }`} aria-hidden>
                           <ItemIcon size={15} />
                         </span>
                         <span className="truncate font-medium flex-1">{item.title}</span>
                         <span className="rounded-full bg-[var(--cf-surface-2)]/80 font-mono text-[10px] font-medium px-1.5 py-0.5 shrink-0 text-[var(--cf-ink-mute)]">{item.sub}</span>
-                        {active && <ArrowRight size={14} className="text-[#D86D3E] shrink-0" aria-hidden />}
+                        {active && <ArrowRight size={14} className="text-[var(--cf-accent)] shrink-0" aria-hidden />}
                       </button>
                     );
                   })}

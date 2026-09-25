@@ -4,7 +4,7 @@
 // /requests, /attendance. Real data only.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { BookMarked, CalendarCheck, ClipboardList, Inbox } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -22,6 +22,7 @@ const ACTIONS = [
 ];
 
 export default function FacultyHome() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -98,9 +99,9 @@ export default function FacultyHome() {
   const pulse = gradeQueue.length + pendingRequests.length;
 
   return (
-    <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
+    <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">
       {/* REGION 1 — Teaching pulse hero */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <RoleHero
           accent="faculty"
           title="Your teaching queue."
@@ -112,7 +113,7 @@ export default function FacultyHome() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         {/* REGION 2 — analytics: which assignment buries you? */}
-        <motion.div variants={staggerChild} className="lg:col-span-2">
+        <motion.div variants={reduced ? undefined : staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Grading load"
             question="Which assignment buries you?"
@@ -128,7 +129,7 @@ export default function FacultyHome() {
         </motion.div>
 
         {/* REGION 3 — subjects + requests stream */}
-        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 space-y-4" aria-label="Subjects and requests">
+        <motion.section variants={reduced ? undefined : staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5 space-y-4" aria-label="Subjects and requests">
           <div>
             <h2 className="font-display text-base font-semibold mb-2">My subjects</h2>
             <div className="flex flex-wrap gap-1.5">
@@ -187,7 +188,7 @@ export default function FacultyHome() {
       </div>
 
       {/* REGION 4 — task cards */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <TaskGrid>
           {ACTIONS.map(({ to, Icon, label, hint, hintKey }) => (
             <SpotTask key={label} to={to} label={label}>

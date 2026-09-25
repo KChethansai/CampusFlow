@@ -1,5 +1,5 @@
 // Requests as workflow objects: requester, category, stage, next action + timeline.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
@@ -12,7 +12,7 @@ import { btnClass, cn, inputClass, selectClass } from '../../system/tokens';
 const REQUEST_TYPES = ['leave', 'bonafide', 'revaluation', 'other'];
 const FLOW = ['pending', 'in_review', 'approved'];
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 
 const timelineFor = (r) => {
   const events = r.timeline || [];
@@ -39,6 +39,7 @@ export default function Requests() {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('All');
   const [openId, setOpenId] = useState(null);
+  const filterBtnRefs = useRef([]);
   const { register, handleSubmit, reset } = useForm({ defaultValues: { type: 'leave', title: '', description: '' } });
 
   const fetchRequests = async () => {
@@ -83,8 +84,10 @@ export default function Requests() {
   return (
     <div>
       <PageHeader
-        title="Requests"
-        subtitle={`${requests.filter((r) => ['pending', 'in_review'].includes(r.status)).length} open · ${requests.length} total`}
+        title={canReview ? 'Review queue' : 'Requests'}
+        subtitle={canReview
+          ? `${requests.filter((r) => ['pending', 'in_review'].includes(r.status)).length} awaiting your review · ${requests.length} total`
+          : `${requests.filter((r) => ['pending', 'in_review'].includes(r.status)).length} open · ${requests.length} total`}
         actions={isStudent && (
           <button onClick={() => setShowForm((v) => !v)} className={btnClass(showForm ? 'secondary' : 'primary', 'medium')}>
             <Plus size={15} /> New request
@@ -93,10 +96,29 @@ export default function Requests() {
       />
 
       <div className="flex gap-1 p-1.5 mb-4 overflow-x-auto rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/70 backdrop-blur w-fit max-w-full" role="tablist" aria-label="Request filters">
-        {['All', 'Open', 'pending', 'in_review', 'approved', 'rejected'].map((f) => (
-          <button key={f} role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
-            className={cn('rounded-xl px-3.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap transition',
-              filter === f ? 'bg-[#A94727] text-white' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
+        {['All', 'Open', 'pending', 'in_review', 'approved', 'rejected'].map((f, fi, all) => (
+          <button key={f} role="tab" aria-selected={filter === f} tabIndex={filter === f ? 0 : -1}
+            ref={(el) => { filterBtnRefs.current[fi] = el; }}
+            onClick={() => setFilter(f)}
+            onKeyDown={(e) => {
+              const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1
+                : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+              let ni = -1;
+              if (e.key === 'Home') ni = 0;
+              else if (e.key === 'End') ni = all.length - 1;
+              else if (dir) ni = (fi + dir + all.length) % all.length;
+              if (ni < 0) return;
+              e.preventDefault();
+              setFilter(all[ni]);
+              // Focus the newly selected tab after commit (refs survive re-render).
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  filterBtnRefs.current[ni]?.focus();
+                });
+              });
+            }}
+            className={cn('rounded-xl px-3.5 py-2 min-h-11 font-mono text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap transition',
+              filter === f ? 'bg-[var(--cf-accent-strong)] text-white dark:bg-[var(--cf-accent)] dark:text-[#100D0B]' : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)]')}>
             {f === 'Open' ? 'Open' : f.replace(/_/g, ' ')}
           </button>
         ))}
@@ -128,7 +150,7 @@ export default function Requests() {
                         <span className="font-semibold">{r.title}</span>
                         <Badge tone="bg-black/[.05] dark:bg-white/10 text-[var(--cf-ink-soft)]">{r.type}</Badge>
                       </span>
-                      <span className="block text-sm text-[var(--cf-ink-mute)] mt-0.5 line-clamp-1">{r.description || 'No description'}</span>
+                      <span className="block text-sm text-[var(--cf-ink-mute)] mt-0.5 line-clamp-1">{r.description || '—'}</span>
                       <span className="block font-mono text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)] mt-1">
                         {r.student?.name || '—'} · {fmt(r.createdAt)}
                         {r.assignedTo?.name ? ` · with ${r.assignedTo.name}` : ''}

@@ -98,7 +98,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--cf-line)]">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cf-line)] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--cf-ink-mute)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--cf-volt)]" aria-hidden />
               Guide
             </span>
             <span className="font-mono text-[11px] font-semibold text-[var(--cf-ink-mute)] tabular-nums">
@@ -110,7 +110,7 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
             onClick={() => close()}
             aria-label="Exit tour"
             title="Exit tour (Esc)"
-            className="p-1.5 rounded-full text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] hover:bg-black/[.04] dark:hover:bg-white/10 transition"
+            className="min-w-11 min-h-11 grid place-items-center rounded-full text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] hover:bg-black/[.04] dark:hover:bg-white/10 transition"
           >
             <X size={16} />
           </button>
@@ -130,8 +130,8 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
                 onClick={() => setIndex(i)}
                 aria-label={`Go to step ${i + 1}`}
                 className={cn(
-                  'h-1.5 rounded-full transition-all',
-                  i === index ? 'w-5 bg-[#D86D3E]' : 'w-1.5 bg-[var(--cf-ink-mute)]/30 hover:bg-[var(--cf-ink-mute)]/60'
+                  'relative h-1.5 rounded-full transition-all before:absolute before:-inset-2.5 before:content-[""]',
+                  i === index ? 'w-5 bg-[var(--cf-accent)]' : 'w-1.5 bg-[var(--cf-ink-mute)]/30 hover:bg-[var(--cf-ink-mute)]/60'
                 )}
               />
             ))}
@@ -141,14 +141,14 @@ export function Tour({ steps = [], storageKey = 'cf_tour_dismissed', autoOpen = 
               type="button"
               onClick={() => setIndex((i) => Math.max(0, i - 1))}
               disabled={index === 0}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--cf-line)] px-2.5 py-1 font-display text-xs font-semibold text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--cf-line)] px-3 min-h-11 font-display text-xs font-semibold text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={14} /> Back
             </button>
             <button
               type="button"
               onClick={() => (last ? close() : setIndex((i) => Math.min(steps.length - 1, i + 1)))}
-              className="inline-flex items-center gap-1 rounded-full bg-[#D86D3E] px-3 py-1 font-display text-xs font-semibold text-white hover:brightness-110 transition"
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--cf-accent-strong)] dark:bg-[var(--cf-accent)] px-4 min-h-11 font-display text-xs font-semibold text-white dark:text-[#100D0B] hover:brightness-110 transition"
             >
               {last ? 'Finish' : 'Next'}
               {last ? <CheckCircle2 size={14} /> : <ChevronRight size={14} />}

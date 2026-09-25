@@ -152,10 +152,10 @@ export function CounterCarousel({ slides = [], label, className, id }) {
         <button onClick={() => go(1)} aria-label="Next slide" className="p-2.5 rounded-full border border-[var(--cf-line)] hover:bg-black/[.04] dark:hover:bg-white/10 transition">
           <ArrowRight size={16} />
         </button>
-        <div className="flex gap-1.5 ml-2" aria-hidden>
+        <div className="flex gap-1.5 ml-2" role="group" aria-label="Choose slide">
           {slides.map((_, i) => (
-            <button key={i} tabIndex={-1} onClick={() => setIndex([i, i > index ? 1 : -1])}
-              className={cn('h-1.5 rounded-full transition-all', i === index ? 'w-6 bg-primary-500' : 'w-1.5 bg-black/15 dark:bg-white/20')} />
+            <button key={i} aria-label={`Go to slide ${i + 1} of ${slides.length}`} aria-current={i === index} onClick={() => setIndex([i, i > index ? 1 : -1])}
+              className={cn('relative h-1.5 rounded-full transition-all before:absolute before:-inset-2.5 before:content-[""]', i === index ? 'w-6 bg-primary-500' : 'w-1.5 bg-black/15 dark:bg-white/20')} />
           ))}
         </div>
       </div>
@@ -179,34 +179,9 @@ export function Marquee({ children, className, label }) {
   );
 }
 
-/** MagneticButton: subtle pointer pull on desktop (React-Bits pattern). */
-export function MagneticButton({ children, className, ...props }) {
-  const ref = useRef(null);
-  const reduced = useReducedMotion();
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  if (reduced) {
-    return <button ref={ref} className={className} {...props}>{children}</button>;
-  }
-  return (
-    <motion.button
-      ref={ref}
-      className={className}
-      animate={{ x: offset.x, y: offset.y }}
-      transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-      onMouseMove={(e) => {
-        if (window.innerWidth < 1024) return;
-        const r = ref.current?.getBoundingClientRect();
-        if (!r) return;
-        setOffset({ x: (e.clientX - (r.left + r.width / 2)) * 0.18, y: (e.clientY - (r.top + r.height / 2)) * 0.28 });
-      }}
-      onMouseLeave={() => setOffset({ x: 0, y: 0 })}
-      {...props}
-    >
-      {children}
-    </motion.button>
-  );
-}
+/** MagneticButton: canonical implementation lives in components/visual/MagneticButton.jsx.
+ *  Re-exported here to preserve the `../ui/editorial` import path. */
+export { default as MagneticButton } from '../visual/MagneticButton';
 
 /** useParallax: scroll-linked y translation for floating product visuals. */
 export function useParallax(ref, distance = 60) {
@@ -438,7 +413,7 @@ export function ParticleButton({ children, className, onClick, ...props }) {
       onClick={handleClick}
       className={cn(
         'relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-[16px] px-5 py-2.5 font-display font-semibold text-sm transition-all duration-200 active:scale-[0.98]',
-        'bg-[#A94727] text-white shadow-lg hover:shadow-[0_0_24px_rgba(216,109,62,0.5)] hover:brightness-110',
+        'bg-[var(--cf-accent-strong)] dark:bg-[var(--cf-accent)] text-white dark:text-[#100D0B] shadow-lg hover:shadow-[0_0_24px_rgba(216,109,62,0.5)] hover:brightness-110',
         className
       )}
       {...props}
@@ -447,7 +422,7 @@ export function ParticleButton({ children, className, onClick, ...props }) {
       {bursts.map((b) => (
         <span
           key={b.id}
-          className="pointer-events-none absolute w-2 h-2 rounded-full bg-[#E7A66D] animate-ping"
+          className="pointer-events-none absolute w-2 h-2 rounded-full bg-[var(--cf-volt)] animate-ping"
           style={{ left: b.x, top: b.y, transform: 'translate(-50%, -50%)' }}
           aria-hidden
         />

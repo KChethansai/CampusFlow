@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, Link } from 'react-router';
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useAuth } from './store/useAuth';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 import Layout from './components/layout/Layout';
@@ -8,26 +8,61 @@ import Login from './pages/auth/Login';
 import AuthLayout from './pages/auth/AuthLayout';
 import Onboarding from './pages/auth/Onboarding';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
-import Dashboard from './pages/Dashboard';
-import Users from './pages/admin/Users';
-import AIReports from './pages/admin/AIReports';
-import Departments from './pages/admin/Departments';
-import Institutions from './pages/admin/Institutions';
-import Courses from './pages/admin/Courses';
-import Subjects from './pages/academic/Subjects';
-import Schedule from './pages/academic/Schedule';
-import Assignments from './pages/academic/Assignments';
-import Attendance from './pages/academic/Attendance';
-import MyEnrollments from './pages/academic/MyEnrollments';
-import Placement from './pages/placement/Placement';
-import Requests from './pages/requests/Requests';
-import Profile from './pages/Profile';
-import Directory from './pages/Directory';
-import Events from './pages/Events';
-import Study from './pages/Study';
 import { btnClass, emptyState } from './styles/common';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
+import { ChunkErrorBoundary } from './components/data/LazyRetry';
+import { LoadingState } from './components/ui/primitives';
 import NotFound from './pages/NotFound';
+
+// Route-split: authenticated pages load on demand. Auth-critical routes
+// (Landing/Login/Onboarding/PasswordReset/NotFound) stay eager so first
+// paint and the server-authoritative gate never wait on a chunk.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Users = lazy(() => import('./pages/admin/Users'));
+const AIReports = lazy(() => import('./pages/admin/AIReports'));
+const Departments = lazy(() => import('./pages/admin/Departments'));
+const Institutions = lazy(() => import('./pages/admin/Institutions'));
+const Courses = lazy(() => import('./pages/admin/Courses'));
+const Subjects = lazy(() => import('./pages/academic/Subjects'));
+const Schedule = lazy(() => import('./pages/academic/Schedule'));
+const Assignments = lazy(() => import('./pages/academic/Assignments'));
+const Attendance = lazy(() => import('./pages/academic/Attendance'));
+const MyEnrollments = lazy(() => import('./pages/academic/MyEnrollments'));
+const Placement = lazy(() => import('./pages/placement/Placement'));
+const Requests = lazy(() => import('./pages/requests/Requests'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Directory = lazy(() => import('./pages/Directory'));
+const Events = lazy(() => import('./pages/Events'));
+const Study = lazy(() => import('./pages/Study'));
+
+function PageFallback() {
+  return (
+    <div className="min-h-[60vh] grid place-items-center" role="status" aria-label="Loading page">
+      <LoadingState label="Loading…" />
+    </div>
+  );
+}
+
+// Stale precached shell + rotated chunk hashes make a lazy route import
+// reject; React caches the rejection, so the only recovery is a reload
+// onto fresh chunk URLs (same recovery as the boot stale-shell card).
+function PageLoadError() {
+  return (
+    <div className="min-h-[60vh] grid place-items-center" role="alert">
+      <div className="text-center">
+        <p className="font-display font-semibold text-[var(--cf-ink)]">This page failed to load.</p>
+        <p className="mt-1 text-sm text-[var(--cf-ink-mute)]">Your saved copy may be out of date.</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className={btnClass('primary', 'medium') + ' mt-4'}
+        >
+          Reload latest version
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // No self-registration — accounts are provisioned by the institution admin.
 function NoSelfSignup() {
@@ -35,7 +70,7 @@ function NoSelfSignup() {
     <AuthLayout
       title="No self-registration"
       subtitle="Accounts are created by your institution admin — contact them."
-      footer={<Link to="/login" className="font-semibold text-[#D86D3E] underline underline-offset-2 hover:brightness-110">Back to sign in</Link>}
+       footer={<Link to="/login" className="font-semibold text-[var(--cf-accent)] underline underline-offset-2 hover:brightness-110">Back to sign in</Link>}
     >
       <p className={emptyState}>Ask your admin for an account, then sign in.</p>
       <Link to="/login" className={btnClass('primary', 'large') + ' w-full mt-4'}>Sign in →</Link>
@@ -90,6 +125,8 @@ function App() {
 
   return (
     <AppErrorBoundary>
+    <ChunkErrorBoundary fallback={<PageLoadError />}>
+    <Suspense fallback={<PageFallback />}>
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<Login />} />
@@ -232,6 +269,8 @@ function App() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
+    </ChunkErrorBoundary>
     </AppErrorBoundary>
   );
 }

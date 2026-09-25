@@ -7,6 +7,7 @@ import { Bell, Briefcase, GraduationCap, Inbox, Megaphone, Settings2 } from 'luc
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import api from '../api/axios';
 import { useSocket } from '../store/useSocket';
+import { useFocusTrap } from '../system/focusTrap';
 import { cn } from '../system/tokens';
 import { EASE_OUT, motionVariants } from '../system/motion';
 
@@ -82,8 +83,16 @@ export default function NotificationsCenter() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastEvent]);
+  // Slow poll retained as offline fallback — paused when the tab is hidden
+  // or the session is gone, so background tabs never fan out requests.
   useEffect(() => {
-    const id = setInterval(refresh, 300000);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      try {
+        if (!localStorage.getItem('cf_auth')) return;
+      } catch { return; }
+      refresh();
+    }, 300000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => clearInterval(id);
   }, []);
@@ -118,6 +127,16 @@ export default function NotificationsCenter() {
 
   const dismiss = (id) => setItems((prev) => prev.filter((x) => x._id !== id));
 
+  const trapRef = useFocusTrap(open);
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open ]);
+
   return (
     <div className="relative">
       <button
@@ -129,7 +148,7 @@ export default function NotificationsCenter() {
         <Bell size={19} aria-hidden />
         {unread > 0 && (
           <span
-            className="absolute right-2 top-2 w-2.5 h-2.5 rounded-full bg-[#E7A66D] ring-2 ring-[var(--cf-surface)] cf-unread-pulse"
+            className="absolute right-2 top-2 w-2.5 h-2.5 rounded-full bg-[var(--cf-volt)] ring-2 ring-[var(--cf-surface)] cf-unread-pulse"
             aria-hidden
           />
         )}
@@ -139,6 +158,7 @@ export default function NotificationsCenter() {
           <>
             <button aria-label="Close notifications" onClick={() => setOpen(false)} className="fixed inset-0 z-30 cursor-default" />
             <motion.div
+              ref={trapRef}
               {...(reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : motionVariants.popover)}
               className="cf-glass absolute right-0 top-full mt-2 w-[22rem] max-w-[90vw] max-h-[70vh] overflow-hidden rounded-2xl border border-[var(--cf-line)] shadow-[0_24px_64px_-16px_rgba(16,24,40,0.35)] z-40 flex flex-col"
               role="dialog"
@@ -157,9 +177,9 @@ export default function NotificationsCenter() {
                         aria-selected={filter === f}
                         onClick={() => setFilter(f)}
                         className={cn(
-                          'px-2.5 min-h-11 sm:min-h-0 sm:py-1 rounded-full font-mono text-[10px] font-medium uppercase tracking-wider transition-all whitespace-nowrap',
+                          'px-2.5 min-h-11 py-1 rounded-full font-mono text-[10px] font-medium uppercase tracking-wider transition-all whitespace-nowrap',
                           filter === f
-                            ? 'bg-[#A94727] text-white'
+                            ? 'bg-[var(--cf-accent-strong)] text-white dark:bg-[var(--cf-accent)] dark:text-[#100D0B]'
                             : 'text-[var(--cf-ink-mute)] hover:bg-black/[0.05] dark:hover:bg-white/10'
                         )}
                       >
@@ -178,7 +198,7 @@ export default function NotificationsCenter() {
                   return (
                     <div key={g.group}>
                       <p className="flex items-center gap-1.5 px-4 pt-3 pb-1 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]">
-                        <GroupIcon size={13} aria-hidden className="text-[#D86D3E] dark:text-[#F5B08A]" />
+                        <GroupIcon size={13} aria-hidden className="text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]" />
                         {g.group}
                         <span className="ml-auto rounded-full border border-[var(--cf-line)] px-1.5 py-px text-[10px] tracking-normal" aria-hidden>
                           {g.rows.length}
@@ -206,13 +226,13 @@ export default function NotificationsCenter() {
                                 className={cn('w-full text-left px-3 py-2.5 min-h-11 transition rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.05]', n.isRead && 'opacity-65')}
                               >
                                 <span className="flex items-start gap-2">
-                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[#D86D3E]/12 text-[#D86D3E] dark:text-[#F5B08A]')} aria-hidden>
+                                  <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-[10px]', n.isRead ? 'bg-[var(--cf-surface-2)]/80 text-[var(--cf-ink-mute)]' : 'bg-[var(--cf-accent)]/12 text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]')} aria-hidden>
                                     <RowIcon size={14} />
                                   </span>
                                   <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--cf-ink)]">
                                       <span className="truncate">{n.title}</span>
-                                      {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7A66D]" aria-label="Unread" role="img" />}
+                                      {!n.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--cf-volt)]" aria-label="Unread" role="img" />}
                                     </span>
                                     {n.message && <span className="block text-xs text-[var(--cf-ink-mute)] line-clamp-2 mt-0.5">{n.message}</span>}
                                   </span>

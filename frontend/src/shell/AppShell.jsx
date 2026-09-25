@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Toaster, toast, useToasterStore } from 'react-hot-toast';
 import { useAuth } from '../store/useAuth';
+import { useFocusTrap } from '../system/focusTrap';
 import { useSocket } from '../store/useSocket';
 import { useTheme } from '../system/theme';
 import { visibleMobileNav, visibleNav } from './navigation';
@@ -32,11 +33,11 @@ const SOFT = 'shadow-[0_16px_48px_-20px_rgba(16,24,40,0.3)]';
 
 // Subtle per-role Obsidian Ember accent pairs. Applied as soft gradient washes only.
 const ROLE_ACCENT = {
-  student: ['#D86D3E', '#B4806A'],
-  faculty: ['#D86D3E', '#C87D4B'],
-  placement_officer: ['#B4806A', '#D86D3E'],
-  college_admin: ['#D86D3E', '#64748b'],
-  super_admin: ['#D86D3E', '#94a3b8']
+  student: ['var(--cf-accent)', 'var(--cf-terracotta)'],
+  faculty: ['var(--cf-accent)', 'var(--cf-volt)'],
+  placement_officer: ['var(--cf-terracotta)', 'var(--cf-accent)'],
+  college_admin: ['var(--cf-accent)', 'var(--cf-ink-mute)'],
+  super_admin: ['var(--cf-accent)', 'var(--cf-ink-soft)']
 };
 
 const tourStepsFor = (role) => {
@@ -55,7 +56,7 @@ const tourStepsFor = (role) => {
 function Brand({ compact }) {
   return (
     <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0" aria-label="CampusFlow home">
-      <span className="w-9 h-9 rounded-xl bg-[#D86D3E] grid place-items-center font-display font-bold text-base text-white shrink-0 shadow-md shadow-[#D86D3E]/30" aria-hidden>
+      <span className="w-9 h-9 rounded-xl bg-[var(--cf-accent)] grid place-items-center font-display font-bold text-base text-white dark:text-[#100D0B] shrink-0 shadow-md shadow-[var(--cf-glow-ember)]" aria-hidden>
         C
       </span>
       {!compact && (
@@ -75,7 +76,7 @@ const railLinkClass = ({ isActive }, compact) => cn(
   `group relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all duration-200 ${EASE} hover:translate-x-1`,
   compact && 'justify-center px-0',
   isActive
-    ? 'text-[#D86D3E] dark:text-[#F5B08A] font-semibold'
+    ? 'text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)] font-semibold'
     : 'text-[var(--cf-ink-soft)] hover:bg-black/[0.04] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
 );
 
@@ -100,12 +101,12 @@ const railLinkInner = ({ isActive }, { label, Icon }, compact, accent, reduced) 
           layoutId="cf-rail-line"
           transition={{ duration: 0.3, ease: EASE_OUT }}
           className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full"
-          style={{ background: `linear-gradient(180deg, ${accent[0]}, ${accent[1]})`, boxShadow: '0 0 12px rgba(216,109,62,0.55)' }}
+           style={{ background: `linear-gradient(180deg, ${accent[0]}, ${accent[1]})`, boxShadow: 'var(--cf-glow-ember)' }}
           aria-hidden
         />
       )
     )}
-    <span className={cn('grid place-items-center rounded-lg transition-colors', isActive && 'bg-[#D86D3E]/10 p-0')}>
+    <span className={cn('grid place-items-center rounded-lg transition-colors', isActive && 'bg-[var(--cf-accent)]/10 p-0')}>
       <Icon size={18} aria-hidden className="shrink-0" />
     </span>
     {!compact && <span className="truncate">{label}</span>}
@@ -168,6 +169,7 @@ export default function AppShell() {
   });
 
   // Staggered drawer: Escape closes, focus lands on close.
+  const mobileTrapRef = useFocusTrap(mobileOpen);
   useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
@@ -222,7 +224,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen cf-atmosphere text-[var(--cf-ink)]">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-[#D86D3E] focus:text-white focus:text-sm focus:font-medium">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-[var(--cf-accent)] focus:text-white dark:focus:text-[#100D0B] focus:text-sm focus:font-medium">
         Skip to content
       </a>
 
@@ -249,7 +251,7 @@ export default function AppShell() {
               aria-label="Open command center"
               title={collapsed ? 'Search (Ctrl/⌘+K)' : undefined}
               className={cn(
-                `flex items-center gap-2 min-h-11 rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink-mute)] transition-all duration-200 ${EASE} hover:border-[#D86D3E]/40 hover:text-[var(--cf-ink)]`,
+                `flex items-center gap-2 min-h-11 rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 text-[var(--cf-ink-mute)] transition-all duration-200 ${EASE} hover:border-[var(--cf-accent)]/40 hover:text-[var(--cf-ink)]`,
                 collapsed ? 'justify-center px-0' : 'px-3'
               )}
             >
@@ -330,7 +332,7 @@ export default function AppShell() {
                 <Menu size={20} />
               </button>
               <span className="hidden md:inline-flex items-center gap-1.5 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-3 text-xs font-semibold text-[var(--cf-ink-soft)]">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E7A66D' }} aria-hidden />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cf-volt)' }} aria-hidden />
                 {semester ? `Sem ${semester}` : 'Campus'}
               </span>
               <nav aria-label="Sections" className="hidden xl:flex flex-1 items-center justify-center gap-1">
@@ -341,14 +343,14 @@ export default function AppShell() {
                     className={({ isActive }) => cn(
                       `relative rounded-full px-3.5 min-h-11 inline-flex items-center text-sm font-medium transition-all duration-200 ${EASE}`,
                       isActive
-                        ? 'text-[#D86D3E] dark:text-[#F5B08A]'
+                        ? 'text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]'
                         : 'text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] dark:hover:bg-white/[0.06]'
                     )}
                   >
                     {({ isActive }) => (
                       <>
                         {isActive && (reduced ? (
-                          <span className="absolute inset-0 rounded-full bg-[#D86D3E]/10" aria-hidden />
+                          <span className="absolute inset-0 rounded-full bg-[var(--cf-accent)]/10" aria-hidden />
                         ) : (
                           <motion.span
                             layoutId="cf-topbar-pill"
@@ -366,7 +368,7 @@ export default function AppShell() {
               </nav>
               <div className="flex-1 xl:hidden" />
               <span className="hidden lg:inline-flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] px-3 text-xs font-semibold capitalize text-[var(--cf-ink-soft)]">
-                <span className="w-2 h-2 rounded-full bg-[#E7A66D] animate-pulse-dot" aria-hidden />
+                <span className="w-2 h-2 rounded-full bg-[var(--cf-volt)] animate-pulse-dot" aria-hidden />
                 {roleLabel(user?.role)}
               </span>
               <button onClick={() => setPaletteOpen(true)} aria-label="Search" className={iconBtn}>
@@ -391,7 +393,7 @@ export default function AppShell() {
               </Link>
               <Link
                 to="/profile"
-                className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[#D86D3E]/40`}
+                className={`hidden sm:flex items-center gap-2 min-h-11 rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 py-1 pl-1 pr-3 transition-all duration-200 ${EASE} hover:border-[var(--cf-accent)]/40`}
               >
                 <span className="w-8 h-8 rounded-full grid place-items-center text-white text-xs font-bold shrink-0" style={{ background: `linear-gradient(135deg, ${accent[0]}, ${accent[1]})` }} aria-hidden>
                   {(user?.name?.[0] || 'U').toUpperCase()}
@@ -441,15 +443,16 @@ export default function AppShell() {
               aria-hidden
               initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT }}
-              className="absolute left-0 top-0 bottom-0 w-[17.5rem] rounded-r-3xl bg-[#D86D3E]/15"
+              className="absolute left-0 top-0 bottom-0 w-[17.5rem] rounded-r-3xl bg-[var(--cf-accent)]/15"
             />
             <motion.span
               aria-hidden
               initial={{ x: '-104%' }} animate={{ x: 0 }} exit={{ x: '-104%' }}
               transition={reduced ? { duration: 0.01 } : { duration: 0.4, ease: EASE_OUT, delay: 0.06 }}
-              className="absolute left-0 top-0 bottom-0 w-[17.25rem] rounded-r-3xl bg-[#E7A66D]/10"
+              className="absolute left-0 top-0 bottom-0 w-[17.25rem] rounded-r-3xl bg-[var(--cf-volt)]/10"
             />
             <motion.nav
+              ref={mobileTrapRef}
               aria-label="Mobile"
               initial={reduced ? { opacity: 0 } : { x: '-104%' }}
               animate={reduced ? { opacity: 1 } : { x: 0 }}
@@ -459,7 +462,7 @@ export default function AppShell() {
             >
               <div className="flex items-center justify-between mb-4">
                 <Brand />
-                <button onClick={() => setMobileOpen(false)} aria-label="Close" autoFocus className={iconBtn}>
+                <button onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" autoFocus className={iconBtn}>
                   <X size={18} />
                 </button>
               </div>
@@ -476,7 +479,7 @@ export default function AppShell() {
                         <span className={cn(
                           `relative flex items-center gap-2.5 rounded-xl px-3 min-h-11 py-2 text-sm font-medium transition-all mb-0.5 ${EASE} overflow-hidden`,
                           state.isActive
-                            ? 'text-[#D86D3E] dark:text-[#F5B08A]'
+                            ? 'text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]'
                             : 'text-[var(--cf-ink-soft)] hover:translate-x-1'
                         )}>
                           {state.isActive && (
@@ -487,7 +490,7 @@ export default function AppShell() {
                             />
                           )}
                           {state.isActive && (
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[#D86D3E] shadow-[0_0_12px_rgba(216,109,62,0.8)]" aria-hidden />
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-[var(--cf-accent)] shadow-[var(--cf-glow-ember)]" aria-hidden />
                           )}
                           <item.Icon size={18} aria-hidden className="relative shrink-0" />
                           <span className="relative">{item.label}</span>
@@ -499,7 +502,7 @@ export default function AppShell() {
               </motion.div>
               <button
                 onClick={logout}
-                className="mt-4 w-full flex items-center justify-center gap-2 min-h-11 rounded-full bg-[#A94727] text-white text-sm font-semibold transition-all"
+                className="mt-4 w-full flex items-center justify-center gap-2 min-h-11 rounded-full bg-[var(--cf-accent-strong)] text-white dark:bg-[var(--cf-accent)] dark:text-[#100D0B] text-sm font-semibold transition-all"
               >
                 <LogOut size={17} /> Log out
               </button>
@@ -517,14 +520,14 @@ export default function AppShell() {
               to={to}
               className={({ isActive }) =>
                 `relative flex flex-col items-center gap-0.5 py-2.5 min-h-11 justify-center text-[10px] font-semibold transition ${
-                  isActive ? 'text-[#D86D3E] dark:text-[#F5B08A]' : 'text-[var(--cf-ink-mute)]'
+                  isActive ? 'text-[var(--cf-accent)] dark:text-[var(--cf-accent-pale)]' : 'text-[var(--cf-ink-mute)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   {isActive && (reduced ? (
-                    <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[#D86D3E]" aria-hidden />
+                    <span className="absolute top-0 inset-x-6 h-1 rounded-full bg-[var(--cf-accent)]" aria-hidden />
                   ) : (
                     <motion.span
                       layoutId="cf-bottom-tab"

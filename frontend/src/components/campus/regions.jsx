@@ -187,7 +187,8 @@ export function TaskStat({ label, value, sub }) {
 
 // --- Lazy recharts viz: Area / Bar / Composed over one glass-tooltip language.
 // ponytail: one loader + one style instead of three chart components.
-const CHART_COLORS = ['#D86D3E', '#A77B68', '#25D890'];
+// Chart palette follows --cf-chart-* (light/dark counterparts in index.css).
+const CHART_COLORS = ['var(--cf-chart-1)', 'var(--cf-chart-2)', 'var(--cf-chart-4)'];
 
 export function LazyChart({
   kind = 'area',
@@ -199,16 +200,32 @@ export function LazyChart({
 }) {
   const reduced = useReducedMotion();
   const [charts, setCharts] = useState(null);
+  const [chartFailed, setChartFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
+  // Retry with backoff: a failed chunk must not leave a permanent loader.
+  // Retry re-runs the dynamic import in place — no page reload, no state loss.
   useEffect(() => {
     let live = true;
-    import('recharts').then((m) => {
-      if (live) setCharts(m);
-    });
+    let attempts = 0;
+    let timer = 0;
+    const load = () => {
+      import('recharts').then(
+        (m) => { if (live) setCharts(m); },
+        () => {
+          if (!live) return;
+          attempts += 1;
+          if (attempts > 3) { setChartFailed(true); return; }
+          timer = setTimeout(() => { if (live) load(); }, 500 * attempts);
+        }
+      );
+    };
+    load();
     return () => {
       live = false;
+      clearTimeout(timer);
     };
-  }, []);
+  }, [retryNonce]);
 
   const autoSummary =
     summary ||
@@ -228,9 +245,16 @@ export function LazyChart({
 
   return (
     <figure role="img" aria-label={`Chart. ${autoSummary}`}>
-      <div style={{ width: '100%', height }} aria-hidden>
-        {!charts || data.length === 0 ? (
+      <div style={{ width: '100%', height }} aria-hidden={!chartFailed} role={chartFailed ? 'alert' : undefined}>
+        {chartFailed ? (
           <div className="grid place-items-center h-full text-sm text-[var(--cf-ink-mute)]">
+            Chart failed to load.&nbsp;
+            <button type="button" onClick={() => { setChartFailed(false); setCharts(null); setRetryNonce((n) => n + 1); }} className="font-semibold text-[var(--cf-accent)] underline underline-offset-2">
+              Retry
+            </button>
+          </div>
+        ) : !charts || data.length === 0 ? (
+          <div className="grid place-items-center h-full text-sm text-[var(--cf-ink-mute)]" role="status">
             {data.length === 0 ? 'Not enough data for a chart yet.' : 'Loading chart…'}
           </div>
         ) : (

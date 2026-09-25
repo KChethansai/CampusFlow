@@ -5,7 +5,7 @@
 // /ai-reports. Real data only.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -28,6 +28,7 @@ const cumulative = (rows) => {
 };
 
 export default function AdminHome() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -36,20 +37,24 @@ export default function AdminHome() {
   const [courses, setCourses] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
+  const [failedParts, setFailedParts] = useState([]);
 
   const load = async () => {
     setLoading(true);
     setFailed(false);
+    setFailedParts([]);
     const [u, d, c, r, ai] = await Promise.allSettled([
       api.get('/users'), api.get('/departments'), api.get('/courses'),
       api.get('/requests'), api.get('/ai-reports')
     ]);
     let ok = false;
-    if (u.status === 'fulfilled') { setUsers(u.value.data.data || []); ok = true; }
-    if (d.status === 'fulfilled') { setDepartments(d.value.data.data || []); ok = true; }
-    if (c.status === 'fulfilled') { setCourses(c.value.data.data || []); ok = true; }
-    if (r.status === 'fulfilled') { setRequests(r.value.data.data || []); ok = true; }
-    if (ai.status === 'fulfilled') { setReports(ai.value.data.data || []); ok = true; }
+    const parts = [];
+    if (u.status === 'fulfilled') { setUsers(u.value.data.data || []); ok = true; } else parts.push('people');
+    if (d.status === 'fulfilled') { setDepartments(d.value.data.data || []); ok = true; } else parts.push('departments');
+    if (c.status === 'fulfilled') { setCourses(c.value.data.data || []); ok = true; } else parts.push('courses');
+    if (r.status === 'fulfilled') { setRequests(r.value.data.data || []); ok = true; } else parts.push('request queue');
+    if (ai.status === 'fulfilled') { setReports(ai.value.data.data || []); ok = true; } else parts.push('intelligence');
+    setFailedParts(parts);
     if (!ok) setFailed(true);
     setLoading(false);
   };
@@ -98,9 +103,17 @@ export default function AdminHome() {
   if (failed) return <ErrorState message="Couldn't load institution data." onRetry={load} />;
 
   return (
-    <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
+    <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">
+      {failedParts.length > 0 && (
+        <p role="alert" className="mb-4 rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-warning)]/10 px-3 py-2.5 text-xs font-semibold text-[var(--cf-ink-soft)]">
+          Couldn&apos;t refresh {failedParts.join(', ')}. Showing the rest.&nbsp;
+          <button type="button" onClick={load} className="font-bold text-[var(--cf-accent)] underline underline-offset-2">
+            Retry
+          </button>
+        </p>
+      )}
       {/* REGION 1 — Campus pulse hero (dense, restrained) */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <RoleHero
           accent="admin"
           dense
@@ -120,7 +133,7 @@ export default function AdminHome() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         {/* REGION 2 — growth: is the community compounding? */}
-        <motion.div variants={staggerChild} className="lg:col-span-2">
+        <motion.div variants={reduced ? undefined : staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Community growth"
             question="Is the community compounding?"
@@ -130,15 +143,15 @@ export default function AdminHome() {
             empty={growthRows.every((r) => r.users === 0) ? 'No growth signal yet' : null}
             emptyHint="Accounts will chart here once people join."
           >
-            <LazyChart data={growthRows} xKey="bucket" series={[{ key: 'users', color: '#D86D3E' }]} height={200} />
+            <LazyChart data={growthRows} xKey="bucket" series={[{ key: 'users', color: 'var(--cf-chart-1)' }]} height={200} />
           </AnalyticsPanel>
         </motion.div>
 
         {/* REGION 3 — request queue stream */}
-        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
+        <motion.section variants={reduced ? undefined : staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Request queue">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-semibold text-sm">Request queue</h2>
-            <Link to="/requests" className="text-xs font-medium text-[#D86D3E] hover:underline">Review</Link>
+            <Link to="/requests" className="text-xs font-medium text-[var(--cf-accent)] hover:underline">Review</Link>
           </div>
           {pending.length === 0 ? (
             <p className="text-xs text-[var(--cf-ink-mute)]">All clear.</p>
@@ -159,7 +172,7 @@ export default function AdminHome() {
             className="cf-card-spot rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-4 mt-4 flex items-center justify-between gap-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
           >
             <span>
-              <span className="font-display text-sm font-bold flex items-center gap-1.5"><Sparkles size={14} className="text-[#A77B68]" aria-hidden /> Intelligence</span>
+              <span className="font-display text-sm font-bold flex items-center gap-1.5"><Sparkles size={14} className="text-[var(--cf-terracotta)]" aria-hidden /> Intelligence</span>
               <span className="block text-[11px] text-[var(--cf-ink-mute)] mt-0.5">
                 {reports.length} reports · {reports.some((r) => r.provider === 'none') ? 'provider not configured' : 'provider live'}
               </span>
@@ -170,7 +183,7 @@ export default function AdminHome() {
       </div>
 
       {/* REGION 4 — department health table (plain surface, no particles) */}
-      <motion.section variants={staggerChild} className="rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-5 mt-4" aria-label="Department health">
+      <motion.section variants={reduced ? undefined : staggerChild} className="rounded-[24px] border border-[var(--cf-line)] bg-[var(--cf-surface)] p-5 mt-4" aria-label="Department health">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-base font-semibold">Department health</h2>
           <Link to="/departments" className="text-xs font-medium text-[#D86D3E] hover:underline">All departments</Link>
@@ -208,7 +221,7 @@ export default function AdminHome() {
           </div>
         )}
       </motion.section>
-      <motion.div variants={staggerChild} className="mt-4">
+      <motion.div variants={reduced ? undefined : staggerChild} className="mt-4">
         <EnrollmentOverview />
       </motion.div>
       <p className="sr-only">Signed in as {user?.name}, {user?.role}.</p>

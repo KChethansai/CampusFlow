@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Printer, Sparkles, TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
 import { Badge, EmptyState, LoadingState, PageHeader } from '../../components/ui/primitives';
@@ -42,6 +42,7 @@ const confidenceOf = (report, signal) => {
 };
 
 export default function AIReports() {
+  const reduced = useReducedMotion();
   const [reports, setReports] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -245,8 +246,8 @@ export default function AIReports() {
               <EmptyState title="Select a report" hint="Insights with evidence will appear here." />
             </div>
           ) : (
-            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" key={selected._id} className="space-y-3">
-              <motion.div variants={staggerChild}>
+            <motion.div {...(reduced ? {} : staggerParent(0.05))} initial={reduced ? false : 'initial'} animate="animate" key={selected._id} className="space-y-3">
+              <motion.div variants={reduced ? undefined : staggerChild}>
                 <section className={INTEL} aria-label="Report header">
                   <span className={GRADIENT_LINE} aria-hidden />
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -292,7 +293,7 @@ export default function AIReports() {
                 </div>
               )}
               {signals.map((s, i) => (
-                <motion.article key={i} variants={staggerChild} className={INTEL}>
+                <motion.article key={i} variants={reduced ? undefined : staggerChild} className={INTEL}>
                   <span className={GRADIENT_LINE} aria-hidden />
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

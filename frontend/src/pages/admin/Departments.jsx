@@ -72,7 +72,7 @@ function Departments() {
                 <span className="rounded-full border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--cf-ink-soft)]">{dept.code}</span>
               </div>
               <p className="text-sm text-[var(--cf-ink-mute)]">
-                {dept.description || 'No description'}
+                {dept.description || '—'}
               </p>
               {dept.hod && (
                 <p className="mt-2 border-t border-[var(--cf-line)] pt-2 text-xs text-[var(--cf-ink-mute)]">

@@ -4,7 +4,7 @@
 // PIPELINE_STAGES / normalizeStage untouched. Real data only.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { ArrowRight, Briefcase, Building2 } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -17,6 +17,7 @@ import { PIPELINE_STAGES, normalizeStage } from '../../system/tokens';
 import { staggerChild, staggerParent } from '../../system/motion';
 
 export default function PlacementHome() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const isStudent = user?.role === 'student';
   const [loading, setLoading] = useState(true);
@@ -96,9 +97,9 @@ export default function PlacementHome() {
   if (failed) return <ErrorState message="Couldn't load placement data." onRetry={load} />;
 
   return (
-    <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
+    <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">
       {/* REGION 1 — Mission Control hero: funnel + conversion gauge */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <RoleHero
           accent="placement"
           title="Recruitment in motion."
@@ -122,7 +123,7 @@ export default function PlacementHome() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         {/* REGION 2 — conversion analytics: is the pipeline compounding? */}
-        <motion.div variants={staggerChild} className="lg:col-span-2">
+        <motion.div variants={reduced ? undefined : staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Conversion analytics"
             icon={<Briefcase size={17} className="text-[#A77B68]" aria-hidden />}
@@ -144,7 +145,7 @@ export default function PlacementHome() {
         </motion.div>
 
         {/* REGION 3 — open drives stream */}
-        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
+        <motion.section variants={reduced ? undefined : staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Open drives">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-base font-semibold">Open drives</h2>
             <Link to="/placement" className="text-xs font-medium text-[#D86D3E] hover:underline">All</Link>
@@ -173,7 +174,7 @@ export default function PlacementHome() {
       </div>
 
       {/* REGION 4 — glance task cards */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <TaskGrid>
           <SpotTask to="/placement" label="Open drives">
             <TaskStat label="Open drives" value={openDrives.length} />
@@ -189,7 +190,7 @@ export default function PlacementHome() {
           </SpotTask>
         </TaskGrid>
       </motion.div>
-      <motion.div variants={staggerChild} className="mt-4">
+      <motion.div variants={reduced ? undefined : staggerChild} className="mt-4">
         <PlacementFunnel />
       </motion.div>
     </motion.div>

@@ -2,8 +2,9 @@ import { motion, useReducedMotion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../system/tokens';
 
-export const kicker = 'font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4B5563] dark:text-[#707A89]';
-export const sub = 'mt-3 text-[15px] leading-relaxed text-[#4B5563] dark:text-[#A7B0BF] max-w-xl';
+export const kicker = 'font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--cf-ink-mute)]';
+export const sub = 'mt-3 text-[15px] leading-relaxed text-[var(--cf-ink-soft)] max-w-xl';
+// Landing-soft surface: intentionally lighter than app cards (single glassCard owner; tokens.js duplicate removed).
 export const glassCard = 'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-sm';
 
 /* Word-stagger blur reveal */

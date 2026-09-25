@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Award, Briefcase, GraduationCap, Inbox, ShieldCheck } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
@@ -24,6 +24,7 @@ const notificationKinds = [
 const defaultPreferences = Object.fromEntries(notificationKinds.map(([key]) => [key, { inApp: true, push: true, email: true }]));
 
 export default function Profile() {
+  const reduced = useReducedMotion();
   const { user, changePassword, logoutUser } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [tab, setTab] = useState('overview');
@@ -111,9 +112,9 @@ export default function Profile() {
   ];
 
   return (
-    <motion.div {...staggerParent(0.07)} initial="initial" animate="animate" className="max-w-3xl mx-auto">
+    <motion.div {...(reduced ? {} : staggerParent(0.07))} initial={reduced ? false : 'initial'} animate="animate" className="max-w-3xl mx-auto">
       {/* Glass header */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <section className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl overflow-hidden mb-4">
           <div className="px-5 pt-5 pb-10 relative" aria-hidden>
             <div
@@ -172,7 +173,7 @@ export default function Profile() {
         >
       {tab === 'overview' && (
         <div className="grid sm:grid-cols-2 gap-4">
-          <motion.div variants={staggerChild}>
+          <motion.div variants={reduced ? undefined : staggerChild}>
             <Card>
               <h2 className="font-display font-semibold mb-3">Identity</h2>
               <dl className="space-y-2.5 text-sm">
@@ -186,7 +187,7 @@ export default function Profile() {
               </dl>
             </Card>
           </motion.div>
-          <motion.div variants={staggerChild}>
+          <motion.div variants={reduced ? undefined : staggerChild}>
             <Card>
               <h2 className="font-display font-semibold mb-1 flex items-center gap-1.5"><Award size={16} className="text-amber-500" /> Achievements</h2>
               <p className="text-sm text-[var(--cf-ink-mute)]">Milestones from placements and academics will live here.</p>
@@ -197,7 +198,7 @@ export default function Profile() {
       )}
 
       {tab === 'activity' && (
-        <motion.div variants={staggerChild}>
+        <motion.div variants={reduced ? undefined : staggerChild}>
           <Card>
             <h2 className="font-display font-semibold mb-1">Activity</h2>
             <p className="text-xs text-[var(--cf-ink-mute)] mb-4">Live counts from your assignments, applications and requests.</p>
@@ -218,7 +219,7 @@ export default function Profile() {
       )}
 
       {tab === 'notifications' && (
-        <motion.div variants={staggerChild}>
+        <motion.div variants={reduced ? undefined : staggerChild}>
           <Card>
             <h2 className="font-display font-semibold mb-1">Notification channels</h2>
             <p className="text-xs text-[var(--cf-ink-mute)] mb-4">Choose how each update reaches you. Realtime means an active browser session; email is included in the weekly digest.</p>
@@ -244,7 +245,7 @@ export default function Profile() {
       )}
 
       {tab === 'security' && (
-        <motion.div variants={staggerChild}>
+        <motion.div variants={reduced ? undefined : staggerChild}>
           <Card>
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-semibold flex items-center gap-1.5"><ShieldCheck size={16} className="text-green-600" /> Security</h2>

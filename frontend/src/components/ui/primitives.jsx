@@ -1,6 +1,6 @@
 // CampusFlow UI primitives — every external pattern is normalized here.
 // Typography / spacing / radius / motion always come from system/tokens.
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { X } from 'lucide-react';
 import {
@@ -24,81 +24,97 @@ export function Button({ variant = 'primary', size = 'medium', className, ...pro
   return <button className={cn(btnClass(variant, size), className)} {...props} />;
 }
 
-// Glass fields: hairline borders + 14px radius + royal focus ring.
+// Glass fields: hairline borders + 14px radius + semantic focus ring.
 const glassField =
-  'border border-[var(--cf-line)] rounded-[14px] focus:border-[#D86D3E] focus:ring-[3px] focus:ring-[#D86D3E]/30 focus:outline-none';
-const glassError = 'border-[#FF5964] focus:border-[#FF5964] focus:ring-[#FF5964]/30';
+  'border border-[var(--cf-line)] rounded-[14px] focus:border-[var(--cf-accent)] focus:ring-[3px] focus:ring-[var(--cf-focus)] focus:outline-none';
+const glassError = 'border-[var(--cf-danger)] focus:border-[var(--cf-danger)] focus:ring-[var(--cf-focus)]';
 
-const FieldShell = ({ label, error, id, children }) => (
+const FieldShell = ({ label, error, id, errorId, children }) => (
   <div>
-    {label && (
+    {label && id && (
       <label htmlFor={id} className={labelClass}>
         {label}
       </label>
     )}
     {children}
     {error && (
-      <p className="mt-1 text-xs font-medium text-[#FF5964]" role="alert">
+      <p id={errorId} className="mt-1 text-xs font-medium text-[var(--cf-danger)]" role="alert">
         {error}
       </p>
     )}
   </div>
 );
 
-export const Input = forwardRef(function Input({ label, error, id, className, ...props }, ref) {
+function useFieldIds(id) {
+  const auto = useId();
+  const fieldId = id || `cf-field-${auto.replace(/:/g, '')}`;
+  return { fieldId, errorId: `${fieldId}-error` };
+}
+
+export const Input = forwardRef(function Input({ label, error, id, className, 'aria-describedby': describedBy, ...props }, ref) {
+  const { fieldId, errorId } = useFieldIds(id);
   return (
-    <FieldShell label={label} error={error} id={id}>
+    <FieldShell label={label} error={error} id={fieldId} errorId={errorId}>
       <input
-        id={id}
+        id={fieldId}
         ref={ref}
         className={cn(inputClass, glassField, error && glassError, className)}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? (describedBy ? `${errorId} ${describedBy}` : errorId) : describedBy}
         {...props}
       />
     </FieldShell>
   );
 });
 
-export const Select = forwardRef(function Select({ label, error, id, className, children, ...props }, ref) {
+export const Select = forwardRef(function Select({ label, error, id, className, children, 'aria-describedby': describedBy, ...props }, ref) {
+  const { fieldId, errorId } = useFieldIds(id);
   return (
-    <FieldShell label={label} error={error} id={id}>
-      <select id={id} ref={ref} className={cn(inputClass, glassField, error && glassError, className)} {...props}>
+    <FieldShell label={label} error={error} id={fieldId} errorId={errorId}>
+      <select
+        id={fieldId}
+        ref={ref}
+        className={cn(inputClass, glassField, error && glassError, className)}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? (describedBy ? `${errorId} ${describedBy}` : errorId) : describedBy}
+        {...props}
+      >
         {children}
       </select>
     </FieldShell>
   );
 });
 
-export const Textarea = forwardRef(function Textarea({ label, error, id, className, ...props }, ref) {
+export const Textarea = forwardRef(function Textarea({ label, error, id, className, 'aria-describedby': describedBy, ...props }, ref) {
+  const { fieldId, errorId } = useFieldIds(id);
   return (
-    <FieldShell label={label} error={error} id={id}>
+    <FieldShell label={label} error={error} id={fieldId} errorId={errorId}>
       <textarea
-        id={id}
+        id={fieldId}
         ref={ref}
         rows={4}
         className={cn(inputClass, glassField, error && glassError, className)}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? (describedBy ? `${errorId} ${describedBy}` : errorId) : describedBy}
         {...props}
       />
     </FieldShell>
   );
 });
 
-// Glass pills — single status language.
-const pillGlass =
-  'status-pill font-medium rounded-full px-2.5 py-0.5 border border-[var(--cf-line)] text-xs whitespace-nowrap';
-
+// Glass pills — single status language (statusBadge/roleBadge/badge already
+// include badgeBase; no second wrapper class).
 export function Badge({ tone, status, role, className, children }) {
   if (status)
-    return <span className={cn(statusBadgeFn(status), pillGlass, className)}>{children ?? status.replace(/_/g, ' ')}</span>;
+    return <span className={cn(statusBadgeFn(status), className)}>{children ?? status.replace(/_/g, ' ')}</span>;
   if (role)
-    return <span className={cn(roleBadgeFn(role), pillGlass, className)}>{children ?? role.replace(/_/g, ' ')}</span>;
-  return <span className={cn(badgeFn(tone), pillGlass, className)}>{children}</span>;
+    return <span className={cn(roleBadgeFn(role), className)}>{children ?? role.replace(/_/g, ' ')}</span>;
+  return <span className={cn(badgeFn(tone), className)}>{children}</span>;
 }
 
 export function StatusPill({ status, className, children }) {
   return (
-    <span className={cn(statusBadgeFn(status), pillGlass, className)}>
+    <span className={cn(statusBadgeFn(status), className)}>
       {children ?? String(status || '').replace(/_/g, ' ')}
     </span>
   );
@@ -106,7 +122,7 @@ export function StatusPill({ status, className, children }) {
 
 export function RoleBadge({ role, className, children }) {
   return (
-    <span className={cn(roleBadgeFn(role), pillGlass, className)}>
+    <span className={cn(roleBadgeFn(role), className)}>
       {children ?? String(role || '').replace(/_/g, ' ')}
     </span>
   );
@@ -241,39 +257,56 @@ export function GlowButton({ variant = 'primary', size = 'medium', className, ch
   );
 }
 
-export function Tabs({ tabs = [], value, onChange, className }) {
+export function Tabs({ tabs = [], value, onChange, className, label = 'Sections' }) {
+  const btnRefs = useRef([]);
+  const ids = tabs.map((tab) => (typeof tab === 'string' ? tab : tab.id || tab.value));
+  const focusTab = (index) => {
+    const total = ids.length;
+    const next = ((index % total) + total) % total;
+    btnRefs.current[next]?.focus();
+    onChange?.(ids[next]);
+  };
   return (
     <div
       role="tablist"
+      aria-label={label}
       className={cn(
         'inline-flex items-center gap-1 p-1 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 backdrop-blur-md',
         className
       )}
     >
-      {tabs.map((tab) => {
-        const id = typeof tab === 'string' ? tab : tab.id || tab.value;
-        const label = typeof tab === 'string' ? tab : tab.label || tab.title;
+      {tabs.map((tab, i) => {
+        const id = ids[i];
+        const tabLabel = typeof tab === 'string' ? tab : tab.label || tab.title;
         const active = value === id;
         return (
           <button
             key={id}
+            ref={(el) => { btnRefs.current[i] = el; }}
             role="tab"
             aria-selected={active}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange?.(id)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') { e.preventDefault(); focusTab(i + 1); }
+              else if (e.key === 'ArrowLeft') { e.preventDefault(); focusTab(i - 1); }
+              else if (e.key === 'Home') { e.preventDefault(); focusTab(0); }
+              else if (e.key === 'End') { e.preventDefault(); focusTab(ids.length - 1); }
+            }}
             className={cn(
-              'relative px-3.5 py-1.5 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[3px] focus-visible:outline-[#D86D3E]',
-              active ? 'text-white' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]'
+              'relative px-4 min-h-11 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[3px] focus-visible:outline-[var(--cf-focus)]',
+              active ? 'text-white dark:text-[#100D0B]' : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]'
             )}
           >
             {active && (
               <motion.span
                 layoutId="cf-tabs-indicator"
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                className="absolute inset-0 rounded-xl bg-[#D86D3E] shadow-[0_2px_12px_rgba(216,109,62,0.45)]"
+                className="absolute inset-0 rounded-xl bg-[var(--cf-accent-strong)] dark:bg-[var(--cf-accent)] shadow-[var(--cf-glow-ember)]"
                 aria-hidden
               />
             )}
-            <span className="relative z-10 flex items-center gap-1.5">{label}</span>
+            <span className="relative z-10 flex items-center gap-1.5">{tabLabel}</span>
           </button>
         );
       })}
@@ -284,6 +317,7 @@ export function Tabs({ tabs = [], value, onChange, className }) {
 export function Drawer({ open, onClose, title, children, wide, className }) {
   const reduced = useReducedMotion();
   const trapRef = useFocusTrap(open);
+  const titleId = useId();
   useEffect(() => {
     if (!open) return;
     const handleKey = (e) => {
@@ -296,7 +330,7 @@ export function Drawer({ open, onClose, title, children, wide, className }) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] overflow-hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[80] overflow-hidden" role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -320,11 +354,11 @@ export function Drawer({ open, onClose, title, children, wide, className }) {
               )}
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--cf-line)]">
-                <h3 className="font-display font-bold text-base text-[var(--cf-ink)]">{title}</h3>
+                <h3 id={titleId} className="font-display font-bold text-base text-[var(--cf-ink)]">{title}</h3>
                 <button
                   onClick={onClose}
                   aria-label="Close drawer"
-                  className="p-2 rounded-xl text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] hover:bg-black/[0.05] dark:hover:bg-white/10 transition"
+                  className="min-w-11 min-h-11 grid place-items-center rounded-xl text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)] hover:bg-black/[0.05] dark:hover:bg-white/10 transition"
                 >
                   <X size={18} />
                 </button>

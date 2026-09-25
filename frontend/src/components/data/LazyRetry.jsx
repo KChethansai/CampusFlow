@@ -30,7 +30,7 @@ export function ChunkFallback({ onRetry, label = 'Loading chart…' }) {
       <button
         type="button"
         onClick={onRetry ?? (() => window.location.reload())}
-        className="rounded-full border border-[var(--cf-line)] px-3 py-1 text-xs font-semibold text-[var(--cf-ink)] hover:border-[#D86D3E]/60"
+        className="rounded-full border border-[var(--cf-line)] px-3 py-1 text-xs font-semibold text-[var(--cf-ink)] hover:border-[var(--cf-accent)]/60"
       >
         Retry
       </button>

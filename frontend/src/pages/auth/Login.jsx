@@ -114,7 +114,7 @@ function Login() {
           aria-label="I am signing in as"
           className="grid grid-cols-4 gap-1 p-1 rounded-2xl border border-[var(--cf-line)] bg-[var(--cf-surface-2)]/60 backdrop-blur-md"
         >
-          {ROLE_TABS.map((r) => {
+          {ROLE_TABS.map((r, ri) => {
             const active = roleTab === r.value;
             return (
               <button
@@ -122,11 +122,24 @@ function Login() {
                 type="button"
                 role="tab"
                 aria-selected={active}
+                tabIndex={active ? 0 : -1}
                 onClick={() => handleRoleChange(r.value)}
+                onKeyDown={(e) => {
+                  const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1
+                    : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+                  if (e.key === 'Home') { e.preventDefault(); handleRoleChange(ROLE_TABS[0].value); document.querySelector(`[data-role-tab="${ROLE_TABS[0].value}"]`)?.focus(); return; }
+                  if (e.key === 'End') { e.preventDefault(); handleRoleChange(ROLE_TABS[ROLE_TABS.length - 1].value); document.querySelector(`[data-role-tab="${ROLE_TABS[ROLE_TABS.length - 1].value}"]`)?.focus(); return; }
+                  if (!dir) return;
+                  e.preventDefault();
+                  const next = ROLE_TABS[(ri + dir + ROLE_TABS.length) % ROLE_TABS.length];
+                  handleRoleChange(next.value);
+                  document.querySelector(`[data-role-tab="${next.value}"]`)?.focus();
+                }}
+                data-role-tab={r.value}
                 className={cn(
-                  'relative px-2 py-1.5 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[2px] focus-visible:outline-[#D86D3E]',
+                  'relative px-2 py-1.5 min-h-11 rounded-xl text-xs font-display font-semibold transition-colors duration-200 focus-visible:outline-[2px] focus-visible:outline-[var(--cf-focus)]',
                   active
-                    ? 'text-white'
+                    ? 'text-white dark:text-[#100D0B]'
                     : 'text-[var(--cf-ink-mute)] hover:text-[var(--cf-ink)]'
                 )}
               >
@@ -134,7 +147,7 @@ function Login() {
                   <motion.span
                     layoutId="cf-auth-role-pill"
                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                    className="absolute inset-0 rounded-xl bg-[#D86D3E] shadow-[0_2px_10px_rgba(216,109,62,0.4)]"
+                    className="absolute inset-0 rounded-xl bg-[var(--cf-accent-strong)] dark:bg-[var(--cf-accent)] shadow-[var(--cf-glow-ember)]"
                     aria-hidden
                   />
                 )}

@@ -46,12 +46,12 @@ export default function LiquidGlassButton({
 
   const variants = {
     primary:
-      'bg-gradient-to-r from-[#D86D3E] via-[#E7A66D] to-[#D86D3E] bg-[length:200%_auto] text-[#100D0B] font-semibold shadow-lg shadow-[#D86D3E]/25 hover:shadow-xl hover:shadow-[#D86D3E]/40 border border-white/25 hover:brightness-105 active:scale-[0.98]',
+      'bg-gradient-to-r from-[var(--cf-accent)] via-[var(--cf-volt)] to-[var(--cf-accent)] bg-[length:200%_auto] text-[#100D0B] font-semibold shadow-lg shadow-[var(--cf-accent)]/25 hover:shadow-xl hover:shadow-[var(--cf-accent)]/40 border border-white/25 hover:brightness-105 active:scale-[0.98]',
     secondary:
-      'bg-[#1C1512]/80 backdrop-blur-xl text-white font-medium border border-white/10 hover:border-[#D86D3E]/50 hover:bg-[#251C17] shadow-lg shadow-black/30 active:scale-[0.98]',
+      'bg-[#1C1512]/80 backdrop-blur-xl text-white font-medium border border-white/10 hover:border-[var(--cf-accent)]/50 hover:bg-[#251C17] shadow-lg shadow-black/30 active:scale-[0.98]',
     ghost:
       'bg-transparent text-[var(--cf-ink-soft)] hover:text-[var(--cf-ink)] border border-transparent hover:border-[var(--cf-line)] active:scale-[0.98]'
-  }[variant] || 'bg-[#E7A66D] text-[#100D0B]';
+  }[variant] || 'bg-[var(--cf-volt)] text-[#100D0B]';
 
   const content = (
     <motion.span

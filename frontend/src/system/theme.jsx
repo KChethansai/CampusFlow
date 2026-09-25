@@ -1,5 +1,5 @@
 // Theme: light + real dark ("campus at night"). Class-based, persisted.
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const ThemeContext = createContext({ theme: 'dark', toggle: () => {} });
 
@@ -26,7 +26,11 @@ export function ThemeProvider({ children }) {
     []
   );
 
-  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
+  // Memoized value: without this, every toggle re-renders the whole tree
+  // from a new object identity (provider wraps <App/> in main.jsx).
+  const value = useMemo(() => ({ theme, toggle }), [theme, toggle]);
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = () => useContext(ThemeContext);

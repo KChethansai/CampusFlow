@@ -49,8 +49,9 @@ export const cardClass =
 export const floatClass =
   'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-brutal-lg';
 // Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
-export const glassCard =
-  'glass-card bg-[var(--cf-surface)]/70 backdrop-blur-xl rounded-[24px] border border-[var(--cf-line)] shadow-brutal';
+// Luxury glass + spotlight surfaces (brief §1-2, taste-restrained: single accent, no neon spam)
+// NOTE: the live `glassCard` surface is owned by components/landing/shared.jsx
+// (landing-soft shadow); the former canonical duplicate here had zero imports.
 export const spotCard = 'cf-card-spot cf-spotlight';
 export const glowFocus = 'cf-glow-focus';
 export const bentoClass = cn(cardClass, spotCard, 'p-5 sm:p-6');
@@ -58,7 +59,7 @@ export const tableClass = 'w-full text-sm text-left border-collapse';
 export const tableHeadClass = 'text-[var(--cf-ink-mute)] border-b border-[var(--cf-line)] bg-[var(--cf-surface-2)]/30 backdrop-blur-sm sticky top-0 z-10';
 export const tableCellHead = 'px-4 py-3 text-left font-mono font-medium text-[11px] uppercase tracking-wider text-[var(--cf-ink-mute)]';
 export const tableCell = 'px-4 py-3.5 border-b border-[var(--cf-line)]/50 text-[var(--cf-ink)]';
-export const tableRowHover = 'hover:bg-[#D86D3E]/[0.03] dark:hover:bg-[#D86D3E]/[0.05] transition-colors';
+export const tableRowHover = 'hover:bg-[var(--cf-accent)]/[0.04] dark:hover:bg-[var(--cf-accent)]/[0.06] transition-colors';
 export const emptyState = 'text-center text-[var(--cf-ink-mute)] py-10 text-sm';
 export const loadingState = 'text-[var(--cf-ink-mute)] text-sm';
 
@@ -66,7 +67,7 @@ export const loadingState = 'text-[var(--cf-ink-mute)] text-sm';
 export const formGroup = 'mb-4';
 export const labelClass = 'block mb-1.5 text-sm font-medium text-[var(--cf-ink-soft)]';
 export const inputClass =
-  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] border border-[var(--cf-line)] rounded-[14px] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none focus:ring-[3px] focus:ring-[#D86D3E]/30 focus:border-[#D86D3E] transition';
+  'w-full px-3.5 py-2.5 text-sm bg-[var(--cf-surface)] border border-[var(--cf-line)] rounded-[14px] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-mute)] focus:outline-none focus:ring-[3px] focus:ring-[var(--cf-focus)] focus:border-[var(--cf-accent)] transition';
 export const selectClass = inputClass;
 export const formCardClass =
   'bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] shadow-brutal p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-3';
@@ -76,13 +77,13 @@ export const buttonBase =
   'inline-flex items-center justify-center gap-1.5 rounded-[14px] font-display text-sm font-semibold transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98]';
 
 export const buttonVariants = {
-  primary: 'bg-[#A94727] text-white hover:brightness-110 shadow-brutal-sm',
+  primary: 'bg-[var(--cf-accent-strong)] text-white hover:brightness-110 shadow-brutal-sm dark:bg-[var(--cf-accent)] dark:text-[#100D0B]',
   secondary: 'glass-surface text-[var(--cf-ink)] hover:bg-[var(--cf-surface-2)]',
-  success: 'bg-[#25D890] text-[#100D0B] hover:brightness-105',
-  danger: 'bg-[#FF5964] text-white hover:brightness-110',
+  success: 'bg-[var(--cf-success)] text-white hover:brightness-105 dark:text-[#100D0B]',
+  danger: 'bg-[var(--cf-danger)] text-white hover:brightness-110',
   outline: 'bg-[var(--cf-surface)] text-[var(--cf-ink)] border border-[var(--cf-line)] hover:bg-[var(--cf-surface-2)]',
   ghost: 'bg-transparent text-[var(--cf-ink-soft)] hover:bg-black/[.05] dark:hover:bg-white/10',
-  glow: 'bg-[#E7A66D] text-[#100D0B] hover:brightness-105'
+  glow: 'bg-[var(--cf-volt)] text-[#100D0B] hover:brightness-105'
 };
 
 export const buttonSizes = {
@@ -97,52 +98,60 @@ export const btnClass = (variant = 'primary', size = 'medium') =>
 // Badges — single status language across product (pill radius)
 export const badgeBase =
   'status-pill inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap border border-[var(--cf-line)]';
-export const badge = (color = 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200') =>
+export const badge = (color = 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]') =>
   `${badgeBase} ${color}`;
 
+const tint = {
+  warn: 'bg-[var(--cf-warning)]/15 text-[var(--cf-warning-strong)] dark:text-[var(--cf-warning)]',
+  accent: 'bg-[var(--cf-accent)]/12 text-[var(--cf-accent-strong)] dark:text-[var(--cf-accent-pale)]',
+  ok: 'bg-[var(--cf-success)]/15 text-[var(--cf-success-strong)] dark:text-[var(--cf-success)]',
+  bad: 'bg-[var(--cf-danger)]/12 text-[var(--cf-danger-strong)] dark:text-[var(--cf-danger)]',
+  neutral: 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]',
+};
+
 export const statusColors = {
-  pending: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]',
-  in_review: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  under_review: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  approved: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  rejected: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  draft: 'bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-gray-300',
-  published: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  open: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  closed: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]',
-  graded: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  archived: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400',
-  active: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  inactive: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  applied: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  shortlisted: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  assessment: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  interview_1: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  interview_2: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  interview: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  hr_round: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  offer: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  placed: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  selected: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  submitted: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  late: 'bg-[#FFBD4A]/20 text-[#8a5a00] dark:text-[#FFBD4A]',
-  present: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  absent: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  od: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]'
+  pending: tint.warn,
+  in_review: tint.accent,
+  under_review: tint.accent,
+  approved: tint.ok,
+  rejected: tint.bad,
+  draft: tint.neutral,
+  published: tint.accent,
+  open: tint.ok,
+  closed: tint.warn,
+  graded: tint.accent,
+  archived: tint.neutral,
+  active: tint.ok,
+  inactive: tint.bad,
+  applied: tint.accent,
+  shortlisted: tint.accent,
+  assessment: tint.accent,
+  interview_1: tint.accent,
+  interview_2: tint.accent,
+  interview: tint.accent,
+  hr_round: tint.accent,
+  offer: tint.ok,
+  placed: tint.ok,
+  selected: tint.ok,
+  submitted: tint.accent,
+  late: 'bg-[var(--cf-warning)]/20 text-[var(--cf-warning-strong)] dark:text-[var(--cf-warning)]',
+  present: tint.ok,
+  absent: tint.bad,
+  od: tint.accent
 };
 
 export const roleColors = {
-  super_admin: 'bg-[#FF5964]/12 text-[#c22e3a] dark:text-[#FF5964]',
-  college_admin: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  faculty: 'bg-[#D86D3E]/12 text-[#B6532B] dark:text-[#F5B08A]',
-  student: 'bg-[#25D890]/15 text-[#0b6b4a] dark:text-[#25D890]',
-  placement_officer: 'bg-[#FFBD4A]/15 text-[#8a5a00] dark:text-[#FFBD4A]'
+  super_admin: tint.bad,
+  college_admin: tint.accent,
+  faculty: tint.accent,
+  student: tint.ok,
+  placement_officer: tint.warn
 };
 
 export const statusBadge = (status) =>
-  badge(statusColors[status] || 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200');
+  badge(statusColors[status] || 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]');
 export const roleBadge = (role) =>
-  badge(roleColors[role] || 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200');
+  badge(roleColors[role] || 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]');
 
 // 8px spacing scale helper
 export const space = { 1: 8, 2: 16, 3: 24, 4: 32, 5: 40, 6: 48 };

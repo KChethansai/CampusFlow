@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { CalendarDays, CalendarPlus, Megaphone, Plus } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
@@ -13,11 +13,12 @@ import { btnClass, cn, inputClass, labelClass } from '../system/tokens';
 
 const TYPES = ['academic', 'cultural', 'sports', 'technical', 'placement', 'other'];
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
-const fmtD = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const fmtD = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
 const glassField = cn(inputClass, 'rounded-[14px]');
 
 export default function Events() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const isStudent = user?.role === 'student';
   const canPublish = ['college_admin', 'super_admin', 'faculty'].includes(user?.role);
@@ -189,9 +190,9 @@ export default function Events() {
       {loading ? <LoadingState /> : tab === 'events' ? (
         <section id="panel-events" role="tabpanel" aria-labelledby="tab-events">
           {upcoming.length === 0 ? <Card><EmptyState editorial title="Nothing scheduled" hint="New events will appear here." /></Card> : (
-            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-4">
+            <motion.div {...(reduced ? {} : staggerParent(0.05))} initial={reduced ? false : 'initial'} animate="animate" className="grid md:grid-cols-2 gap-4">
               {upcoming.map((e) => (
-                <motion.article key={e._id} variants={staggerChild} className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-5">
+                <motion.article key={e._id} variants={reduced ? undefined : staggerChild} className="rounded-3xl border border-[var(--cf-line)] bg-[var(--cf-surface)]/80 backdrop-blur-xl p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <Badge tone="bg-[#D86D3E]/10 text-[#D86D3E] dark:text-[#F5B08A]">
                       {e.type || 'event'}

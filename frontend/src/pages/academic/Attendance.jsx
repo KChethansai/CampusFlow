@@ -188,7 +188,7 @@ export default function Attendance() {
             <div className="flex flex-wrap items-start gap-8">
               <div>
                 <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--cf-ink-mute)] mb-2">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E7A66D]" aria-hidden />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--cf-volt)]" aria-hidden />
                   Health
                 </p>
                 <AttendanceRing value={health} />
@@ -213,13 +213,13 @@ export default function Attendance() {
                       <span className="text-xs text-[var(--cf-ink-mute)] tabular-nums">{c.pct}% · {c.n} records</span>
                     </div>
                     <div className="h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden" role="img" aria-label={`${c.name} ${c.pct} percent`}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? '#D86D3E' : c.pct >= 60 ? '#FFBD4A' : '#FF5964' }} />
+                        <div className="h-full rounded-full transition-all" style={{ width: `${c.pct}%`, background: c.pct >= 75 ? 'var(--cf-chart-1)' : c.pct >= 60 ? 'var(--cf-chart-5)' : 'var(--cf-chart-6)' }} />
                     </div>
                   </li>
                 ))}
               </ul>
               {health < 75 && (
-                <p className="rounded-[14px] border border-[var(--cf-line)] bg-[#FFBD4A]/10 px-3 py-2.5 mt-4 text-xs font-semibold">
+                  <p className="rounded-[14px] border border-[var(--cf-line)] bg-[var(--cf-warning)]/10 px-3 py-2.5 mt-4 text-xs font-semibold">
                   Projected risk: below the 75% threshold. Attend every upcoming class to recover.
                 </p>
               )}
@@ -230,7 +230,10 @@ export default function Attendance() {
                 {mine.slice(-6).reverse().map((s) => (
                   <li key={s._id} className="py-2.5 flex items-center gap-2 text-sm">
                     <span className="font-medium tabular-nums">{fmt(s.date)}</span>
-                    <span className="text-[var(--cf-ink-mute)] truncate">{s.subject?.name || ''} · Period {s.period}</span>
+                    <span className="text-[var(--cf-ink-mute)] truncate">
+                      {s.subject?.name || ''} · Period {s.period}
+                      {s.markedBy?.name ? ` · marked by ${s.markedBy.name}` : ''}
+                    </span>
                     <span className="ml-auto flex gap-1">
                       {(s.records || []).slice(0, 4).map((r, i) => (
                         <span key={i} className={statusBadge(r.status)}>{r.status}</span>
@@ -278,18 +281,32 @@ export default function Attendance() {
             <li key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <span className="flex-1 truncate font-medium">{s.name}</span>
               <div className="flex gap-1" role="radiogroup" aria-label={`Attendance for ${s.name}`}>
-                {STATUSES.map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    role="radio"
-                    aria-checked={(marks[s._id] || 'present') === st}
-                    onClick={() => setMarks((m) => ({ ...m, [s._id]: st }))}
-                    className={cn2((marks[s._id] || 'present') === st)}
-                  >
-                    {st}
-                  </button>
-                ))}
+                {STATUSES.map((st, sti) => {
+                  const checked = (marks[s._id] || 'present') === st;
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      tabIndex={checked ? 0 : -1}
+                      onClick={() => setMarks((m) => ({ ...m, [s._id]: st }))}
+                      onKeyDown={(e) => {
+                        const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1
+                          : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+                        if (!dir) return;
+                        e.preventDefault();
+                        const next = STATUSES[(sti + dir + STATUSES.length) % STATUSES.length];
+                        setMarks((m) => ({ ...m, [s._id]: next }));
+                        document.querySelector(`[data-att-radio="${s._id}-${next}"]`)?.focus();
+                      }}
+                      data-att-radio={`${s._id}-${st}`}
+                      className={cn2(checked)}
+                    >
+                      {st}
+                    </button>
+                  );
+                })}
               </div>
             </li>
           ))}
@@ -308,4 +325,4 @@ const isTaughtBy = (subject, userId) =>
   userId != null && String(subject?.faculty?._id || subject?.faculty || '') === String(userId);
 
 const cn2 = (active) =>
-  `rounded-full px-2.5 py-1 text-[11px] font-bold capitalize border transition ${active ? 'bg-[#A94727] text-white border-transparent' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;
+  `rounded-full px-2.5 min-h-9 text-[11px] font-bold capitalize border transition ${active ? 'bg-[var(--cf-accent-strong)] text-white border-transparent dark:bg-[var(--cf-accent)] dark:text-[#100D0B]' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)] border-[var(--cf-line)]'}`;

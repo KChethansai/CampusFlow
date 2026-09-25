@@ -25,7 +25,7 @@ export const AssignmentCard = memo(function AssignmentCard({
         </button>
         {badge}
       </div>
-      <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{description || 'No description'}</p>
+      <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{description || '—'}</p>
       {meta && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
           {meta}

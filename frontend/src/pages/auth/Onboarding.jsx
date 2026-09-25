@@ -99,7 +99,7 @@ export default function Onboarding() {
                   current ? 'bg-white/20 text-white' : 'bg-[var(--cf-surface-2)] text-[var(--cf-ink-soft)]')}>
                   {done ? <Check size={11} strokeWidth={3} aria-hidden /> : i + 1}
                 </span>
-                {current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E7A66D]" aria-hidden />}
+                {current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--cf-volt)]" aria-hidden />}
                 <span className="truncate text-[11px] font-display font-semibold hidden sm:block">{label}</span>
               </div>
             </li>
@@ -112,7 +112,7 @@ export default function Onboarding() {
           <div className="mb-4">
             <p className="text-sm font-display font-semibold mb-2">Choose your profile style</p>
             <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Profile style">
-              {AVATARS.map((a) => {
+              {AVATARS.map((a, ai) => {
                 const active = form.avatar === a.id;
                 return (
                   <motion.button
@@ -120,10 +120,26 @@ export default function Onboarding() {
                     type="button"
                     role="radio"
                     aria-checked={active}
+                    tabIndex={active ? 0 : -1}
                     onClick={() => setForm((f) => ({ ...f, avatar: a.id }))}
+                    onKeyDown={(e) => {
+                      const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1
+                        : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+                      let next = null;
+                      if (e.key === 'Home') next = AVATARS[0];
+                      else if (e.key === 'End') next = AVATARS[AVATARS.length - 1];
+                      else if (dir) next = AVATARS[(ai + dir + AVATARS.length) % AVATARS.length];
+                      if (!next) return;
+                      e.preventDefault();
+                      setForm((f) => ({ ...f, avatar: next.id }));
+                      requestAnimationFrame(() => {
+                        document.querySelector(`[data-avatar-radio="${next.id}"]`)?.focus();
+                      });
+                    }}
+                    data-avatar-radio={a.id}
                     whileTap={{ scale: 0.96 }}
-                    className={cn('flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition',
-                      active ? 'border-[#D86D3E]/50 bg-[#D86D3E]/[.06]' : 'border-[var(--cf-line)] hover:border-[var(--cf-ink-mute)]')}
+                    className={cn('flex flex-col items-center gap-1.5 p-2.5 min-h-11 rounded-2xl border transition',
+                      active ? 'border-[var(--cf-accent)]/50 bg-[var(--cf-accent)]/[.06]' : 'border-[var(--cf-line)] hover:border-[var(--cf-ink-mute)]')}
                   >
                     <span className={cn('w-9 h-9 rounded-xl grid place-items-center text-white text-sm font-bold', a.bg)} aria-hidden>
                       {(user?.name?.[0] || a.label[0]).toUpperCase()}

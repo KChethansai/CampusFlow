@@ -4,7 +4,7 @@
 // /job-applications, /notifications. Real data only.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { AlertTriangle, ArrowRight, Briefcase, ClipboardList, GraduationCap } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -25,6 +25,7 @@ const dueIn = (d) => {
 };
 
 export default function StudentHome() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -134,9 +135,9 @@ export default function StudentHome() {
   if (failed) return <ErrorState message="Couldn't load your dashboard." onRetry={load} />;
 
   return (
-    <motion.div {...staggerParent(0.06)} initial="initial" animate="animate">
+    <motion.div {...(reduced ? {} : staggerParent(0.06))} initial={reduced ? false : 'initial'} animate="animate">
       {/* REGION 1 — Hero Pulse */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <RoleHero
           accent="student"
           title="Your day, in one glance."
@@ -169,7 +170,7 @@ export default function StudentHome() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         {/* REGION 2 — analytics: when is the crunch? */}
-        <motion.div variants={staggerChild} className="lg:col-span-2">
+        <motion.div variants={reduced ? undefined : staggerChild} className="lg:col-span-2">
           <AnalyticsPanel
             title="Workload trajectory"
             icon={<ClipboardList size={17} className="text-[#D86D3E]" aria-hidden />}
@@ -186,7 +187,7 @@ export default function StudentHome() {
         </motion.div>
 
         {/* REGION 3 — activity stream: due timeline */}
-        <motion.section variants={staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Due timeline">
+        <motion.section variants={reduced ? undefined : staggerChild} className="bg-[var(--cf-surface)] rounded-[24px] border border-[var(--cf-line)] p-5" aria-label="Due timeline">
           <h2 className="font-display text-base font-semibold mb-3">Due timeline</h2>
           {upcoming.length === 0 ? (
             <EmptyState title="Clear skies" hint="Check the placement board?" />
@@ -233,7 +234,7 @@ export default function StudentHome() {
       </div>
 
       {/* REGION 4 — task cards */}
-      <motion.div variants={staggerChild}>
+      <motion.div variants={reduced ? undefined : staggerChild}>
         <TaskGrid>
           <SpotTask to="/study" label="Open study">
             <p className="font-display text-sm font-bold flex items-center gap-2">
@@ -267,7 +268,7 @@ export default function StudentHome() {
           </SpotTask>
         </TaskGrid>
       </motion.div>
-      <motion.div variants={staggerChild} className="mt-4">
+      <motion.div variants={reduced ? undefined : staggerChild} className="mt-4">
         <AttendanceTrend />
       </motion.div>
     </motion.div>

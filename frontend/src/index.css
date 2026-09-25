@@ -106,12 +106,25 @@
   --cf-ink-mute: #756257;
   --cf-line: rgba(54, 35, 25, .12);
   --cf-accent: #C85D34;
+  --cf-accent-strong: #B6532B;
+  --cf-accent-pale: #B6532B;
   --cf-volt: #E7A66D;
   --cf-teal: #79B8A6;
   --cf-terracotta: #A77B68;
   --cf-success: #43845E;
+  --cf-success-strong: #0b6b4a;
   --cf-warning: #A66C1F;
+  --cf-warning-strong: #8a5a00;
   --cf-danger: #B94C43;
+  --cf-danger-strong: #c22e3a;
+  --cf-focus: rgba(200, 93, 52, .32);
+  --cf-selection: rgba(200, 93, 52, .22);
+  --cf-chart-1: #D86D3E;
+  --cf-chart-2: #79B8A6;
+  --cf-chart-3: #E7A66D;
+  --cf-chart-4: #43845E;
+  --cf-chart-5: #A66C1F;
+  --cf-chart-6: #B94C43;
   --cf-frame: #211713;
   --cf-glow-ember: 0 0 32px rgba(200,93,52,.20);
   --cf-glow-volt: 0 0 20px rgba(231,166,109,.22);
@@ -133,16 +146,45 @@
   --cf-ink-mute: #948173;
   --cf-line: rgba(255,238,220,.10);
   --cf-accent: #F08A52;
+  --cf-accent-strong: #F08A52;
+  --cf-accent-pale: #F5B08A;
   --cf-volt: #E7A66D;
   --cf-teal: #79B8A6;
   --cf-terracotta: #C39279;
   --cf-success: #75BD8E;
+  --cf-success-strong: #75BD8E;
   --cf-warning: #E7B766;
+  --cf-warning-strong: #E7B766;
   --cf-danger: #EF8275;
+  --cf-danger-strong: #EF8275;
+  --cf-focus: rgba(240, 138, 82, .38);
+  --cf-selection: rgba(240, 138, 82, .30);
+  --cf-chart-1: #F08A52;
+  --cf-chart-2: #79B8A6;
+  --cf-chart-3: #E7A66D;
+  --cf-chart-4: #75BD8E;
+  --cf-chart-5: #E7B766;
+  --cf-chart-6: #EF8275;
   --cf-frame: rgba(255,238,220,.12);
   --cf-glow-ember: 0 0 32px rgba(240,138,82,.30);
   --cf-glow-volt: 0 0 20px rgba(231,166,109,.28);
   color-scheme: dark;
+}
+
+/* Semantic selection, focus, and autofill — one language across themes */
+::selection {
+  background: var(--cf-selection);
+}
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--cf-focus);
+  outline-offset: 2px;
+}
+input:-webkit-autofill,
+select:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--cf-ink);
+  caret-color: var(--cf-ink);
+  transition: background-color 600s ease-in-out 0s;
 }
 
 * {

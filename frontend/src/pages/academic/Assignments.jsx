@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -62,6 +62,7 @@ const LANES = ['Overdue', 'Today', 'This Week', 'Later', 'Settled'];
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
 export default function Assignments() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const isFaculty = user?.role === 'faculty';
   const isStudent = user?.role === 'student';
@@ -181,10 +182,10 @@ export default function Assignments() {
       {loading ? <LoadingState /> : assignments.length === 0 ? (
         <div className={GLASS}><EmptyState editorial title="No assignments yet" hint="New work will land here." /></div>
       ) : (
-        <motion.div {...staggerParent(0.04)} initial="initial" animate="animate" className="space-y-4">
+        <motion.div {...(reduced ? {} : staggerParent(0.04))} initial={reduced ? false : 'initial'} animate="animate" className="space-y-4">
           {LANES.map((lane) => (
             lanes[lane].length > 0 && (
-              <motion.section key={lane} variants={staggerChild} className={GLASS} aria-label={`${lane} assignments`}>
+              <motion.section key={lane} variants={reduced ? undefined : staggerChild} className={GLASS} aria-label={`${lane} assignments`}>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-display text-base font-semibold flex items-center gap-2">
                     <span
@@ -207,9 +208,9 @@ export default function Assignments() {
                           <h3 className="font-display font-semibold leading-snug">{a.title}</h3>
                           <Badge status={prio.status}>{prio.label}</Badge>
                         </div>
-                        <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{a.description || 'No description'}</p>
+                        <p className="text-sm text-[var(--cf-ink-mute)] line-clamp-2 mb-3">{a.description || '—'}</p>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-mute)] mb-3">
-                          <span>{a.subject?.name || 'Subject'}</span>
+                          <span>{a.subject?.name || '—'}</span>
                           <span className="tabular-nums">{a.maxScore} pts</span>
                           <span className={cn('font-medium tabular-nums', state === 'Overdue' && 'text-red-600 dark:text-red-400')}>Due {fmt(a.dueDate)}</span>
                           {mine[0]?.score != null && <span className="rounded-full bg-[#E7A66D]/25 px-2 py-0.5 text-[11px] font-bold tabular-nums">Score {mine[0].score}</span>}

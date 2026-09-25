@@ -52,11 +52,11 @@ export default function MagneticButton({
 
   const variantStyles = {
     primary:
-      'bg-[#A94727] text-white shadow-lg shadow-[#D86D3E]/25 hover:bg-[#B6532B] hover:shadow-[#D86D3E]/40',
+      'bg-[var(--cf-accent-strong)] text-white shadow-lg shadow-[var(--cf-accent)]/25 hover:bg-[var(--cf-accent)] hover:shadow-[var(--cf-accent)]/40',
     secondary:
       'border border-[var(--cf-line)] bg-[var(--cf-surface)] text-[var(--cf-ink)] hover:bg-[var(--cf-surface-2)] hover:border-black/20 dark:hover:border-white/20',
     glow:
-      'bg-[#E7A66D] text-[#100D0B] shadow-lg shadow-[#E7A66D]/20 hover:brightness-105'
+      'bg-[var(--cf-volt)] text-[#100D0B] shadow-lg shadow-[var(--cf-volt)]/20 hover:brightness-105'
   }[variant] || variantStyles.primary;
 
   return (

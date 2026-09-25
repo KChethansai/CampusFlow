@@ -4,7 +4,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../store/useAuth';
@@ -35,6 +35,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numer
 const fmtDT = (d) => d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
 export default function Placement() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const isStudent = user?.role === 'student';
   const isStaff = ['placement_officer', 'college_admin', 'super_admin'].includes(user?.role);
@@ -360,11 +361,11 @@ export default function Placement() {
           )}
 
           {tab === 'market' && (
-            <motion.div {...staggerParent(0.05)} initial="initial" animate="animate" className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <motion.div {...(reduced ? {} : staggerParent(0.05))} initial={reduced ? false : 'initial'} animate="animate" className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
               {drives.map((d) => {
                 const applied = appliedDriveIds.has(String(d._id));
                 return (
-                  <motion.article key={d._id} variants={staggerChild} className={`${GLASS} ${LIFT}`}>
+                  <motion.article key={d._id} variants={reduced ? undefined : staggerChild} className={`${GLASS} ${LIFT}`}>
                     <div className="flex items-start gap-3 mb-3">
                       <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[14px] bg-[#D86D3E]/10 text-[#D86D3E]" aria-hidden>
                         <Building2 size={19} />
