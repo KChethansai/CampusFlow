@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { jest } from '@jest/globals';
 import jwt from 'jsonwebtoken';
-import { io as ioClient } from '../../frontend/node_modules/socket.io-client/build/esm/index.js';
+import { io as ioClient } from 'socket.io-client';
 import app from '../app.js';
 import { env } from '../config/env.js';
 import { initSocket, setIO, authenticateSocket } from '../config/socket.js';
